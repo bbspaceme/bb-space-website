@@ -111,9 +111,31 @@ export function CommandPalette() {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Cari halaman, modul analisis, atau aksi..." />
+      <CommandInput
+        placeholder="Cari halaman, ticker IDX, atau aksi..."
+        value={query}
+        onValueChange={setQuery}
+      />
       <CommandList>
         <CommandEmpty>Tidak ditemukan.</CommandEmpty>
+        {tickerMatches.length > 0 && (
+          <>
+            <CommandGroup heading="Ticker IDX">
+              {tickerMatches.map((t) => (
+                <CommandItem
+                  key={t.code}
+                  value={`ticker ${t.code} ${t.name}`}
+                  onSelect={() => go(`/watchlist?add=${t.code}` as never)}
+                >
+                  <Hash className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <span className="font-mono font-semibold">{t.code}</span>
+                  <span className="ml-2 truncate text-xs text-muted-foreground">{t.name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
         {Object.entries(groups).map(([group, list], idx) => (
           <div key={group}>
             {idx > 0 && <CommandSeparator />}
