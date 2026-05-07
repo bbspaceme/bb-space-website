@@ -131,7 +131,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [now, setNow] = useState<Date>(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
   const navGroups = auth.isAdmin ? ADMIN_GROUPS : auth.isAdvisor ? ADVISOR_GROUPS : MEMBER_GROUPS;
   const flatNav = navGroups.flatMap((g) => g.items);
 
@@ -152,6 +152,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
+    setNow(new Date());
     const id = setInterval(() => setNow(new Date()), 1000 * 30);
     return () => clearInterval(id);
   }, []);
