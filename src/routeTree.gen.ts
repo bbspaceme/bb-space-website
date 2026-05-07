@@ -20,6 +20,7 @@ import { Route as AppEkonomiRouteImport } from './routes/_app.ekonomi'
 import { Route as AppCommunityRouteImport } from './routes/_app.community'
 import { Route as AppAnalisisRouteImport } from './routes/_app.analisis'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
+import { Route as AppActivityRouteImport } from './routes/_app.activity'
 import { Route as AppEkonomiIndexRouteImport } from './routes/_app.ekonomi.index'
 import { Route as ApiPublicEvaluatePriceAlertsRouteImport } from './routes/api/public/evaluate-price-alerts'
 import { Route as AppEkonomiMacroRouteImport } from './routes/_app.ekonomi.macro'
@@ -96,6 +97,11 @@ const AppAnalisisRoute = AppAnalisisRouteImport.update({
 const AppAdminRoute = AppAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppActivityRoute = AppActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEkonomiIndexRoute = AppEkonomiIndexRouteImport.update({
@@ -218,6 +224,7 @@ const AppAdminAuditRoute = AppAdminAuditRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/activity': typeof AppActivityRoute
   '/admin': typeof AppAdminRouteWithChildren
   '/analisis': typeof AppAnalisisRouteWithChildren
   '/community': typeof AppCommunityRoute
@@ -253,6 +260,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/activity': typeof AppActivityRoute
   '/admin': typeof AppAdminRouteWithChildren
   '/analisis': typeof AppAnalisisRouteWithChildren
   '/community': typeof AppCommunityRoute
@@ -289,6 +297,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/_app/activity': typeof AppActivityRoute
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/analisis': typeof AppAnalisisRouteWithChildren
   '/_app/community': typeof AppCommunityRoute
@@ -326,6 +335,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/activity'
     | '/admin'
     | '/analisis'
     | '/community'
@@ -361,6 +371,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/activity'
     | '/admin'
     | '/analisis'
     | '/community'
@@ -396,6 +407,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/login'
+    | '/_app/activity'
     | '/_app/admin'
     | '/_app/analisis'
     | '/_app/community'
@@ -513,6 +525,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/activity': {
+      id: '/_app/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof AppActivityRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/ekonomi/': {
@@ -754,6 +773,7 @@ const AppEkonomiRouteWithChildren = AppEkonomiRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppActivityRoute: typeof AppActivityRoute
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAnalisisRoute: typeof AppAnalisisRouteWithChildren
   AppCommunityRoute: typeof AppCommunityRoute
@@ -765,6 +785,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppActivityRoute: AppActivityRoute,
   AppAdminRoute: AppAdminRouteWithChildren,
   AppAnalisisRoute: AppAnalisisRouteWithChildren,
   AppCommunityRoute: AppCommunityRoute,

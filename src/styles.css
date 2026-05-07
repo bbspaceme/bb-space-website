@@ -152,13 +152,28 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Type scale */
+  /* Type scale (use these instead of ad-hoc text-[10px]/[11px]) */
   .text-display { font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; }
   .text-h1 { font-size: 22px; line-height: 1.3; font-weight: 600; }
   .text-h2 { font-size: 18px; line-height: 1.35; font-weight: 600; }
+  .text-h3 { font-size: 15px; line-height: 1.4; font-weight: 600; }
   .text-body { font-size: 14px; line-height: 1.5; }
   .text-caption { font-size: 12px; line-height: 1.45; }
+  .text-micro { font-size: 11px; line-height: 1.4; letter-spacing: 0.02em; }
   .text-mono-sm { font-family: var(--font-mono); font-size: 12px; }
+
+  /* Motion tokens */
+  :root {
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+    --ease-decel: cubic-bezier(0, 0, 0, 1);
+    --duration-fast: 120ms;
+    --duration-base: 200ms;
+    --duration-slow: 320ms;
+  }
+  .motion-fast { transition: all var(--duration-fast) var(--ease-standard); }
+  .motion-base { transition: all var(--duration-base) var(--ease-standard); }
+  .motion-slow { transition: all var(--duration-slow) var(--ease-emphasized); }
 
   /* Tabular numerals globally for trading-grade alignment */
   table,
