@@ -288,12 +288,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <CommandIcon className="h-3 w-3" />
                 <span>K</span>
               </button>
-              <div className="hidden flex-col items-end leading-tight sm:flex">
+              <div className="hidden flex-col items-end leading-tight sm:flex" suppressHydrationWarning>
                 <span className="font-mono text-[11px] tabular text-muted-foreground">
-                  {format(now, "EEE, dd MMM yyyy", { locale: idLocale })}
+                  {now ? format(now, "EEE, dd MMM yyyy", { locale: idLocale }) : "—"}
                 </span>
                 <span className="font-mono text-[11px] tabular text-foreground/80">
-                  {format(now, "HH:mm")} WIB
+                  {now ? `${format(now, "HH:mm")} WIB` : "— WIB"}
                 </span>
               </div>
               <span className="hidden h-5 w-px bg-border sm:block" />
