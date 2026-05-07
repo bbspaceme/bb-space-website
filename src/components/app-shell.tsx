@@ -58,6 +58,12 @@ const MEMBER_GROUPS: NavGroup[] = [
       { to: "/market-insight", label: "Market Insight", icon: Newspaper },
     ],
   },
+  {
+    label: "Personal",
+    items: [
+      { to: "/activity", label: "Activity", icon: ScrollText },
+    ],
+  },
 ];
 
 const ADVISOR_GROUPS: NavGroup[] = [
@@ -131,7 +137,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [now, setNow] = useState<Date>(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
   const navGroups = auth.isAdmin ? ADMIN_GROUPS : auth.isAdvisor ? ADVISOR_GROUPS : MEMBER_GROUPS;
   const flatNav = navGroups.flatMap((g) => g.items);
 
@@ -152,6 +158,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
+    setNow(new Date());
     const id = setInterval(() => setNow(new Date()), 1000 * 30);
     return () => clearInterval(id);
   }, []);
@@ -287,12 +294,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <CommandIcon className="h-3 w-3" />
                 <span>K</span>
               </button>
-              <div className="hidden flex-col items-end leading-tight sm:flex">
+              <div className="hidden flex-col items-end leading-tight sm:flex" suppressHydrationWarning>
                 <span className="font-mono text-[11px] tabular text-muted-foreground">
-                  {format(now, "EEE, dd MMM yyyy", { locale: idLocale })}
+                  {now ? format(now, "EEE, dd MMM yyyy", { locale: idLocale }) : "—"}
                 </span>
                 <span className="font-mono text-[11px] tabular text-foreground/80">
-                  {format(now, "HH:mm")} WIB
+                  {now ? `${format(now, "HH:mm")} WIB` : "— WIB"}
                 </span>
               </div>
               <span className="hidden h-5 w-px bg-border sm:block" />
