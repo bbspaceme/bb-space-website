@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,13 +11,20 @@ import { addWatchlist, listWatchlist, removeWatchlist } from "@/lib/watchlist.fu
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/watchlist")({
+  validateSearch: (s: Record<string, unknown>) =>
+    z.object({ add: z.string().optional() }).parse(s),
   component: WatchlistPage,
 });
 
 function WatchlistPage() {
-  const [ticker, setTicker] = useState("");
+  const search = Route.useSearch();
+  const [ticker, setTicker] = useState(search.add?.toUpperCase() ?? "");
   const [note, setNote] = useState("");
   const q = useQuery({ queryKey: ["watchlist"], queryFn: () => listWatchlist() });
+
+  useEffect(() => {
+    if (search.add) setTicker(search.add.toUpperCase());
+  }, [search.add]);
 
   const add = useMutation({
     mutationFn: () => addWatchlist({ data: { ticker, note: note || undefined } }),

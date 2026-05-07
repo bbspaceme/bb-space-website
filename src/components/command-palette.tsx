@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   CommandDialog,
@@ -10,6 +10,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { useAuth } from "@/auth";
+import { IDX_EMITEN } from "@/lib/idx-tickers";
 import {
   Users,
   Briefcase,
@@ -30,6 +31,7 @@ import {
   Receipt,
   LogOut,
   BarChart3,
+  Hash,
 } from "lucide-react";
 
 type Item = { to: string; label: string; group: string; icon: React.ComponentType<{ className?: string }> };
@@ -70,6 +72,7 @@ const ADMIN: Item[] = [
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const navigate = useNavigate();
   const auth = useAuth();
 
@@ -84,6 +87,14 @@ export function CommandPalette() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  const tickerMatches = useMemo(() => {
+    const q = query.trim().toUpperCase();
+    if (q.length < 1) return [];
+    return IDX_EMITEN.filter(
+      (e) => e.code.includes(q) || e.name.toUpperCase().includes(q),
+    ).slice(0, 8);
+  }, [query]);
+
   if (!auth.isAuthenticated) return null;
 
   const items = auth.isAdmin ? ADMIN : auth.isAdvisor ? ADVISOR : MEMBER;
@@ -94,14 +105,41 @@ export function CommandPalette() {
 
   const go = (to: string) => {
     setOpen(false);
+    setQuery("");
     navigate({ to });
   };
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Cari halaman, modul analisis, atau aksi..." />
+      <CommandInput
+        placeholder="Cari halaman, ticker IDX, atau aksi..."
+        value={query}
+        onValueChange={setQuery}
+      />
       <CommandList>
         <CommandEmpty>Tidak ditemukan.</CommandEmpty>
+        {tickerMatches.length > 0 && (
+          <>
+            <CommandGroup heading="Ticker IDX">
+              {tickerMatches.map((t) => (
+                <CommandItem
+                  key={t.code}
+                  value={`ticker ${t.code} ${t.name}`}
+                  onSelect={() => {
+                    setOpen(false);
+                    setQuery("");
+                    navigate({ to: "/watchlist", search: { add: t.code } });
+                  }}
+                >
+                  <Hash className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <span className="font-mono font-semibold">{t.code}</span>
+                  <span className="ml-2 truncate text-xs text-muted-foreground">{t.name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
         {Object.entries(groups).map(([group, list], idx) => (
           <div key={group}>
             {idx > 0 && <CommandSeparator />}
