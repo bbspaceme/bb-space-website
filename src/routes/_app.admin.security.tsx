@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ShieldCheck, LogOut } from "lucide-react";
 import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/security")({
@@ -127,10 +128,10 @@ function AdminSecurityPage() {
                       )}
                     </TableCell>
                     <TableCell className="font-mono text-[11px] text-muted-foreground">
-                      {format(new Date(r.created_at), "dd MMM HH:mm")}
+                      {format(new Date(r.created_at), "dd MMM HH:mm", { locale: idLocale })}
                     </TableCell>
                     <TableCell className="font-mono text-[11px] text-muted-foreground">
-                      {format(new Date(r.last_seen_at), "dd MMM HH:mm")}
+                      {format(new Date(r.last_seen_at), "dd MMM HH:mm", { locale: idLocale })}
                     </TableCell>
                     <TableCell className="text-right">
                       {r.is_active && (

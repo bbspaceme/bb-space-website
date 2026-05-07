@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Megaphone } from "lucide-react";
 import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export const Route = createFileRoute("/_app/market-insight")({
   beforeLoad: async () => {
@@ -47,7 +48,7 @@ function MarketInsightPage() {
             <>
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
                 <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                  Broadcast: {format(new Date(latestQ.data.created_at), "EEEE, dd MMMM yyyy")}
+                  Broadcast: {format(new Date(latestQ.data.created_at), "EEEE, dd MMMM yyyy", { locale: idLocale })}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
                   oleh <span className="font-mono font-semibold text-foreground">@{latestQ.data.posted_by_username}</span>

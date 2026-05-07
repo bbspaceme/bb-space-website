@@ -9,6 +9,7 @@ import { generateAiInsight } from "@/lib/insight-ai.functions";
 import { toast } from "sonner";
 import { Sparkles, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export const Route = createFileRoute("/_app/admin/insight-ai")({
   component: InsightAiPage,
@@ -60,7 +61,7 @@ function InsightAiPage() {
           {result && (
             <>
               <div className="border-b border-border pb-3 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                Generated: {format(new Date(result.generated_at), "EEE, dd MMM yyyy HH:mm")} · {result.users_analyzed} user dianalisis
+                Generated: {format(new Date(result.generated_at), "EEE, dd MMM yyyy HH:mm", { locale: idLocale })} · {result.users_analyzed} user dianalisis
               </div>
               <article className="prose prose-sm prose-invert max-w-none pt-4">
                 <ReactMarkdown>{result.content}</ReactMarkdown>

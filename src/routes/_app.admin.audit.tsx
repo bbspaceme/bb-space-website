@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollText, Search, FileDown } from "lucide-react";
 import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { exportRowsCsv } from "@/lib/csv-export";
 
@@ -59,7 +60,7 @@ function AdminAuditPage() {
               className="h-8 rounded-sm text-[11px] uppercase tracking-[0.12em]"
               onClick={() =>
                 exportRowsCsv(
-                  `audit-${format(new Date(), "yyyyMMdd-HHmm")}`,
+                  `audit-${format(new Date(), "yyyyMMdd-HHmm", { locale: idLocale })}`,
                   rows.map((r) => ({
                     timestamp: r.created_at,
                     user: r.username ?? "",
@@ -97,7 +98,7 @@ function AdminAuditPage() {
                 {rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-mono text-[11px] text-muted-foreground">
-                      {format(new Date(r.created_at), "dd MMM HH:mm:ss")}
+                      {format(new Date(r.created_at), "dd MMM HH:mm:ss", { locale: idLocale })}
                     </TableCell>
                     <TableCell className="text-[12px]">{r.username ?? <span className="text-muted-foreground">—</span>}</TableCell>
                     <TableCell><Badge variant="outline" className="font-mono text-[10px]">{r.action}</Badge></TableCell>
