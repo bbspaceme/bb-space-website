@@ -1,0 +1,412 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { IDX_TICKERS, toYahoo, fromYahoo } from "@/lib/idx-tickers";
+import { getServerDatabaseClient } from "@/lib/backend-client.server";
+
+// ============================================
+// Yahoo Finance helpers
+// ============================================
+const YAHOO_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+  Accept: "application/json",
+};
+
+/**
+ * Real-time intraday quote (delay ~15min).
+ * Returns map of yahooSymbol -> regularMarketPrice.
+ */
+async function fetchYahooQuote(symbols: string[]): Promise<Record<string, number>> {
+  if (symbols.length === 0) return {};
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
+    symbols.join(","),
+  )}`;
+  const res = await fetch(url, { headers: YAHOO_HEADERS });
+  if (!res.ok) throw new Error(`Yahoo quote error: ${res.status}`);
+  const json = (await res.json()) as {
+    quoteResponse?: { result?: Array<{ symbol: string; regularMarketPrice?: number }> };
+  };
+  const out: Record<string, number> = {};
+  for (const q of json.quoteResponse?.result ?? []) {
+    if (typeof q.regularMarketPrice === "number") out[q.symbol] = q.regularMarketPrice;
+  }
+  return out;
+}
+
+/**
+ * Historical EOD via Yahoo chart endpoint.
+ * Returns array of { date: 'YYYY-MM-DD', close: number }.
+ */
+async function fetchYahooChart(
+  symbol: string,
+  fromUnix: number,
+  toUnix: number,
+): Promise<Array<{ date: string; close: number }>> {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
+    symbol,
+  )}?period1=${fromUnix}&period2=${toUnix}&interval=1d`;
+  const res = await fetch(url, { headers: YAHOO_HEADERS });
+  if (!res.ok) return [];
+  const json = (await res.json()) as {
+    chart?: {
+      result?: Array<{
+        timestamp?: number[];
+        indicators?: { quote?: Array<{ close?: (number | null)[] }> };
+      }>;
+    };
+  };
+  const r = json.chart?.result?.[0];
+  const ts = r?.timestamp ?? [];
+  const cl = r?.indicators?.quote?.[0]?.close ?? [];
+  const out: Array<{ date: string; close: number }> = [];
+  for (let i = 0; i < ts.length; i++) {
+    const c = cl[i];
+    if (typeof c === "number" && Number.isFinite(c)) {
+      out.push({
+        date: new Date(ts[i] * 1000).toISOString().slice(0, 10),
+        close: c,
+      });
+    }
+  }
+  return out;
+}
+
+// ============================================
+// CoinGecko BTC helpers (no API key needed)
+// ============================================
+async function fetchBtcSpotUsd(): Promise<number | null> {
+  try {
+    const res = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+      { headers: { Accept: "application/json" } },
+    );
+    if (!res.ok) return null;
+    const j = (await res.json()) as { bitcoin?: { usd?: number } };
+    return typeof j.bitcoin?.usd === "number" ? j.bitcoin.usd : null;
+  } catch {
+    const yahoo = await fetchYahooQuote(["BTC-USD"]);
+    return yahoo["BTC-USD"] ?? null;
+  }
+}
+
+async function fetchBtcDailyUsd(
+  fromUnix: number,
+  toUnix: number,
+): Promise<Array<{ date: string; close: number }>> {
+  const yahooBars = await fetchYahooChart("BTC-USD", fromUnix, toUnix);
+  if (yahooBars.length > 0) return yahooBars;
+
+  // CoinGecko free tier: max 365 days history.
+  // Chunk into 80-day windows to ensure daily granularity (range <90d returns hourly).
+  const ONE_YEAR_SEC = 365 * 24 * 60 * 60;
+  const maxFrom = Math.floor(Date.now() / 1000) - ONE_YEAR_SEC + 86400;
+  const safeFrom = Math.max(fromUnix, maxFrom);
+  const byDay = new Map<string, number>();
+  const CHUNK = 80 * 24 * 60 * 60; // 80 days
+  for (let start = safeFrom; start < toUnix; start += CHUNK) {
+    const end = Math.min(start + CHUNK, toUnix);
+    try {
+      const url = `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range?vs_currency=usd&from=${start}&to=${end}`;
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      if (!res.ok) continue;
+      const j = (await res.json()) as { prices?: Array<[number, number]> };
+      for (const [ms, price] of j.prices ?? []) {
+        const d = new Date(ms).toISOString().slice(0, 10);
+        byDay.set(d, price); // last value of the day wins
+      }
+    } catch {
+      continue;
+    }
+    // Be polite to the free public API
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return Array.from(byDay.entries())
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([date, close]) => ({ date, close }));
+}
+
+async function recomputeKbaiRange(db: ReturnType<typeof getServerDatabaseClient>, fromDate: string, toDate: string) {
+  const [{ data: holdings }, { data: prices }, { count: memberCount }] = await Promise.all([
+    db.from("holdings").select("user_id, ticker, total_lot, avg_price").gt("total_lot", 0),
+    db.from("eod_prices").select("ticker, close, date").gte("date", fromDate).lte("date", toDate).order("date", { ascending: true }),
+    db.from("profiles").select("id", { count: "exact", head: true }),
+  ]);
+
+  const priceByDateTicker = new Map<string, number>();
+  const dates = new Set<string>();
+  for (const p of prices ?? []) {
+    dates.add(p.date);
+    priceByDateTicker.set(`${p.date}:${p.ticker}`, Number(p.close));
+  }
+
+  let prevIndex: number | null = null;
+  const kbaiRows: Array<{ date: string; value: number; pct_change: number; member_count: number }> = [];
+  const snapshotRows: Array<{ user_id: string; date: string; total_value: number; total_cost: number; total_pl: number }> = [];
+  for (const date of Array.from(dates).sort()) {
+    const userAgg = new Map<string, { value: number; cost: number }>();
+    for (const h of holdings ?? []) {
+      const close = priceByDateTicker.get(`${date}:${h.ticker}`);
+      if (close == null) continue;
+      const value = Number(h.total_lot) * close * 100;
+      const cost = Number(h.total_lot) * Number(h.avg_price) * 100;
+      const cur = userAgg.get(h.user_id) ?? { value: 0, cost: 0 };
+      cur.value += value;
+      cur.cost += cost;
+      userAgg.set(h.user_id, cur);
+    }
+    for (const [user_id, v] of userAgg) {
+      snapshotRows.push({ user_id, date, total_value: v.value, total_cost: v.cost, total_pl: v.value - v.cost });
+    }
+    const totalValue = Array.from(userAgg.values()).reduce((s, v) => s + v.value, 0);
+    const totalCost = Array.from(userAgg.values()).reduce((s, v) => s + v.cost, 0);
+    const indexValue = totalCost > 0 ? (totalValue / totalCost) * 100 : 100;
+    const pct = prevIndex && prevIndex > 0 ? ((indexValue - prevIndex) / prevIndex) * 100 : 0;
+    prevIndex = indexValue;
+    kbaiRows.push({ date, value: indexValue, pct_change: pct, member_count: memberCount ?? userAgg.size });
+  }
+
+  if (snapshotRows.length > 0) await db.from("portfolio_snapshots").upsert(snapshotRows, { onConflict: "user_id,date" });
+  if (kbaiRows.length > 0) await db.from("kbai_index").upsert(kbaiRows, { onConflict: "date" });
+  return { kbai_days: kbaiRows.length };
+}
+
+// ============================================
+// Refresh INTRADAY price (real-time, ~15min delay)
+// Updates eod_prices for TODAY using regularMarketPrice
+// ============================================
+export const refreshIntradayPrices = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
+  .handler(async ({ data }) => {
+  const db = getServerDatabaseClient(data?.access_token);
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Tickers from holdings + always include the IDX_TICKERS basket
+  const { data: holdings } = await db
+    .from("holdings")
+    .select("ticker")
+    .gt("total_lot", 0);
+  const heldTickers = (holdings ?? []).map((h) => h.ticker);
+  const allTickers = Array.from(new Set([...heldTickers, ...IDX_TICKERS]));
+
+  // Fetch in batches (Yahoo limit ~100 symbols per request)
+  const batchSize = 80;
+  const yahooSymbols = allTickers.map(toYahoo);
+  const quotes: Record<string, number> = {};
+  for (let i = 0; i < yahooSymbols.length; i += batchSize) {
+    const batch = yahooSymbols.slice(i, i + batchSize);
+    const got = await fetchYahooQuote([...batch, "^JKSE"]);
+    Object.assign(quotes, got);
+  }
+
+  // Upsert eod_prices (today)
+  const eodRows = Object.entries(quotes)
+    .filter(([sym]) => sym.endsWith(".JK"))
+    .map(([sym, close]) => ({
+      ticker: fromYahoo(sym),
+      date: today,
+      close,
+      source: "yahoo-intraday",
+    }));
+
+  if (eodRows.length > 0) {
+    const { error } = await db
+      .from("eod_prices")
+      .upsert(eodRows, { onConflict: "ticker,date" });
+    if (error) throw new Error(error.message);
+  }
+
+  // IHSG benchmark
+  let ihsgUpdated = false;
+  if (quotes["^JKSE"]) {
+    const { error } = await db
+      .from("benchmark_prices")
+      .upsert(
+        [{ symbol: "IHSG" as const, date: today, value: quotes["^JKSE"] }],
+        { onConflict: "symbol,date" },
+      );
+    if (!error) ihsgUpdated = true;
+  }
+
+  // GOLD benchmark via Yahoo (GC=F continuous gold futures)
+  let goldUpdated = false;
+  const goldQuote = await fetchYahooQuote(["GC=F"]);
+  if (goldQuote["GC=F"]) {
+    const { error } = await db
+      .from("benchmark_prices")
+      .upsert(
+        [{ symbol: "GOLD" as const, date: today, value: goldQuote["GC=F"] }],
+        { onConflict: "symbol,date" },
+      );
+    if (!error) goldUpdated = true;
+  }
+
+  // BTC benchmark via CoinGecko
+  let btcUpdated = false;
+  const btcSpot = await fetchBtcSpotUsd();
+  if (btcSpot != null) {
+    const { error } = await db
+      .from("benchmark_prices")
+      .upsert(
+        [{ symbol: "BTC" as const, date: today, value: btcSpot }],
+        { onConflict: "symbol,date" },
+      );
+    if (!error) btcUpdated = true;
+  }
+
+  return {
+    updated: eodRows.length,
+    ihsg: ihsgUpdated ? quotes["^JKSE"] : null,
+    gold: goldUpdated ? goldQuote["GC=F"] : null,
+    btc: btcUpdated ? btcSpot : null,
+    timestamp: new Date().toISOString(),
+  };
+});
+
+// ============================================
+// Backfill EOD: <from_date> -> <to_date|today>
+// for all IDX_TICKERS + IHSG
+// ============================================
+export const backfillEodFromApril = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      from_date: z.string().min(8), // 'YYYY-MM-DD'
+      to_date: z.string().min(8).optional(), // 'YYYY-MM-DD', default today
+      access_token: z.string().min(1).optional(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const db = getServerDatabaseClient(data.access_token);
+    const fromDate = data.from_date;
+    const toDate = data.to_date ?? new Date().toISOString().slice(0, 10);
+    const fromUnix = Math.floor(new Date(fromDate + "T00:00:00Z").getTime() / 1000);
+    const toUnix = Math.floor(new Date(toDate + "T23:59:59Z").getTime() / 1000);
+
+    // 1. Backfill IHSG benchmark
+    const ihsgBars = await fetchYahooChart("^JKSE", fromUnix, toUnix);
+    let ihsgInserted = 0;
+    if (ihsgBars.length > 0) {
+      const rows = ihsgBars.map((b) => ({
+        symbol: "IHSG" as const,
+        date: b.date,
+        value: b.close,
+      }));
+      const { error } = await db
+        .from("benchmark_prices")
+        .upsert(rows, { onConflict: "symbol,date" });
+      if (!error) ihsgInserted = rows.length;
+    }
+
+    // 1b. Backfill GOLD (GC=F)
+    const goldBars = await fetchYahooChart("GC=F", fromUnix, toUnix);
+    let goldInserted = 0;
+    if (goldBars.length > 0) {
+      const rows = goldBars.map((b) => ({
+        symbol: "GOLD" as const,
+        date: b.date,
+        value: b.close,
+      }));
+      const { error } = await db
+        .from("benchmark_prices")
+        .upsert(rows, { onConflict: "symbol,date" });
+      if (!error) goldInserted = rows.length;
+    }
+
+    // 1c. Backfill BTC via CoinGecko
+    const btcBars = await fetchBtcDailyUsd(fromUnix, toUnix);
+    let btcInserted = 0;
+    if (btcBars.length > 0) {
+      const rows = btcBars.map((b) => ({
+        symbol: "BTC" as const,
+        date: b.date,
+        value: b.close,
+      }));
+      const { error } = await db
+        .from("benchmark_prices")
+        .upsert(rows, { onConflict: "symbol,date" });
+      if (!error) btcInserted = rows.length;
+    }
+
+    // 2. Backfill all IDX_TICKERS (parallel batches of 16)
+    const concurrency = 16;
+    let totalRows = 0;
+    let tickersOk = 0;
+    let tickersFailed = 0;
+
+    for (let i = 0; i < IDX_TICKERS.length; i += concurrency) {
+      const batch = IDX_TICKERS.slice(i, i + concurrency);
+      const results = await Promise.allSettled(
+        batch.map(async (ticker) => {
+          const bars = await fetchYahooChart(toYahoo(ticker), fromUnix, toUnix);
+          if (bars.length === 0) return { ticker, count: 0 };
+          const rows = bars.map((b) => ({
+            ticker,
+            date: b.date,
+            close: b.close,
+            source: "yahoo-eod",
+          }));
+          const { error } = await db
+            .from("eod_prices")
+            .upsert(rows, { onConflict: "ticker,date" });
+          if (error) throw new Error(error.message);
+          return { ticker, count: rows.length };
+        }),
+      );
+      for (const r of results) {
+        if (r.status === "fulfilled") {
+          totalRows += r.value.count;
+          if (r.value.count > 0) tickersOk += 1;
+        } else {
+          tickersFailed += 1;
+        }
+      }
+    }
+
+    const kbai = await recomputeKbaiRange(db, fromDate, toDate);
+
+    return {
+      from: fromDate,
+      total_tickers: IDX_TICKERS.length,
+      ihsg_days: ihsgInserted,
+      gold_days: goldInserted,
+      btc_days: btcInserted,
+      kbai_days: kbai.kbai_days,
+      tickers_ok: tickersOk,
+      tickers_failed: tickersFailed,
+      total_eod_rows: totalRows,
+    };
+  });
+
+// ============================================
+// DELETE ALL market data (eod_prices + benchmark_prices)
+// Admin-only — RLS enforces this on the DB layer.
+// ============================================
+export const deleteAllMarketData = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
+  .handler(async ({ data }) => {
+    const db = getServerDatabaseClient(data?.access_token);
+    // Use a permissive predicate (delete requires WHERE clause via PostgREST)
+    const eod = await db.from("eod_prices").delete().gt("close", -1);
+    if (eod.error) throw new Error(`eod: ${eod.error.message}`);
+    const bench = await db.from("benchmark_prices").delete().gt("value", -1);
+    if (bench.error) throw new Error(`benchmark: ${bench.error.message}`);
+    return { ok: true };
+  });
+
+// ============================================
+// EXPORT ALL market data — returns rows for client-side XLSX build.
+// ============================================
+export const exportAllMarketData = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
+  .handler(async ({ data }) => {
+    const db = getServerDatabaseClient(data?.access_token);
+    const [eod, bench] = await Promise.all([
+      db.from("eod_prices").select("date, ticker, close, source").order("date", { ascending: false }).limit(100000),
+      db.from("benchmark_prices").select("date, symbol, value").order("date", { ascending: false }).limit(50000),
+    ]);
+    if (eod.error) throw new Error(eod.error.message);
+    if (bench.error) throw new Error(bench.error.message);
+    return {
+      eod: eod.data ?? [],
+      benchmark: bench.data ?? [],
+    };
+  });
