@@ -21,6 +21,7 @@ import { exportPortfolioPdf } from "@/lib/pdf-export";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { IDX_EMITEN, IDX_TICKERS } from "@/lib/idx-tickers";
+import { MetricTooltip } from "@/components/metric-tooltip";
 
 export const Route = createFileRoute("/_app/portfolio")({
   beforeLoad: async () => {
@@ -216,14 +217,15 @@ function PortfolioPage() {
 
       {/* Summary strip */}
       <section className="grid grid-cols-1 gap-px overflow-hidden rounded-sm border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Total Equity" value={fmtIDR(totalEquity)} sub="Holdings + Cash" />
-        <Stat label="Market Value" value={fmtIDR(totalValue)} sub={`${rows.length} positions`} />
-        <Stat label="Cash Balance" value={fmtIDR(cashBalance)} sub="Idle funds" />
+        <Stat label="Total Equity" value={fmtIDR(totalEquity)} sub="Holdings + Cash" tooltip="Nilai pasar holdings + saldo cash. Snapshot per harga EOD terakhir." />
+        <Stat label="Market Value" value={fmtIDR(totalValue)} sub={`${rows.length} positions`} tooltip="Lot × harga EOD × 100 saham per lot." />
+        <Stat label="Cash Balance" value={fmtIDR(cashBalance)} sub="Idle funds" tooltip="Saldo cash yang belum diinvestasikan, otomatis berkurang saat BUY dan bertambah saat SELL." />
         <Stat
           label="Unrealized P/L"
           value={fmtIDR(totalPL)}
           sub={fmtPct(totalPLPct)}
           tone={totalPL >= 0 ? "pos" : "neg"}
+          tooltip="Selisih nilai pasar terhadap cost basis (avg price × lot × 100). Belum direalisasikan sampai SELL."
         />
       </section>
 
@@ -438,16 +440,19 @@ function Stat({
   value,
   sub,
   tone,
+  tooltip,
 }: {
   label: string;
   value: string;
   sub?: string;
   tone?: "pos" | "neg";
+  tooltip?: string;
 }) {
   return (
     <div className="bg-card px-5 py-5">
-      <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
+      <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+        <span>{label}</span>
+        {tooltip && <MetricTooltip term={label} description={tooltip} />}
       </div>
       <div
         className={cn(
