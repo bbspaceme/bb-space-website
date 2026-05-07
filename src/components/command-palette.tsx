@@ -125,7 +125,11 @@ export function CommandPalette() {
                 <CommandItem
                   key={t.code}
                   value={`ticker ${t.code} ${t.name}`}
-                  onSelect={() => go(`/watchlist?add=${t.code}` as never)}
+                  onSelect={() => {
+                    setOpen(false);
+                    setQuery("");
+                    navigate({ to: "/watchlist", search: { add: t.code } });
+                  }}
                 >
                   <Hash className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span className="font-mono font-semibold">{t.code}</span>
