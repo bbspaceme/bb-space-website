@@ -1,0 +1,130 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+export const generateAiInsight = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ requester_id: z.string().uuid() }))
+  .handler(async ({ data }) => {
+    // Verify advisor or admin
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.requester_id);
+    const isAdvisor = !!roles?.some((r) => r.role === "advisor" || r.role === "admin");
+    if (!isAdvisor) throw new Error("Unauthorized");
+
+    // Aggregate data
+    const [{ data: profiles }, { data: holdings }, { data: cash }, { data: prices }] =
+      await Promise.all([
+        supabaseAdmin.from("profiles").select("id, username"),
+        supabaseAdmin.from("holdings").select("*").gt("total_lot", 0),
+        supabaseAdmin.from("cash_balances").select("user_id, balance"),
+        supabaseAdmin
+          .from("eod_prices")
+          .select("ticker, close, date")
+          .order("date", { ascending: false })
+          .limit(5000),
+      ]);
+
+    const priceMap = new Map<string, number>();
+    for (const p of prices ?? []) if (!priceMap.has(p.ticker)) priceMap.set(p.ticker, Number(p.close));
+    const userMap = new Map((profiles ?? []).map((p) => [p.id, p.username]));
+    const cashMap = new Map((cash ?? []).map((c) => [c.user_id, Number(c.balance)]));
+
+    const userAgg = new Map<string, { username: string; positions: { ticker: string; value: number; cost: number; lot: number }[]; total_value: number; total_cost: number; cash: number }>();
+    for (const h of holdings ?? []) {
+      const last = priceMap.get(h.ticker) ?? Number(h.avg_price);
+      const value = last * h.total_lot * 100;
+      const cost = Number(h.avg_price) * h.total_lot * 100;
+      const cur = userAgg.get(h.user_id) ?? {
+        username: userMap.get(h.user_id) ?? h.user_id.slice(0, 8),
+        positions: [],
+        total_value: 0, total_cost: 0,
+        cash: cashMap.get(h.user_id) ?? 0,
+      };
+      cur.positions.push({ ticker: h.ticker, value, cost, lot: h.total_lot });
+      cur.total_value += value;
+      cur.total_cost += cost;
+      userAgg.set(h.user_id, cur);
+    }
+
+    const usersSummary = Array.from(userAgg.values()).map((u) => ({
+      username: u.username,
+      positions: u.positions.length,
+      total_value: Math.round(u.total_value),
+      cash: Math.round(u.cash),
+      equity: Math.round(u.total_value + u.cash),
+      pl: Math.round(u.total_value - u.total_cost),
+      pl_pct: u.total_cost > 0 ? +(((u.total_value - u.total_cost) / u.total_cost) * 100).toFixed(2) : 0,
+      top_positions: u.positions.sort((a, b) => b.value - a.value).slice(0, 5).map((p) => ({
+        ticker: p.ticker, lot: p.lot, value: Math.round(p.value),
+      })),
+    }));
+
+    const communityAgg = new Map<string, number>();
+    for (const u of userAgg.values()) {
+      for (const p of u.positions) {
+        communityAgg.set(p.ticker, (communityAgg.get(p.ticker) ?? 0) + p.value);
+      }
+    }
+    const communityTotal = Array.from(communityAgg.values()).reduce((s, v) => s + v, 0);
+    const topCommunity = Array.from(communityAgg.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([t, v]) => ({ ticker: t, value: Math.round(v), pct: communityTotal > 0 ? +((v / communityTotal) * 100).toFixed(2) : 0 }));
+
+    const payload = {
+      community: {
+        total_value: Math.round(communityTotal),
+        total_users: usersSummary.length,
+        top_concentrations: topCommunity,
+      },
+      users: usersSummary,
+    };
+
+    // Call Lovable AI
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+
+    const systemPrompt = `Kamu adalah analis investasi senior untuk komunitas KBAI (Indonesian Stock Exchange).
+Berikan insight strategis dalam Bahasa Indonesia, padat dan actionable. Output dalam markdown dengan struktur:
+
+## 🎯 AI-Assisted Allocation Recommendation
+(rekomendasi alokasi berdasarkan konsentrasi & risk pasar IDX)
+
+## ⚠️ Early Warning Risk Signal
+(flag risiko: konsentrasi tinggi, sektor tunggal, cash terlalu rendah/tinggi, P/L ekstrem)
+
+## 🔄 Auto-Rebalancing Trigger
+(user/posisi mana yang perlu rebalance dan mengapa)
+
+## 📊 Client Scorecard (Top 5)
+(skor 1-10 untuk top 5 user berdasarkan: diversifikasi, P/L, cash management)
+
+## 💡 AI Insight per Portfolio
+(insight singkat untuk setiap user)`;
+
+    const userPrompt = `Berikut data internal komunitas (JSON):\n\n${JSON.stringify(payload, null, 2)}`;
+
+    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-pro",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+
+    if (!aiRes.ok) {
+      if (aiRes.status === 429) throw new Error("Rate limit. Coba lagi sebentar.");
+      if (aiRes.status === 402) throw new Error("Kuota AI habis. Top-up workspace credits.");
+      const t = await aiRes.text();
+      throw new Error(`AI error: ${aiRes.status} ${t.slice(0, 200)}`);
+    }
+    const aiJson = (await aiRes.json()) as { choices?: { message?: { content?: string } }[] };
+    const content = aiJson.choices?.[0]?.message?.content ?? "(no response)";
+    return { content, generated_at: new Date().toISOString(), users_analyzed: usersSummary.length };
+  });
