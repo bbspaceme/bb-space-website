@@ -8,7 +8,7 @@ import { Sparkles, Briefcase, Star, Newspaper, LineChart, Globe, Users, ChevronR
 type Step = { icon: React.ComponentType<{ className?: string }>; title: string; body: string };
 
 const MEMBER_STEPS: Step[] = [
-  { icon: Users, title: "Selamat datang di KBAI Terminal", body: "Platform komunitas untuk tracking portfolio saham IDX dengan indeks komunitas KBAI." },
+  { icon: Users, title: "Selamat datang di BB Space", body: "Platform komunitas untuk tracking portfolio saham IDX dengan indeks komunitas KBAI." },
   { icon: Briefcase, title: "Portfolio kamu", body: "Catat transaksi BUY/SELL, kelola cash, lihat P/L realtime. Mulai dari menu Portfolio." },
   { icon: Star, title: "Watchlist", body: "Pantau saham tanpa harus hold. Tambahkan ticker yang sedang kamu pelajari." },
   { icon: Newspaper, title: "Market Insight", body: "Broadcast dari Advisor — analisis pasar harian. Cek menu Market Insight." },

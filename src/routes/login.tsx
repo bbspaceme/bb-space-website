@@ -76,7 +76,7 @@ function LoginPage() {
             <Activity className="h-4 w-4 text-foreground" />
           </span>
           <div className="leading-tight">
-            <div className="text-[14px] font-semibold tracking-wide">KBAI Terminal</div>
+            <div className="text-[14px] font-semibold tracking-wide">BB Space</div>
             <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
               Keluarga Besar Awas Indeks
             </div>
