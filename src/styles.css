@@ -127,7 +127,40 @@
   --sidebar-ring: oklch(0.45 0.005 270);
 }
 
-/* Keep .dark variant aliasing the same tokens so any dark: utility still resolves. */
+/* Light variant — institutional, neutral, paper-like */
+.light {
+  color-scheme: light;
+  --background: oklch(0.985 0.002 270);
+  --foreground: oklch(0.18 0.005 270);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.005 270);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.005 270);
+  --primary: oklch(0.22 0.005 270);
+  --primary-foreground: oklch(0.98 0.003 270);
+  --secondary: oklch(0.95 0.003 270);
+  --secondary-foreground: oklch(0.2 0.005 270);
+  --muted: oklch(0.95 0.003 270);
+  --muted-foreground: oklch(0.46 0.008 270);
+  --accent: oklch(0.94 0.003 270);
+  --accent-foreground: oklch(0.18 0.005 270);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.98 0.003 270);
+  --border: oklch(0.9 0.004 270);
+  --input: oklch(0.9 0.004 270);
+  --ring: oklch(0.7 0.005 270);
+  --pos: oklch(0.55 0.16 152);
+  --neg: oklch(0.55 0.2 25);
+  --sidebar: oklch(0.97 0.003 270);
+  --sidebar-foreground: oklch(0.28 0.005 270);
+  --sidebar-primary: oklch(0.22 0.005 270);
+  --sidebar-primary-foreground: oklch(0.98 0.003 270);
+  --sidebar-accent: oklch(0.92 0.004 270);
+  --sidebar-accent-foreground: oklch(0.18 0.005 270);
+  --sidebar-border: oklch(0.9 0.004 270);
+  --sidebar-ring: oklch(0.7 0.005 270);
+}
+
 .dark {
   color-scheme: dark;
 }
