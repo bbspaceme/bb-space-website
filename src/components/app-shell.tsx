@@ -58,6 +58,12 @@ const MEMBER_GROUPS: NavGroup[] = [
       { to: "/market-insight", label: "Market Insight", icon: Newspaper },
     ],
   },
+  {
+    label: "Personal",
+    items: [
+      { to: "/activity", label: "Activity", icon: ScrollText },
+    ],
+  },
 ];
 
 const ADVISOR_GROUPS: NavGroup[] = [
