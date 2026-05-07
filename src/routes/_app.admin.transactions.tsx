@@ -13,8 +13,10 @@ import {
 } from "@/components/ui/select";
 import { fmtIDR, fmtNum } from "@/lib/format";
 import { format } from "date-fns";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, FileDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { exportRowsCsv } from "@/lib/csv-export";
 
 export const Route = createFileRoute("/_app/admin/transactions")({
   component: AdminTransactionsPage,
@@ -128,10 +130,32 @@ function AdminTransactionsPage() {
       </Card>
 
       <Card className="rounded-sm border-border">
-        <CardHeader className="border-b border-border py-3">
+        <CardHeader className="border-b border-border py-3 flex flex-row items-center justify-between">
           <CardTitle className="text-[13px] font-semibold uppercase tracking-[0.14em]">
             Transactions ({sorted.length})
           </CardTitle>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 rounded-sm text-[11px] uppercase tracking-[0.12em]"
+            onClick={() =>
+              exportRowsCsv(
+                `transactions-${format(new Date(), "yyyyMMdd-HHmm")}`,
+                sorted.map((t) => ({
+                  date: format(new Date(t.transacted_at), "yyyy-MM-dd"),
+                  user: t.username,
+                  ticker: t.ticker,
+                  side: t.side,
+                  lot: t.lot,
+                  price: t.price,
+                  notional: t.notional,
+                })),
+                ["date", "user", "ticker", "side", "lot", "price", "notional"],
+              )
+            }
+          >
+            <FileDown className="mr-1.5 h-3.5 w-3.5" /> Export CSV
+          </Button>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">

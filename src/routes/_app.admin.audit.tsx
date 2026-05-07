@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ScrollText, Search } from "lucide-react";
+import { ScrollText, Search, FileDown } from "lucide-react";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { exportRowsCsv } from "@/lib/csv-export";
 
 export const Route = createFileRoute("/_app/admin/audit")({
   component: AdminAuditPage,
@@ -41,14 +43,36 @@ function AdminAuditPage() {
           <CardTitle className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.14em]">
             <ScrollText className="h-4 w-4" /> Audit Log · {rows.length} entri
           </CardTitle>
-          <div className="relative w-64">
-            <Search className="absolute left-2 top-2.5 h-3 w-3 text-muted-foreground" />
-            <Input
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              placeholder="Cari action / user / entity"
-              className="h-8 pl-7 text-[12px]"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative w-64">
+              <Search className="absolute left-2 top-2.5 h-3 w-3 text-muted-foreground" />
+              <Input
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                placeholder="Cari action / user / entity"
+                className="h-8 pl-7 text-[12px]"
+              />
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 rounded-sm text-[11px] uppercase tracking-[0.12em]"
+              onClick={() =>
+                exportRowsCsv(
+                  `audit-${format(new Date(), "yyyyMMdd-HHmm")}`,
+                  rows.map((r) => ({
+                    timestamp: r.created_at,
+                    user: r.username ?? "",
+                    action: r.action,
+                    entity: r.entity ?? "",
+                    entity_id: r.entity_id ?? "",
+                    metadata: r.metadata ? JSON.stringify(r.metadata) : "",
+                  })),
+                )
+              }
+            >
+              <FileDown className="mr-1.5 h-3.5 w-3.5" /> CSV
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
