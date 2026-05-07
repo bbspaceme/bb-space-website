@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Megaphone, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export const Route = createFileRoute("/_app/admin/broadcast")({
   component: BroadcastAdminPage,
@@ -127,7 +128,7 @@ function BroadcastAdminPage() {
           {latestQ.data ? (
             <>
               <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-                {format(new Date(latestQ.data.created_at), "EEE, dd MMM yyyy HH:mm")}
+                {format(new Date(latestQ.data.created_at), "EEE, dd MMM yyyy HH:mm", { locale: idLocale })}
               </div>
               <div className="text-[11px] text-muted-foreground">
                 oleh @{latestQ.data.posted_by_username}

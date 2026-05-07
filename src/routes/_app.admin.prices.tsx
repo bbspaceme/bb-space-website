@@ -27,6 +27,7 @@ import {
 import { toast } from "sonner";
 import { RefreshCw, Activity, Database, Trash2, Download } from "lucide-react";
 import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/_app/admin/prices")({
@@ -38,9 +39,9 @@ function AdminPricesPage() {
   const auth = useAuth();
   const accessToken = auth.session?.access_token;
   const [backfillFrom, setBackfillFrom] = useState(
-    format(new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
+    format(new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), "yyyy-MM-dd", { locale: idLocale }),
   );
-  const [backfillTo, setBackfillTo] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [backfillTo, setBackfillTo] = useState(format(new Date(), "yyyy-MM-dd", { locale: idLocale }));
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const eodQ = useQuery({
@@ -130,7 +131,7 @@ function AdminPricesPage() {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.eod), "EOD Prices");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.benchmark), "Benchmarks");
-      XLSX.writeFile(wb, `kbai-market-data-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`);
+      XLSX.writeFile(wb, `kbai-market-data-${format(new Date(), "yyyyMMdd-HHmm", { locale: idLocale })}.xlsx`);
       toast.success(`Export OK: ${res.eod.length} EOD + ${res.benchmark.length} benchmark`);
     },
     onError: (e) => toast.error(e.message),
@@ -230,7 +231,7 @@ function AdminPricesPage() {
               <TableBody>
                 {(eodQ.data ?? []).map((p) => (
                   <TableRow key={p.id}>
-                    <TableCell>{format(new Date(p.date), "dd MMM yyyy")}</TableCell>
+                    <TableCell>{format(new Date(p.date), "dd MMM yyyy", { locale: idLocale })}</TableCell>
                     <TableCell className="font-medium">{p.ticker}</TableCell>
                     <TableCell className="text-right">{fmtNum(Number(p.close))}</TableCell>
                     <TableCell className="text-muted-foreground text-xs">{p.source ?? "—"}</TableCell>
@@ -259,7 +260,7 @@ function AdminPricesPage() {
               <TableBody>
                 {(benchQ.data ?? []).map((b) => (
                   <TableRow key={b.id}>
-                    <TableCell>{format(new Date(b.date), "dd MMM yyyy")}</TableCell>
+                    <TableCell>{format(new Date(b.date), "dd MMM yyyy", { locale: idLocale })}</TableCell>
                     <TableCell className="font-medium">{b.symbol}</TableCell>
                     <TableCell className="text-right">{fmtNum(Number(b.value))}</TableCell>
                   </TableRow>
@@ -277,7 +278,7 @@ function ManualBenchmarkForm() {
   const qc = useQueryClient();
   const [symbol, setSymbol] = useState<"IHSG" | "GOLD" | "BTC" | "SMF">("SMF");
   const [value, setValue] = useState("");
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd", { locale: idLocale }));
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async (e: React.FormEvent) => {

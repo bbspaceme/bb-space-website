@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { fmtIDR, fmtNum } from "@/lib/format";
 import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 import { ArrowDown, ArrowUp, ArrowUpDown, FileDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -140,9 +141,9 @@ function AdminTransactionsPage() {
             className="h-8 rounded-sm text-[11px] uppercase tracking-[0.12em]"
             onClick={() =>
               exportRowsCsv(
-                `transactions-${format(new Date(), "yyyyMMdd-HHmm")}`,
+                `transactions-${format(new Date(), "yyyyMMdd-HHmm", { locale: idLocale })}`,
                 sorted.map((t) => ({
-                  date: format(new Date(t.transacted_at), "yyyy-MM-dd"),
+                  date: format(new Date(t.transacted_at), "yyyy-MM-dd", { locale: idLocale }),
                   user: t.username,
                   ticker: t.ticker,
                   side: t.side,
@@ -174,7 +175,7 @@ function AdminTransactionsPage() {
               <TableBody className="text-[13px] tabular">
                 {sorted.map((t) => (
                   <TableRow key={t.id}>
-                    <TableCell>{format(new Date(t.transacted_at), "dd MMM yyyy")}</TableCell>
+                    <TableCell>{format(new Date(t.transacted_at), "dd MMM yyyy", { locale: idLocale })}</TableCell>
                     <TableCell>{t.username}</TableCell>
                     <TableCell className="font-mono text-[12px] font-semibold">{t.ticker}</TableCell>
                     <TableCell>

@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { RefreshCw, Plus, Minus, Wallet, Briefcase, Sparkles, FileDown } from "lucide-react";
 import { exportPortfolioPdf } from "@/lib/pdf-export";
 import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { IDX_EMITEN, IDX_TICKERS } from "@/lib/idx-tickers";
 import { MetricTooltip } from "@/components/metric-tooltip";
@@ -452,7 +453,7 @@ function PortfolioPage() {
                 {(txnsQ.data ?? []).map((t) => (
                   <tr key={t.id} className="border-b border-border/60 last:border-0 hover:bg-accent/40">
                     <td className="px-4 py-2.5 text-muted-foreground">
-                      {format(new Date(t.transacted_at), "dd MMM yyyy")}
+                      {format(new Date(t.transacted_at), "dd MMM yyyy", { locale: idLocale })}
                     </td>
                     <td className="px-4 py-2.5">
                       <span
@@ -575,7 +576,7 @@ function TransactionDialog({
   const [ticker, setTicker] = useState("");
   const [lot, setLot] = useState("");
   const [price, setPrice] = useState("");
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd", { locale: idLocale }));
   const [submitting, setSubmitting] = useState(false);
 
   if (open && side !== initialSide && ticker === "" && lot === "" && price === "") {
@@ -586,7 +587,7 @@ function TransactionDialog({
     setTicker("");
     setLot("");
     setPrice("");
-    setDate(format(new Date(), "yyyy-MM-dd"));
+    setDate(format(new Date(), "yyyy-MM-dd", { locale: idLocale }));
   };
 
   const close = () => {
@@ -621,7 +622,7 @@ function TransactionDialog({
       toast.error("Harga tidak valid");
       return;
     }
-    const today = format(new Date(), "yyyy-MM-dd");
+    const today = format(new Date(), "yyyy-MM-dd", { locale: idLocale });
     if (date > today) {
       toast.error("Tanggal tidak boleh lebih dari hari ini");
       return;
@@ -816,14 +817,14 @@ function CashDialog({
 }) {
   const [type, setType] = useState<"DEPOSIT" | "WITHDRAW">("DEPOSIT");
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd", { locale: idLocale }));
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const reset = () => {
     setAmount("");
     setNote("");
-    setDate(format(new Date(), "yyyy-MM-dd"));
+    setDate(format(new Date(), "yyyy-MM-dd", { locale: idLocale }));
   };
   const close = () => {
     reset();

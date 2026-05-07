@@ -21,6 +21,7 @@ import { adminCreateUser, adminGrantRole, adminDeleteUser, adminListUsers, admin
 import { toast } from "sonner";
 import { UserPlus, Shield, Trash2, Pencil, LineChart } from "lucide-react";
 import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export const Route = createFileRoute("/_app/admin/users")({
   component: AdminUsersPage,
@@ -110,7 +111,7 @@ function AdminUsersPage() {
                           </Badge>
                         ))}
                       </TableCell>
-                      <TableCell>{format(new Date(u.created_at), "dd MMM yyyy")}</TableCell>
+                      <TableCell>{format(new Date(u.created_at), "dd MMM yyyy", { locale: idLocale })}</TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button
                           size="sm"

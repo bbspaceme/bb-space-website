@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Settings, Save, Database, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export const Route = createFileRoute("/_app/admin/settings")({
   component: AdminSettingsPage,
@@ -146,7 +147,7 @@ function SettingEditor({
         <div>
           <div className="font-mono text-[12px] font-semibold">{k}</div>
           <div className="text-[10px] text-muted-foreground">
-            updated {format(new Date(updatedAt), "dd MMM HH:mm")}
+            updated {format(new Date(updatedAt), "dd MMM HH:mm", { locale: idLocale })}
           </div>
         </div>
         <Button size="sm" onClick={save} disabled={isSaving}>

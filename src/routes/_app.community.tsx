@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { fmtNum, fmtPct } from "@/lib/format";
 import { format, subMonths, subYears } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export const Route = createFileRoute("/_app/community")({
   component: CommunityPage,
@@ -24,7 +25,7 @@ type Range = "1M" | "3M" | "1Y";
 function rangeStart(r: Range): string {
   const now = new Date();
   const d = r === "1M" ? subMonths(now, 1) : r === "3M" ? subMonths(now, 3) : subYears(now, 1);
-  return format(d, "yyyy-MM-dd");
+  return format(d, "yyyy-MM-dd", { locale: idLocale });
 }
 
 function CommunityPage() {
@@ -177,7 +178,7 @@ function CommunityPage() {
                     fontSize={10}
                     tickLine={false}
                     axisLine={{ stroke: "var(--color-border)" }}
-                    tickFormatter={(d) => format(new Date(d), "dd MMM")}
+                    tickFormatter={(d) => format(new Date(d), "dd MMM", { locale: idLocale })}
                     minTickGap={24}
                   />
                   <YAxis
@@ -205,7 +206,7 @@ function CommunityPage() {
                       marginBottom: 4,
                     }}
                     formatter={(v: number) => fmtNum(v)}
-                    labelFormatter={(d) => format(new Date(d as string), "dd MMM yyyy")}
+                    labelFormatter={(d) => format(new Date(d as string), "dd MMM yyyy", { locale: idLocale })}
                   />
                   <Legend
                     verticalAlign="top"
@@ -274,7 +275,7 @@ function CommunityPage() {
                     fontSize={10}
                     tickLine={false}
                     axisLine={{ stroke: "var(--color-border)" }}
-                    tickFormatter={(d) => format(new Date(d), "dd MMM")}
+                    tickFormatter={(d) => format(new Date(d), "dd MMM", { locale: idLocale })}
                     minTickGap={24}
                   />
                   <YAxis
@@ -309,7 +310,7 @@ function CommunityPage() {
                       marginBottom: 4,
                     }}
                     formatter={(v: number) => fmtNum(v)}
-                    labelFormatter={(d) => format(new Date(d as string), "dd MMM yyyy")}
+                    labelFormatter={(d) => format(new Date(d as string), "dd MMM yyyy", { locale: idLocale })}
                   />
                   <Legend
                     verticalAlign="top"
