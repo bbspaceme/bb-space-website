@@ -348,6 +348,79 @@ function PortfolioPage() {
         )}
       </section>
 
+      {/* Performance Attribution */}
+      {rows.length > 0 && totalCost > 0 && (
+        <section className="rounded-sm border border-border bg-card">
+          <header className="flex items-center justify-between border-b border-border px-5 py-3.5">
+            <h2 className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.14em]">
+              Performance Attribution
+              <MetricTooltip
+                term="Attribution"
+                description="Kontribusi setiap holding terhadap total return portofolio. Bobot = cost share × return saham."
+              />
+            </h2>
+            <span className="text-[11px] text-muted-foreground">
+              Total return {fmtPct(totalPLPct)}
+            </span>
+          </header>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                  <th className="px-4 py-2.5 text-left font-medium">Ticker</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Weight</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Return</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Contribution</th>
+                  <th className="px-4 py-2.5 font-medium">Bar</th>
+                </tr>
+              </thead>
+              <tbody className="text-[13px] tabular">
+                {rows
+                  .map((r) => {
+                    const weight = r.cost / totalCost;
+                    const ret = r.cost > 0 && r.value != null ? (r.value - r.cost) / r.cost : 0;
+                    const contrib = weight * ret * 100;
+                    return { ticker: r.ticker, weight, ret, contrib };
+                  })
+                  .sort((a, b) => Math.abs(b.contrib) - Math.abs(a.contrib))
+                  .map((a) => {
+                    const maxAbs = Math.max(
+                      ...rows.map((r) => {
+                        const w = r.cost / totalCost;
+                        const re = r.cost > 0 && r.value != null ? (r.value - r.cost) / r.cost : 0;
+                        return Math.abs(w * re * 100);
+                      }),
+                      0.01,
+                    );
+                    const pct = (Math.abs(a.contrib) / maxAbs) * 100;
+                    return (
+                      <tr key={a.ticker} className="border-b border-border/60 last:border-0 hover:bg-accent/40">
+                        <td className="px-4 py-2.5 font-mono text-[12px] font-semibold">{a.ticker}</td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground">{fmtPct(a.weight * 100)}</td>
+                        <td className={cn("px-4 py-2.5 text-right", a.ret >= 0 ? "text-pos" : "text-neg")}>
+                          {fmtPct(a.ret * 100)}
+                        </td>
+                        <td className={cn("px-4 py-2.5 text-right font-medium", a.contrib >= 0 ? "text-pos" : "text-neg")}>
+                          {a.contrib >= 0 ? "+" : ""}{a.contrib.toFixed(2)} pp
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <div className="relative h-2 w-full bg-border/50">
+                            <div
+                              className={cn("absolute top-0 h-full", a.contrib >= 0 ? "bg-pos/70 left-1/2" : "bg-neg/70 right-1/2")}
+                              style={{ width: `${pct / 2}%` }}
+                            />
+                            <div className="absolute inset-y-0 left-1/2 w-px bg-border" />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       {/* Transactions */}
       <section className="rounded-sm border border-border bg-card">
         <header className="flex items-center justify-between border-b border-border px-5 py-3.5">
