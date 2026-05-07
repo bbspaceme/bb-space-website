@@ -158,6 +158,63 @@ export type Database = {
         }
         Relationships: []
       }
+      economic_events: {
+        Row: {
+          actual: number | null
+          category: string
+          country: string
+          created_at: string
+          event_date: string
+          event_time: string | null
+          forecast: number | null
+          id: string
+          importance: number
+          metadata: Json
+          previous: number | null
+          source: string
+          source_ref: string | null
+          title: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual?: number | null
+          category: string
+          country: string
+          created_at?: string
+          event_date: string
+          event_time?: string | null
+          forecast?: number | null
+          id?: string
+          importance?: number
+          metadata?: Json
+          previous?: number | null
+          source?: string
+          source_ref?: string | null
+          title: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual?: number | null
+          category?: string
+          country?: string
+          created_at?: string
+          event_date?: string
+          event_time?: string | null
+          forecast?: number | null
+          id?: string
+          importance?: number
+          metadata?: Json
+          previous?: number | null
+          source?: string
+          source_ref?: string | null
+          title?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       eod_prices: {
         Row: {
           close: number
@@ -235,6 +292,45 @@ export type Database = {
           id?: string
           member_count?: number | null
           pct_change?: number | null
+          value?: number
+        }
+        Relationships: []
+      }
+      macro_indicators: {
+        Row: {
+          country: string
+          created_at: string
+          id: string
+          indicator: string
+          metadata: Json
+          period: string
+          source: string
+          unit: string | null
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          country: string
+          created_at?: string
+          id?: string
+          indicator: string
+          metadata?: Json
+          period: string
+          source: string
+          unit?: string | null
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          country?: string
+          created_at?: string
+          id?: string
+          indicator?: string
+          metadata?: Json
+          period?: string
+          source?: string
+          unit?: string | null
+          updated_at?: string
           value?: number
         }
         Relationships: []

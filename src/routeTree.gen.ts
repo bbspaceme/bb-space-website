@@ -26,6 +26,7 @@ import { Route as ApiPublicEvaluatePriceAlertsRouteImport } from './routes/api/p
 import { Route as AppEkonomiMacroRouteImport } from './routes/_app.ekonomi.macro'
 import { Route as AppEkonomiKomoditasRouteImport } from './routes/_app.ekonomi.komoditas'
 import { Route as AppEkonomiGlobalRouteImport } from './routes/_app.ekonomi.global'
+import { Route as AppEkonomiCalendarRouteImport } from './routes/_app.ekonomi.calendar'
 import { Route as AppEkonomiAiBriefRouteImport } from './routes/_app.ekonomi.ai-brief'
 import { Route as AppAnalisisValuationRouteImport } from './routes/_app.analisis.valuation'
 import { Route as AppAnalisisTechnicalRouteImport } from './routes/_app.analisis.technical'
@@ -128,6 +129,11 @@ const AppEkonomiKomoditasRoute = AppEkonomiKomoditasRouteImport.update({
 const AppEkonomiGlobalRoute = AppEkonomiGlobalRouteImport.update({
   id: '/global',
   path: '/global',
+  getParentRoute: () => AppEkonomiRoute,
+} as any)
+const AppEkonomiCalendarRoute = AppEkonomiCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => AppEkonomiRoute,
 } as any)
 const AppEkonomiAiBriefRoute = AppEkonomiAiBriefRouteImport.update({
@@ -251,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/analisis/technical': typeof AppAnalisisTechnicalRoute
   '/analisis/valuation': typeof AppAnalisisValuationRoute
   '/ekonomi/ai-brief': typeof AppEkonomiAiBriefRoute
+  '/ekonomi/calendar': typeof AppEkonomiCalendarRoute
   '/ekonomi/global': typeof AppEkonomiGlobalRoute
   '/ekonomi/komoditas': typeof AppEkonomiKomoditasRoute
   '/ekonomi/macro': typeof AppEkonomiMacroRoute
@@ -286,6 +293,7 @@ export interface FileRoutesByTo {
   '/analisis/technical': typeof AppAnalisisTechnicalRoute
   '/analisis/valuation': typeof AppAnalisisValuationRoute
   '/ekonomi/ai-brief': typeof AppEkonomiAiBriefRoute
+  '/ekonomi/calendar': typeof AppEkonomiCalendarRoute
   '/ekonomi/global': typeof AppEkonomiGlobalRoute
   '/ekonomi/komoditas': typeof AppEkonomiKomoditasRoute
   '/ekonomi/macro': typeof AppEkonomiMacroRoute
@@ -324,6 +332,7 @@ export interface FileRoutesById {
   '/_app/analisis/technical': typeof AppAnalisisTechnicalRoute
   '/_app/analisis/valuation': typeof AppAnalisisValuationRoute
   '/_app/ekonomi/ai-brief': typeof AppEkonomiAiBriefRoute
+  '/_app/ekonomi/calendar': typeof AppEkonomiCalendarRoute
   '/_app/ekonomi/global': typeof AppEkonomiGlobalRoute
   '/_app/ekonomi/komoditas': typeof AppEkonomiKomoditasRoute
   '/_app/ekonomi/macro': typeof AppEkonomiMacroRoute
@@ -362,6 +371,7 @@ export interface FileRouteTypes {
     | '/analisis/technical'
     | '/analisis/valuation'
     | '/ekonomi/ai-brief'
+    | '/ekonomi/calendar'
     | '/ekonomi/global'
     | '/ekonomi/komoditas'
     | '/ekonomi/macro'
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/analisis/technical'
     | '/analisis/valuation'
     | '/ekonomi/ai-brief'
+    | '/ekonomi/calendar'
     | '/ekonomi/global'
     | '/ekonomi/komoditas'
     | '/ekonomi/macro'
@@ -434,6 +445,7 @@ export interface FileRouteTypes {
     | '/_app/analisis/technical'
     | '/_app/analisis/valuation'
     | '/_app/ekonomi/ai-brief'
+    | '/_app/ekonomi/calendar'
     | '/_app/ekonomi/global'
     | '/_app/ekonomi/komoditas'
     | '/_app/ekonomi/macro'
@@ -567,6 +579,13 @@ declare module '@tanstack/react-router' {
       path: '/global'
       fullPath: '/ekonomi/global'
       preLoaderRoute: typeof AppEkonomiGlobalRouteImport
+      parentRoute: typeof AppEkonomiRoute
+    }
+    '/_app/ekonomi/calendar': {
+      id: '/_app/ekonomi/calendar'
+      path: '/calendar'
+      fullPath: '/ekonomi/calendar'
+      preLoaderRoute: typeof AppEkonomiCalendarRouteImport
       parentRoute: typeof AppEkonomiRoute
     }
     '/_app/ekonomi/ai-brief': {
@@ -754,6 +773,7 @@ const AppAnalisisRouteWithChildren = AppAnalisisRoute._addFileChildren(
 
 interface AppEkonomiRouteChildren {
   AppEkonomiAiBriefRoute: typeof AppEkonomiAiBriefRoute
+  AppEkonomiCalendarRoute: typeof AppEkonomiCalendarRoute
   AppEkonomiGlobalRoute: typeof AppEkonomiGlobalRoute
   AppEkonomiKomoditasRoute: typeof AppEkonomiKomoditasRoute
   AppEkonomiMacroRoute: typeof AppEkonomiMacroRoute
@@ -762,6 +782,7 @@ interface AppEkonomiRouteChildren {
 
 const AppEkonomiRouteChildren: AppEkonomiRouteChildren = {
   AppEkonomiAiBriefRoute: AppEkonomiAiBriefRoute,
+  AppEkonomiCalendarRoute: AppEkonomiCalendarRoute,
   AppEkonomiGlobalRoute: AppEkonomiGlobalRoute,
   AppEkonomiKomoditasRoute: AppEkonomiKomoditasRoute,
   AppEkonomiMacroRoute: AppEkonomiMacroRoute,

@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingUp, Globe, Coins, BarChart3, Sparkles } from "lucide-react";
+import { TrendingUp, Globe, Coins, BarChart3, Sparkles, CalendarDays } from "lucide-react";
 
 export const Route = createFileRoute("/_app/ekonomi")({
   beforeLoad: async () => {
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_app/ekonomi")({
 });
 
 const TABS: Array<{
-  to: "/ekonomi" | "/ekonomi/macro" | "/ekonomi/global" | "/ekonomi/komoditas" | "/ekonomi/ai-brief";
+  to: "/ekonomi" | "/ekonomi/macro" | "/ekonomi/global" | "/ekonomi/komoditas" | "/ekonomi/calendar" | "/ekonomi/ai-brief";
   label: string;
   icon: typeof BarChart3;
   exact?: boolean;
@@ -26,6 +26,7 @@ const TABS: Array<{
   { to: "/ekonomi/macro", label: "Makro", icon: TrendingUp },
   { to: "/ekonomi/global", label: "Global", icon: Globe },
   { to: "/ekonomi/komoditas", label: "Komoditas", icon: Coins },
+  { to: "/ekonomi/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/ekonomi/ai-brief", label: "AI Brief", icon: Sparkles },
 ];
 
