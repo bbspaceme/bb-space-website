@@ -175,7 +175,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     ROUTE_TITLES[pathname] ??
     (pathname.startsWith("/admin")
       ? { title: "Administration", subtitle: pathname.replace("/admin/", "") }
-      : { title: "KBAI", subtitle: "" });
+      : { title: "BB Space", subtitle: "" });
 
   const initials =
     (auth.username ?? auth.user?.email ?? "?")
@@ -198,10 +198,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
             <div className="leading-tight">
               <div className="text-[13px] font-semibold tracking-wide text-sidebar-primary">
-                KBAI
+                BB Space
               </div>
               <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                Terminal
+                Investor Suite
               </div>
             </div>
           </div>
