@@ -19,6 +19,8 @@ function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [today, setToday] = useState<string>("");
+  useEffect(() => { setToday(format(new Date(), "dd MMM yyyy")); }, []);
 
   // If already authenticated, redirect (side effect, not during render)
   useEffect(() => {
@@ -150,7 +152,7 @@ function LoginPage() {
 
         <div className="mt-4 flex justify-between font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
           <span>Session · secure</span>
-          <span>{format(new Date(), "dd MMM yyyy")}</span>
+          <span suppressHydrationWarning>{today || "—"}</span>
         </div>
       </div>
     </div>
