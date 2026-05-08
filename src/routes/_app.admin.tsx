@@ -49,7 +49,13 @@ export const Route = createFileRoute("/_app/admin")({
 
 function AdminLayout() {
   const auth = useAuth();
-  if (!auth.isAdmin && !auth.isAdvisor) return null;
+  const navigate = Route.useNavigate();
+  // SEC-04: redirect instead of rendering null to avoid flash of admin shell
+  if (!auth.isLoading && !auth.isAdmin && !auth.isAdvisor) {
+    navigate({ to: "/community" });
+    return null;
+  }
+  if (auth.isLoading) return null;
   return (
     <div className="space-y-6">
       <Outlet />
