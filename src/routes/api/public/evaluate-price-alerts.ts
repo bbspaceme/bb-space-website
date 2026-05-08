@@ -4,7 +4,17 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 export const Route = createFileRoute("/api/public/evaluate-price-alerts")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        // SEC-02: require shared secret to prevent abuse of cron endpoint
+        const expected = process.env.CRON_SECRET;
+        if (!expected) {
+          return new Response("Server misconfigured: CRON_SECRET not set", { status: 500 });
+        }
+        const provided = request.headers.get("x-cron-secret");
+        if (!provided || provided !== expected) {
+          return new Response("Forbidden", { status: 403 });
+        }
+
         const sb = supabaseAdmin;
 
         const { data: alerts } = await sb
@@ -29,30 +39,45 @@ export const Route = createFileRoute("/api/public/evaluate-price-alerts")({
           if (!latest.has(p.ticker)) latest.set(p.ticker, Number(p.close));
         }
 
-        let triggered = 0;
-        for (const a of alerts) {
+        // PERF-01: collect triggered alerts then batch the writes
+        const now = new Date().toISOString();
+        const triggeredAlerts = alerts.filter((a) => {
           const price = latest.get(a.ticker);
-          if (price == null) continue;
-          const hit =
+          if (price == null) return false;
+          return (
             (a.condition === "above" && price >= Number(a.threshold)) ||
-            (a.condition === "below" && price <= Number(a.threshold));
-          if (!hit) continue;
-          triggered++;
-          await sb
-            .from("price_alerts")
-            .update({ triggered_at: new Date().toISOString(), is_active: false })
-            .eq("id", a.id);
-          await sb.from("notifications").insert({
-            user_id: a.user_id,
-            kind: "price_alert",
-            title: `${a.ticker} ${a.condition === "above" ? "≥" : "≤"} ${Number(a.threshold).toLocaleString("id-ID")}`,
-            body: `Harga terkini ${price.toLocaleString("id-ID")} memicu alert Anda.`,
-            link: "/watchlist",
-            metadata: { ticker: a.ticker, threshold: a.threshold, price },
-          });
+            (a.condition === "below" && price <= Number(a.threshold))
+          );
+        });
+
+        if (triggeredAlerts.length > 0) {
+          await Promise.all([
+            // Update each alert (Supabase upsert needs full row; use update per id in parallel)
+            Promise.all(
+              triggeredAlerts.map((a) =>
+                sb
+                  .from("price_alerts")
+                  .update({ triggered_at: now, is_active: false })
+                  .eq("id", a.id),
+              ),
+            ),
+            sb.from("notifications").insert(
+              triggeredAlerts.map((a) => {
+                const price = latest.get(a.ticker)!;
+                return {
+                  user_id: a.user_id,
+                  kind: "price_alert",
+                  title: `${a.ticker} ${a.condition === "above" ? "≥" : "≤"} ${Number(a.threshold).toLocaleString("id-ID")}`,
+                  body: `Harga terkini ${price.toLocaleString("id-ID")} memicu alert Anda.`,
+                  link: "/watchlist",
+                  metadata: { ticker: a.ticker, threshold: a.threshold, price },
+                };
+              }),
+            ),
+          ]);
         }
 
-        return Response.json({ evaluated: alerts.length, triggered });
+        return Response.json({ evaluated: alerts.length, triggered: triggeredAlerts.length });
       },
     },
   },
