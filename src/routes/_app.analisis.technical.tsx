@@ -33,22 +33,35 @@ function TechnicalPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-sm uppercase tracking-[0.14em] text-muted-foreground">Input</CardTitle>
+            <CardTitle className="text-sm uppercase tracking-[0.14em] text-muted-foreground">
+              Input
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             <div>
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Ticker</Label>
-              <Input className="mt-2 font-mono uppercase" placeholder="TLKM" value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase())} />
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Ticker
+              </Label>
+              <Input
+                className="mt-2 font-mono uppercase"
+                placeholder="TLKM"
+                value={ticker}
+                onChange={(e) => setTicker(e.target.value.toUpperCase())}
+              />
             </div>
             <div>
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Posisi Saat Ini</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Posisi Saat Ini
+              </Label>
               <div className="mt-2 grid grid-cols-3 gap-1 rounded-sm border border-border p-1">
                 {(["None", "Long", "Short"] as const).map((p) => (
                   <button
                     key={p}
                     onClick={() => setPos(p)}
                     className={`rounded-sm px-2 py-1.5 text-[11px] font-medium transition ${
-                      pos === p ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                      pos === p
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {p}
@@ -57,7 +70,11 @@ function TechnicalPage() {
               </div>
             </div>
             <Button className="w-full" onClick={() => m.mutate()} disabled={!ticker || m.isPending}>
-              {m.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Activity className="mr-2 h-4 w-4" />}
+              {m.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Activity className="mr-2 h-4 w-4" />
+              )}
               {m.isPending ? "Menganalisis..." : "Run Analysis"}
             </Button>
           </CardContent>
@@ -70,9 +87,15 @@ function TechnicalPage() {
           </CardHeader>
           <CardContent>
             {m.isPending ? (
-              <div className="space-y-3"><Skeleton className="h-20 w-full" /><Skeleton className="h-32 w-full" /></div>
+              <div className="space-y-3">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-32 w-full" />
+              </div>
             ) : m.isError ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-12 text-center"><AlertTriangle className="h-6 w-6 text-destructive" /><p className="text-[12px] text-muted-foreground">{(m.error as Error).message}</p></div>
+              <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                <AlertTriangle className="h-6 w-6 text-destructive" />
+                <p className="text-[12px] text-muted-foreground">{(m.error as Error).message}</p>
+              </div>
             ) : m.data ? (
               <TechReport d={m.data} />
             ) : (
@@ -89,7 +112,12 @@ function TechnicalPage() {
 }
 
 function TechReport({ d }: { d: Awaited<ReturnType<typeof runTechnicalAnalysis>> }) {
-  const tone = d.bias === "BULLISH" ? "text-pos border-pos/40" : d.bias === "BEARISH" ? "text-neg border-neg/40" : "text-foreground border-border";
+  const tone =
+    d.bias === "BULLISH"
+      ? "text-pos border-pos/40"
+      : d.bias === "BEARISH"
+        ? "text-neg border-neg/40"
+        : "text-foreground border-border";
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -106,7 +134,9 @@ function TechReport({ d }: { d: Awaited<ReturnType<typeof runTechnicalAnalysis>>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {d.trend.map((t) => (
           <div key={t.tf} className="rounded-sm border border-border p-3">
-            <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{t.tf}</div>
+            <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              {t.tf}
+            </div>
             <div className="mt-1 font-serif text-base font-semibold">{t.direction}</div>
             <p className="mt-1 text-[11px] text-muted-foreground">{t.note}</p>
           </div>
@@ -115,14 +145,28 @@ function TechReport({ d }: { d: Awaited<ReturnType<typeof runTechnicalAnalysis>>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Support / Resistance</div>
+          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            Support / Resistance
+          </div>
           <div className="space-y-1 text-[12px]">
-            <div>Resistance: <span className="font-mono text-neg">{d.resistance.map((r) => fmtNum(r, 0)).join(" · ")}</span></div>
-            <div>Support: <span className="font-mono text-pos">{d.support.map((r) => fmtNum(r, 0)).join(" · ")}</span></div>
+            <div>
+              Resistance:{" "}
+              <span className="font-mono text-neg">
+                {d.resistance.map((r) => fmtNum(r, 0)).join(" · ")}
+              </span>
+            </div>
+            <div>
+              Support:{" "}
+              <span className="font-mono text-pos">
+                {d.support.map((r) => fmtNum(r, 0)).join(" · ")}
+              </span>
+            </div>
           </div>
         </div>
         <div>
-          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Indicators</div>
+          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            Indicators
+          </div>
           <div className="overflow-x-auto rounded-sm border border-border">
             <table className="w-full text-[11px]">
               <tbody>
@@ -140,17 +184,32 @@ function TechReport({ d }: { d: Awaited<ReturnType<typeof runTechnicalAnalysis>>
       </div>
 
       <div className="rounded-sm border border-border bg-card/40 p-4">
-        <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Trade Plan</div>
+        <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          Trade Plan
+        </div>
         <div className="mt-2 grid grid-cols-2 gap-2 text-[12px] md:grid-cols-4">
-          <div>Action: <span className="font-semibold">{d.trade_plan.action}</span></div>
-          <div>Entry: <span className="font-mono">{fmtNum(d.trade_plan.entry, 0)}</span></div>
-          <div>SL: <span className="font-mono text-neg">{fmtNum(d.trade_plan.stop_loss, 0)}</span></div>
-          <div>TP: <span className="font-mono text-pos">{fmtNum(d.trade_plan.take_profit, 0)}</span></div>
+          <div>
+            Action: <span className="font-semibold">{d.trade_plan.action}</span>
+          </div>
+          <div>
+            Entry: <span className="font-mono">{fmtNum(d.trade_plan.entry, 0)}</span>
+          </div>
+          <div>
+            SL: <span className="font-mono text-neg">{fmtNum(d.trade_plan.stop_loss, 0)}</span>
+          </div>
+          <div>
+            TP: <span className="font-mono text-pos">{fmtNum(d.trade_plan.take_profit, 0)}</span>
+          </div>
         </div>
         {d.patterns.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {d.patterns.map((p) => (
-              <span key={p} className="rounded-sm border border-border px-2 py-0.5 font-mono text-[10px] text-muted-foreground">{p}</span>
+              <span
+                key={p}
+                className="rounded-sm border border-border px-2 py-0.5 font-mono text-[10px] text-muted-foreground"
+              >
+                {p}
+              </span>
             ))}
           </div>
         )}
@@ -162,7 +221,9 @@ function TechReport({ d }: { d: Awaited<ReturnType<typeof runTechnicalAnalysis>>
 function Box({ label, v }: { label: string; v: string }) {
   return (
     <div className="rounded-sm border border-border bg-card/50 px-3 py-2">
-      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-0.5 font-serif text-base font-semibold tabular-nums">{v}</div>
     </div>
   );

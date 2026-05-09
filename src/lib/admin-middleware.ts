@@ -17,7 +17,7 @@ export const attachSupabaseAuth = createMiddleware({ type: "function" }).client(
       sendContext: {},
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-  }
+  },
 );
 
 // Server-side: validate admin role from authenticated user
@@ -45,7 +45,7 @@ const requireAdminAuth = createMiddleware({ type: "function" }).server(
         userId, // Already verified to be admin
       },
     });
-  }
+  },
 );
 
 // Combined middleware: auth + admin role check
@@ -71,7 +71,7 @@ const requireAdvisorAuth = createMiddleware({ type: "function" }).server(
       .eq("user_id", userId);
 
     const hasAdminOrAdvisor = roles?.some(
-      (r) => String(r.role) === "admin" || String(r.role) === "advisor"
+      (r) => String(r.role) === "admin" || String(r.role) === "advisor",
     );
 
     if (!hasAdminOrAdvisor) {
@@ -84,7 +84,7 @@ const requireAdvisorAuth = createMiddleware({ type: "function" }).server(
         userId,
       },
     });
-  }
+  },
 );
 
 export const advisorAuthMiddleware = [

@@ -1,11 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  generateMacroBrief,
-  getGlobalQuotes,
-  getMacroSnapshot,
-} from "@/lib/ekonomi.functions";
+import { generateMacroBrief, getGlobalQuotes, getMacroSnapshot } from "@/lib/ekonomi.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Sparkles } from "lucide-react";
@@ -75,11 +71,7 @@ function AiBriefPage() {
             Briefing harian berbasis World Bank + global markets, dirangkum oleh Lovable AI.
           </p>
         </div>
-        <Button
-          size="sm"
-          disabled={!ready || briefMut.isPending}
-          onClick={() => briefMut.mutate()}
-        >
+        <Button size="sm" disabled={!ready || briefMut.isPending} onClick={() => briefMut.mutate()}>
           {briefMut.isPending ? (
             <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
           ) : (

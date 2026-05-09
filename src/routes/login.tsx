@@ -20,7 +20,9 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [today, setToday] = useState<string>("");
-  useEffect(() => { setToday(format(new Date(), "dd MMM yyyy")); }, []);
+  useEffect(() => {
+    setToday(format(new Date(), "dd MMM yyyy"));
+  }, []);
 
   // If already authenticated, redirect (side effect, not during render)
   useEffect(() => {
@@ -36,7 +38,9 @@ function LoginPage() {
       await auth.signIn(username.trim(), password);
       // Record session + audit (best-effort, non-blocking failure)
       try {
-        const { data } = await (await import("@/integrations/supabase/client")).supabase.auth.getUser();
+        const { data } = await (
+          await import("@/integrations/supabase/client")
+        ).supabase.auth.getUser();
         if (data.user) {
           await Promise.all([
             recordSession({
@@ -87,9 +91,7 @@ function LoginPage() {
 
         <div className="rounded-sm border border-border bg-card">
           <div className="border-b border-border px-5 py-3.5">
-            <h1 className="text-[13px] font-semibold uppercase tracking-[0.14em]">
-              Sign in
-            </h1>
+            <h1 className="text-[13px] font-semibold uppercase tracking-[0.14em]">Sign in</h1>
             <p className="mt-1 text-[12px] text-muted-foreground">
               Akses dengan kredensial yang diberikan admin.
             </p>

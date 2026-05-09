@@ -21,11 +21,21 @@ export const generateAiInsight = createServerFn({ method: "POST" })
       ]);
 
     const priceMap = new Map<string, number>();
-    for (const p of prices ?? []) if (!priceMap.has(p.ticker)) priceMap.set(p.ticker, Number(p.close));
+    for (const p of prices ?? [])
+      if (!priceMap.has(p.ticker)) priceMap.set(p.ticker, Number(p.close));
     const userMap = new Map((profiles ?? []).map((p) => [p.id, p.username]));
     const cashMap = new Map((cash ?? []).map((c) => [c.user_id, Number(c.balance)]));
 
-    const userAgg = new Map<string, { username: string; positions: { ticker: string; value: number; cost: number; lot: number }[]; total_value: number; total_cost: number; cash: number }>();
+    const userAgg = new Map<
+      string,
+      {
+        username: string;
+        positions: { ticker: string; value: number; cost: number; lot: number }[];
+        total_value: number;
+        total_cost: number;
+        cash: number;
+      }
+    >();
     for (const h of holdings ?? []) {
       const last = priceMap.get(h.ticker) ?? Number(h.avg_price);
       const value = last * h.total_lot * 100;
@@ -33,7 +43,8 @@ export const generateAiInsight = createServerFn({ method: "POST" })
       const cur = userAgg.get(h.user_id) ?? {
         username: userMap.get(h.user_id) ?? h.user_id.slice(0, 8),
         positions: [],
-        total_value: 0, total_cost: 0,
+        total_value: 0,
+        total_cost: 0,
         cash: cashMap.get(h.user_id) ?? 0,
       };
       cur.positions.push({ ticker: h.ticker, value, cost, lot: h.total_lot });
@@ -49,10 +60,16 @@ export const generateAiInsight = createServerFn({ method: "POST" })
       cash: Math.round(u.cash),
       equity: Math.round(u.total_value + u.cash),
       pl: Math.round(u.total_value - u.total_cost),
-      pl_pct: u.total_cost > 0 ? +(((u.total_value - u.total_cost) / u.total_cost) * 100).toFixed(2) : 0,
-      top_positions: u.positions.sort((a, b) => b.value - a.value).slice(0, 5).map((p) => ({
-        ticker: p.ticker, lot: p.lot, value: Math.round(p.value),
-      })),
+      pl_pct:
+        u.total_cost > 0 ? +(((u.total_value - u.total_cost) / u.total_cost) * 100).toFixed(2) : 0,
+      top_positions: u.positions
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5)
+        .map((p) => ({
+          ticker: p.ticker,
+          lot: p.lot,
+          value: Math.round(p.value),
+        })),
     }));
 
     const communityAgg = new Map<string, number>();
@@ -65,7 +82,11 @@ export const generateAiInsight = createServerFn({ method: "POST" })
     const topCommunity = Array.from(communityAgg.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10)
-      .map(([t, v]) => ({ ticker: t, value: Math.round(v), pct: communityTotal > 0 ? +((v / communityTotal) * 100).toFixed(2) : 0 }));
+      .map(([t, v]) => ({
+        ticker: t,
+        value: Math.round(v),
+        pct: communityTotal > 0 ? +((v / communityTotal) * 100).toFixed(2) : 0,
+      }));
 
     const payload = {
       community: {

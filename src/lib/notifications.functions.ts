@@ -22,7 +22,11 @@ export const markNotificationRead = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const now = new Date().toISOString();
-    const q = supabase.from("notifications").update({ read_at: now }).eq("user_id", userId).is("read_at", null);
+    const q = supabase
+      .from("notifications")
+      .update({ read_at: now })
+      .eq("user_id", userId)
+      .is("read_at", null);
     const { error } = data.all ? await q : await q.eq("id", data.id!);
     if (error) throw error;
     return { ok: true };
@@ -45,7 +49,11 @@ export const createPriceAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
-      ticker: z.string().min(2).max(10).regex(/^[A-Z0-9]+$/),
+      ticker: z
+        .string()
+        .min(2)
+        .max(10)
+        .regex(/^[A-Z0-9]+$/),
       condition: z.enum(["above", "below"]),
       threshold: z.number().positive(),
     }),
@@ -67,7 +75,11 @@ export const deletePriceAlert = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase.from("price_alerts").delete().eq("id", data.id).eq("user_id", userId);
+    const { error } = await supabase
+      .from("price_alerts")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", userId);
     if (error) throw error;
     return { ok: true };
   });

@@ -23,7 +23,11 @@ function DividendPage() {
   const m = useMutation({
     mutationFn: () =>
       runDividendStrategy({
-        data: { total_investment: total || undefined, monthly_target: monthly || undefined, tax_status: tax },
+        data: {
+          total_investment: total || undefined,
+          monthly_target: monthly || undefined,
+          tax_status: tax,
+        },
       }),
     onError: (e: Error) => toast.error(e.message),
   });
@@ -46,13 +50,23 @@ function DividendPage() {
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                 Total Investasi (Rp)
               </Label>
-              <Input className="mt-2" placeholder="1.000.000.000" value={total} onChange={(e) => setTotal(e.target.value)} />
+              <Input
+                className="mt-2"
+                placeholder="1.000.000.000"
+                value={total}
+                onChange={(e) => setTotal(e.target.value)}
+              />
             </div>
             <div>
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                 Target Pendapatan Bulanan (Rp)
               </Label>
-              <Input className="mt-2" placeholder="10.000.000" value={monthly} onChange={(e) => setMonthly(e.target.value)} />
+              <Input
+                className="mt-2"
+                placeholder="10.000.000"
+                value={monthly}
+                onChange={(e) => setMonthly(e.target.value)}
+              />
             </div>
             <div>
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -64,7 +78,9 @@ function DividendPage() {
                     key={t}
                     onClick={() => setTax(t)}
                     className={`rounded-sm px-2 py-1.5 text-[11px] font-medium transition ${
-                      tax === t ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                      tax === t
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {t}
@@ -73,7 +89,11 @@ function DividendPage() {
               </div>
             </div>
             <Button className="w-full" onClick={() => m.mutate()} disabled={m.isPending}>
-              {m.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Coins className="mr-2 h-4 w-4" />}
+              {m.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Coins className="mr-2 h-4 w-4" />
+              )}
               {m.isPending ? "Menyusun..." : "Generate Strategy"}
             </Button>
           </CardContent>
@@ -86,9 +106,15 @@ function DividendPage() {
           </CardHeader>
           <CardContent>
             {m.isPending ? (
-              <div className="space-y-3"><Skeleton className="h-20 w-full" /><Skeleton className="h-32 w-full" /></div>
+              <div className="space-y-3">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-32 w-full" />
+              </div>
             ) : m.isError ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-12 text-center"><AlertTriangle className="h-6 w-6 text-destructive" /><p className="text-[12px] text-muted-foreground">{(m.error as Error).message}</p></div>
+              <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                <AlertTriangle className="h-6 w-6 text-destructive" />
+                <p className="text-[12px] text-muted-foreground">{(m.error as Error).message}</p>
+              </div>
             ) : m.data ? (
               <DivReport d={m.data} />
             ) : (
@@ -114,7 +140,9 @@ function DivReport({ d }: { d: Awaited<ReturnType<typeof runDividendStrategy>> }
         <Box label="DRIP 5Y Value" v={fmtIDR(d.drip_5y_value_idr)} />
       </div>
       <div>
-        <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Dividend Portfolio</div>
+        <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          Dividend Portfolio
+        </div>
         <div className="overflow-x-auto rounded-sm border border-border">
           <table className="w-full text-[12px]">
             <thead className="bg-card/60 text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -132,10 +160,18 @@ function DivReport({ d }: { d: Awaited<ReturnType<typeof runDividendStrategy>> }
                 <tr key={p.ticker} className="border-t border-border">
                   <td className="px-2 py-1.5 font-mono font-semibold">{p.ticker}</td>
                   <td className="px-2 py-1.5 text-muted-foreground">{p.name}</td>
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums text-pos">{p.yield_pct.toFixed(2)}%</td>
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">{p.payout_ratio_pct.toFixed(0)}%</td>
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">{p.safety_score.toFixed(0)}/10</td>
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">{p.weight_pct.toFixed(1)}%</td>
+                  <td className="px-2 py-1.5 text-right font-mono tabular-nums text-pos">
+                    {p.yield_pct.toFixed(2)}%
+                  </td>
+                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">
+                    {p.payout_ratio_pct.toFixed(0)}%
+                  </td>
+                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">
+                    {p.safety_score.toFixed(0)}/10
+                  </td>
+                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">
+                    {p.weight_pct.toFixed(1)}%
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -143,7 +179,9 @@ function DivReport({ d }: { d: Awaited<ReturnType<typeof runDividendStrategy>> }
         </div>
       </div>
       <div>
-        <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Sector Mix</div>
+        <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          Sector Mix
+        </div>
         <div className="space-y-1.5">
           {d.sector_mix.map((s) => (
             <div key={s.sector} className="flex items-center gap-3">
@@ -151,7 +189,9 @@ function DivReport({ d }: { d: Awaited<ReturnType<typeof runDividendStrategy>> }
               <div className="h-2 flex-1 overflow-hidden rounded-sm bg-border">
                 <div className="h-full bg-foreground/70" style={{ width: `${s.weight_pct}%` }} />
               </div>
-              <div className="w-12 text-right font-mono text-[11px] tabular-nums">{s.weight_pct.toFixed(0)}%</div>
+              <div className="w-12 text-right font-mono text-[11px] tabular-nums">
+                {s.weight_pct.toFixed(0)}%
+              </div>
             </div>
           ))}
         </div>
@@ -163,7 +203,9 @@ function DivReport({ d }: { d: Awaited<ReturnType<typeof runDividendStrategy>> }
 function Box({ label, v }: { label: string; v: string }) {
   return (
     <div className="rounded-sm border border-border bg-card/50 px-3 py-2">
-      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-0.5 font-serif text-base font-semibold tabular-nums">{v}</div>
     </div>
   );

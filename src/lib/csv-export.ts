@@ -8,7 +8,9 @@ export function toCsv<T extends Record<string, unknown>>(rows: T[], columns?: (k
     return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const head = cols.join(",");
-  const body = rows.map((r) => cols.map((c) => esc((r as Record<string, unknown>)[c])).join(",")).join("\n");
+  const body = rows
+    .map((r) => cols.map((c) => esc((r as Record<string, unknown>)[c])).join(","))
+    .join("\n");
   return `${head}\n${body}`;
 }
 

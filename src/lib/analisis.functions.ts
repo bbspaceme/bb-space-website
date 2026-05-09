@@ -63,11 +63,23 @@ export const runStockScreener = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const sectorClause =
-      data.sectors.length > 0 ? `Fokus sektor: ${data.sectors.join(", ")}.` : "Tanpa preferensi sektor.";
+      data.sectors.length > 0
+        ? `Fokus sektor: ${data.sectors.join(", ")}.`
+        : "Tanpa preferensi sektor.";
     const system = `Anda adalah Senior Equity Analyst yang menyaring saham IDX (Bursa Efek Indonesia). Pilih 10 saham IDX riil yang sesuai parameter, dengan rasionalisasi data fundamental (P/E, ROE, growth) berdasarkan pengetahuan terbaru Anda. Sertakan disclaimer bahwa angka adalah estimasi dan bukan rekomendasi investasi.`;
     const user = `Profil risiko: ${data.risk}. Horizon: ${data.horizon_years} tahun. Jumlah investasi: ${data.amount || "tidak ditentukan"}. ${sectorClause} Berikan 10 emiten terbaik di IDX.`;
     return callAiTool<{
-      tickers: { ticker: string; name: string; sector: string; thesis: string; pe?: number; roe?: number; growth?: number; market_cap_idr?: number; risk_score: number }[];
+      tickers: {
+        ticker: string;
+        name: string;
+        sector: string;
+        thesis: string;
+        pe?: number;
+        roe?: number;
+        growth?: number;
+        market_cap_idr?: number;
+        risk_score: number;
+      }[];
       summary: string;
     }>({
       system,
@@ -174,7 +186,20 @@ export const runDcfValuation = createServerFn({ method: "POST" })
           },
           narrative: { type: "string", description: "Ringkasan tesis 3-5 kalimat." },
         },
-        required: ["ticker", "company", "current_price", "intrinsic_value", "verdict", "upside_pct", "wacc", "terminal_growth", "fcf_projection", "assumptions", "sensitivity", "narrative"],
+        required: [
+          "ticker",
+          "company",
+          "current_price",
+          "intrinsic_value",
+          "verdict",
+          "upside_pct",
+          "wacc",
+          "terminal_growth",
+          "fcf_projection",
+          "assumptions",
+          "sensitivity",
+          "narrative",
+        ],
         additionalProperties: false,
       },
     });
@@ -246,7 +271,20 @@ export const runEarningsBrief = createServerFn({ method: "POST" })
           bear_case: { type: "string" },
           narrative: { type: "string" },
         },
-        required: ["ticker", "company", "decision", "confidence", "consensus_eps", "consensus_revenue", "implied_move_pct", "beat_miss", "segments", "bull_case", "bear_case", "narrative"],
+        required: [
+          "ticker",
+          "company",
+          "decision",
+          "confidence",
+          "consensus_eps",
+          "consensus_revenue",
+          "implied_move_pct",
+          "beat_miss",
+          "segments",
+          "bull_case",
+          "bear_case",
+          "narrative",
+        ],
         additionalProperties: false,
       },
     });
@@ -269,7 +307,12 @@ export const runPortfolioConstruction = createServerFn({ method: "POST" })
     return callAiTool<{
       summary: string;
       allocation: { asset_class: string; weight_pct: number; rationale: string }[];
-      core_satellite: { bucket: "Core" | "Satellite"; ticker: string; weight_pct: number; thesis: string }[];
+      core_satellite: {
+        bucket: "Core" | "Satellite";
+        ticker: string;
+        weight_pct: number;
+        thesis: string;
+      }[];
       rebalancing: string;
       dca: string;
       max_drawdown_pct: number;
@@ -315,7 +358,15 @@ export const runPortfolioConstruction = createServerFn({ method: "POST" })
           max_drawdown_pct: { type: "number" },
           ips: { type: "string" },
         },
-        required: ["summary", "allocation", "core_satellite", "rebalancing", "dca", "max_drawdown_pct", "ips"],
+        required: [
+          "summary",
+          "allocation",
+          "core_satellite",
+          "rebalancing",
+          "dca",
+          "max_drawdown_pct",
+          "ips",
+        ],
         additionalProperties: false,
       },
     });
@@ -342,7 +393,13 @@ export const runTechnicalAnalysis = createServerFn({ method: "POST" })
       resistance: number[];
       indicators: { name: string; value: string; signal: string }[];
       patterns: string[];
-      trade_plan: { action: string; entry: number; stop_loss: number; take_profit: number; rr: number };
+      trade_plan: {
+        action: string;
+        entry: number;
+        stop_loss: number;
+        take_profit: number;
+        rr: number;
+      };
       narrative: string;
     }>({
       system,
@@ -398,7 +455,18 @@ export const runTechnicalAnalysis = createServerFn({ method: "POST" })
           },
           narrative: { type: "string" },
         },
-        required: ["ticker", "bias", "confidence", "trend", "support", "resistance", "indicators", "patterns", "trade_plan", "narrative"],
+        required: [
+          "ticker",
+          "bias",
+          "confidence",
+          "trend",
+          "support",
+          "resistance",
+          "indicators",
+          "patterns",
+          "trade_plan",
+          "narrative",
+        ],
         additionalProperties: false,
       },
     });
@@ -419,7 +487,14 @@ export const runDividendStrategy = createServerFn({ method: "POST" })
     const user = `Total investasi: ${data.total_investment || "-"}. Target bulanan: ${data.monthly_target || "-"}. Pajak: ${data.tax_status}.`;
     return callAiTool<{
       summary: string;
-      portfolio: { ticker: string; name: string; yield_pct: number; payout_ratio_pct: number; safety_score: number; weight_pct: number }[];
+      portfolio: {
+        ticker: string;
+        name: string;
+        yield_pct: number;
+        payout_ratio_pct: number;
+        safety_score: number;
+        weight_pct: number;
+      }[];
       monthly_income_idr: number;
       effective_yield_pct: number;
       drip_5y_value_idr: number;
@@ -445,7 +520,14 @@ export const runDividendStrategy = createServerFn({ method: "POST" })
                 safety_score: { type: "number", description: "1-10" },
                 weight_pct: { type: "number" },
               },
-              required: ["ticker", "name", "yield_pct", "payout_ratio_pct", "safety_score", "weight_pct"],
+              required: [
+                "ticker",
+                "name",
+                "yield_pct",
+                "payout_ratio_pct",
+                "safety_score",
+                "weight_pct",
+              ],
               additionalProperties: false,
             },
           },
@@ -462,7 +544,14 @@ export const runDividendStrategy = createServerFn({ method: "POST" })
             },
           },
         },
-        required: ["summary", "portfolio", "monthly_income_idr", "effective_yield_pct", "drip_5y_value_idr", "sector_mix"],
+        required: [
+          "summary",
+          "portfolio",
+          "monthly_income_idr",
+          "effective_yield_pct",
+          "drip_5y_value_idr",
+          "sector_mix",
+        ],
         additionalProperties: false,
       },
     });

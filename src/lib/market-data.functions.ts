@@ -58,10 +58,19 @@ async function fetchBtcDailyUsd(
     .map(([date, close]) => ({ date, close }));
 }
 
-async function recomputeKbaiRange(db: ReturnType<typeof getAdminDatabaseClient>, fromDate: string, toDate: string) {
+async function recomputeKbaiRange(
+  db: ReturnType<typeof getAdminDatabaseClient>,
+  fromDate: string,
+  toDate: string,
+) {
   const [{ data: holdings }, { data: prices }, { count: memberCount }] = await Promise.all([
     db.from("holdings").select("user_id, ticker, total_lot, avg_price").gt("total_lot", 0),
-    db.from("eod_prices").select("ticker, close, date").gte("date", fromDate).lte("date", toDate).order("date", { ascending: true }),
+    db
+      .from("eod_prices")
+      .select("ticker, close, date")
+      .gte("date", fromDate)
+      .lte("date", toDate)
+      .order("date", { ascending: true }),
     db.from("profiles").select("id", { count: "exact", head: true }),
   ]);
 
@@ -73,8 +82,15 @@ async function recomputeKbaiRange(db: ReturnType<typeof getAdminDatabaseClient>,
   }
 
   let prevIndex: number | null = null;
-  const kbaiRows: Array<{ date: string; value: number; pct_change: number; member_count: number }> = [];
-  const snapshotRows: Array<{ user_id: string; date: string; total_value: number; total_cost: number; total_pl: number }> = [];
+  const kbaiRows: Array<{ date: string; value: number; pct_change: number; member_count: number }> =
+    [];
+  const snapshotRows: Array<{
+    user_id: string;
+    date: string;
+    total_value: number;
+    total_cost: number;
+    total_pl: number;
+  }> = [];
   for (const date of Array.from(dates).sort()) {
     const userAgg = new Map<string, { value: number; cost: number }>();
     for (const h of holdings ?? []) {
@@ -88,17 +104,29 @@ async function recomputeKbaiRange(db: ReturnType<typeof getAdminDatabaseClient>,
       userAgg.set(h.user_id, cur);
     }
     for (const [user_id, v] of userAgg) {
-      snapshotRows.push({ user_id, date, total_value: v.value, total_cost: v.cost, total_pl: v.value - v.cost });
+      snapshotRows.push({
+        user_id,
+        date,
+        total_value: v.value,
+        total_cost: v.cost,
+        total_pl: v.value - v.cost,
+      });
     }
     const totalValue = Array.from(userAgg.values()).reduce((s, v) => s + v.value, 0);
     const totalCost = Array.from(userAgg.values()).reduce((s, v) => s + v.cost, 0);
     const indexValue = totalCost > 0 ? (totalValue / totalCost) * 100 : 100;
     const pct = prevIndex && prevIndex > 0 ? ((indexValue - prevIndex) / prevIndex) * 100 : 0;
     prevIndex = indexValue;
-    kbaiRows.push({ date, value: indexValue, pct_change: pct, member_count: memberCount ?? userAgg.size });
+    kbaiRows.push({
+      date,
+      value: indexValue,
+      pct_change: pct,
+      member_count: memberCount ?? userAgg.size,
+    });
   }
 
-  if (snapshotRows.length > 0) await db.from("portfolio_snapshots").upsert(snapshotRows, { onConflict: "user_id,date" });
+  if (snapshotRows.length > 0)
+    await db.from("portfolio_snapshots").upsert(snapshotRows, { onConflict: "user_id,date" });
   if (kbaiRows.length > 0) await db.from("kbai_index").upsert(kbaiRows, { onConflict: "date" });
   return { kbai_days: kbaiRows.length };
 }
@@ -110,91 +138,83 @@ async function recomputeKbaiRange(db: ReturnType<typeof getAdminDatabaseClient>,
 export const refreshIntradayPrices = createServerFn({ method: "POST" })
   .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
   .handler(async () => {
-  // ARCH-01: System-level operation always uses admin client
-  const db = getAdminDatabaseClient();
-  const today = new Date().toISOString().slice(0, 10);
+    // ARCH-01: System-level operation always uses admin client
+    const db = getAdminDatabaseClient();
+    const today = new Date().toISOString().slice(0, 10);
 
-  // Tickers from holdings + always include the IDX_TICKERS basket
-  const { data: holdings } = await db
-    .from("holdings")
-    .select("ticker")
-    .gt("total_lot", 0);
-  const heldTickers = (holdings ?? []).map((h) => h.ticker);
-  const allTickers = Array.from(new Set([...heldTickers, ...IDX_TICKERS]));
+    // Tickers from holdings + always include the IDX_TICKERS basket
+    const { data: holdings } = await db.from("holdings").select("ticker").gt("total_lot", 0);
+    const heldTickers = (holdings ?? []).map((h) => h.ticker);
+    const allTickers = Array.from(new Set([...heldTickers, ...IDX_TICKERS]));
 
-  // Fetch in batches (Yahoo limit ~100 symbols per request)
-  const batchSize = 80;
-  const yahooSymbols = allTickers.map(toYahoo);
-  const quotes: Record<string, number> = {};
-  for (let i = 0; i < yahooSymbols.length; i += batchSize) {
-    const batch = yahooSymbols.slice(i, i + batchSize);
-    const got = await fetchYahooQuotes([...batch, "^JKSE"]);
-    Object.assign(quotes, got);
-  }
+    // Fetch in batches (Yahoo limit ~100 symbols per request)
+    const batchSize = 80;
+    const yahooSymbols = allTickers.map(toYahoo);
+    const quotes: Record<string, number> = {};
+    for (let i = 0; i < yahooSymbols.length; i += batchSize) {
+      const batch = yahooSymbols.slice(i, i + batchSize);
+      const got = await fetchYahooQuotes([...batch, "^JKSE"]);
+      Object.assign(quotes, got);
+    }
 
-  // Upsert eod_prices (today)
-  const eodRows = Object.entries(quotes)
-    .filter(([sym]) => sym.endsWith(".JK"))
-    .map(([sym, close]) => ({
-      ticker: fromYahoo(sym),
-      date: today,
-      close,
-      source: "yahoo-intraday",
-    }));
+    // Upsert eod_prices (today)
+    const eodRows = Object.entries(quotes)
+      .filter(([sym]) => sym.endsWith(".JK"))
+      .map(([sym, close]) => ({
+        ticker: fromYahoo(sym),
+        date: today,
+        close,
+        source: "yahoo-intraday",
+      }));
 
-  if (eodRows.length > 0) {
-    const { error } = await db
-      .from("eod_prices")
-      .upsert(eodRows, { onConflict: "ticker,date" });
-    if (error) throw new Error(error.message);
-  }
+    if (eodRows.length > 0) {
+      const { error } = await db.from("eod_prices").upsert(eodRows, { onConflict: "ticker,date" });
+      if (error) throw new Error(error.message);
+    }
 
-  // IHSG benchmark
-  let ihsgUpdated = false;
-  if (quotes["^JKSE"]) {
-    const { error } = await db
-      .from("benchmark_prices")
-      .upsert(
-        [{ symbol: "IHSG" as const, date: today, value: quotes["^JKSE"] }],
-        { onConflict: "symbol,date" },
-      );
-    if (!error) ihsgUpdated = true;
-  }
+    // IHSG benchmark
+    let ihsgUpdated = false;
+    if (quotes["^JKSE"]) {
+      const { error } = await db
+        .from("benchmark_prices")
+        .upsert([{ symbol: "IHSG" as const, date: today, value: quotes["^JKSE"] }], {
+          onConflict: "symbol,date",
+        });
+      if (!error) ihsgUpdated = true;
+    }
 
-  // GOLD benchmark via Yahoo (GC=F continuous gold futures)
-  let goldUpdated = false;
-  const goldQuote = await fetchYahooQuotes(["GC=F"]);
-  if (goldQuote["GC=F"]) {
-    const { error } = await db
-      .from("benchmark_prices")
-      .upsert(
-        [{ symbol: "GOLD" as const, date: today, value: goldQuote["GC=F"] }],
-        { onConflict: "symbol,date" },
-      );
-    if (!error) goldUpdated = true;
-  }
+    // GOLD benchmark via Yahoo (GC=F continuous gold futures)
+    let goldUpdated = false;
+    const goldQuote = await fetchYahooQuotes(["GC=F"]);
+    if (goldQuote["GC=F"]) {
+      const { error } = await db
+        .from("benchmark_prices")
+        .upsert([{ symbol: "GOLD" as const, date: today, value: goldQuote["GC=F"] }], {
+          onConflict: "symbol,date",
+        });
+      if (!error) goldUpdated = true;
+    }
 
-  // BTC benchmark via CoinGecko
-  let btcUpdated = false;
-  const btcSpot = await fetchBtcSpotUsd();
-  if (btcSpot != null) {
-    const { error } = await db
-      .from("benchmark_prices")
-      .upsert(
-        [{ symbol: "BTC" as const, date: today, value: btcSpot }],
-        { onConflict: "symbol,date" },
-      );
-    if (!error) btcUpdated = true;
-  }
+    // BTC benchmark via CoinGecko
+    let btcUpdated = false;
+    const btcSpot = await fetchBtcSpotUsd();
+    if (btcSpot != null) {
+      const { error } = await db
+        .from("benchmark_prices")
+        .upsert([{ symbol: "BTC" as const, date: today, value: btcSpot }], {
+          onConflict: "symbol,date",
+        });
+      if (!error) btcUpdated = true;
+    }
 
-  return {
-    updated: eodRows.length,
-    ihsg: ihsgUpdated ? quotes["^JKSE"] : null,
-    gold: goldUpdated ? goldQuote["GC=F"] : null,
-    btc: btcUpdated ? btcSpot : null,
-    timestamp: new Date().toISOString(),
-  };
-});
+    return {
+      updated: eodRows.length,
+      ihsg: ihsgUpdated ? quotes["^JKSE"] : null,
+      gold: goldUpdated ? goldQuote["GC=F"] : null,
+      btc: btcUpdated ? btcSpot : null,
+      timestamp: new Date().toISOString(),
+    };
+  });
 
 // ============================================
 // Backfill EOD: <from_date> -> <to_date|today>
@@ -278,9 +298,7 @@ export const backfillEodFromApril = createServerFn({ method: "POST" })
             close: b.close,
             source: "yahoo-eod",
           }));
-          const { error } = await db
-            .from("eod_prices")
-            .upsert(rows, { onConflict: "ticker,date" });
+          const { error } = await db.from("eod_prices").upsert(rows, { onConflict: "ticker,date" });
           if (error) throw new Error(error.message);
           return { ticker, count: rows.length };
         }),
@@ -334,8 +352,16 @@ export const exportAllMarketData = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const db = getAdminDatabaseClient();
     const [eod, bench] = await Promise.all([
-      db.from("eod_prices").select("date, ticker, close, source").order("date", { ascending: false }).limit(100000),
-      db.from("benchmark_prices").select("date, symbol, value").order("date", { ascending: false }).limit(50000),
+      db
+        .from("eod_prices")
+        .select("date, ticker, close, source")
+        .order("date", { ascending: false })
+        .limit(100000),
+      db
+        .from("benchmark_prices")
+        .select("date, symbol, value")
+        .order("date", { ascending: false })
+        .limit(50000),
     ]);
     if (eod.error) throw new Error(eod.error.message);
     if (bench.error) throw new Error(bench.error.message);

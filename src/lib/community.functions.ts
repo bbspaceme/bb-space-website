@@ -24,7 +24,15 @@ export const getCommunityEquitySeries = createServerFn({ method: "POST" })
             .in("ticker", relevantTickers)
             .order("transacted_at", { ascending: true })
             .limit(20000)
-        : { data: [] as { transacted_at: string; ticker: string; side: string; lot: number; price: number }[] },
+        : {
+            data: [] as {
+              transacted_at: string;
+              ticker: string;
+              side: string;
+              lot: number;
+              price: number;
+            }[],
+          },
       supabaseAdmin
         .from("cash_movements")
         .select("occurred_at, amount, movement_type")

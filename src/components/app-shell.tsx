@@ -60,9 +60,7 @@ const MEMBER_GROUPS: NavGroup[] = [
   },
   {
     label: "Personal",
-    items: [
-      { to: "/activity", label: "Activity", icon: ScrollText },
-    ],
+    items: [{ to: "/activity", label: "Activity", icon: ScrollText }],
   },
 ];
 
@@ -241,7 +239,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     {initials}
                   </div>
                   <div className="min-w-0 flex-1 leading-tight">
-                    <div className="truncate text-[12px] font-medium">{auth.username ?? auth.user?.email}</div>
+                    <div className="truncate text-[12px] font-medium">
+                      {auth.username ?? auth.user?.email}
+                    </div>
                     <div className="truncate text-[10px] uppercase tracking-wider text-muted-foreground">
                       {auth.isAdmin ? "Administrator" : auth.isAdvisor ? "Advisor" : "Member"}
                     </div>
@@ -261,7 +261,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <Settings className="mr-2 h-4 w-4" /> Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-destructive focus:text-destructive"
+                >
                   <LogOut className="mr-2 h-4 w-4" /> Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -283,12 +286,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex items-center gap-4">
               {kbaiQ.data && (
-                <Link to="/community" className="hidden items-center gap-2 rounded-sm border border-border bg-card/40 px-2.5 py-1 hover:border-foreground/40 lg:inline-flex">
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">KBAI</span>
-                  <span className="font-mono text-[12px] font-semibold tabular-nums">{Number(kbaiQ.data.value).toFixed(2)}</span>
+                <Link
+                  to="/community"
+                  className="hidden items-center gap-2 rounded-sm border border-border bg-card/40 px-2.5 py-1 hover:border-foreground/40 lg:inline-flex"
+                >
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    KBAI
+                  </span>
+                  <span className="font-mono text-[12px] font-semibold tabular-nums">
+                    {Number(kbaiQ.data.value).toFixed(2)}
+                  </span>
                   {kbaiQ.data.pct_change != null && (
-                    <span className={cn("font-mono text-[11px] tabular-nums", Number(kbaiQ.data.pct_change) >= 0 ? "text-pos" : "text-neg")}>
-                      {Number(kbaiQ.data.pct_change) >= 0 ? "+" : ""}{Number(kbaiQ.data.pct_change).toFixed(2)}%
+                    <span
+                      className={cn(
+                        "font-mono text-[11px] tabular-nums",
+                        Number(kbaiQ.data.pct_change) >= 0 ? "text-pos" : "text-neg",
+                      )}
+                    >
+                      {Number(kbaiQ.data.pct_change) >= 0 ? "+" : ""}
+                      {Number(kbaiQ.data.pct_change).toFixed(2)}%
                     </span>
                   )}
                 </Link>
@@ -304,7 +320,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <CommandIcon className="h-3 w-3" />
                 <span>K</span>
               </button>
-              <div className="hidden flex-col items-end leading-tight sm:flex" suppressHydrationWarning>
+              <div
+                className="hidden flex-col items-end leading-tight sm:flex"
+                suppressHydrationWarning
+              >
                 <span className="font-mono text-[11px] tabular text-muted-foreground">
                   {now ? format(now, "EEE, dd MMM yyyy", { locale: idLocale }) : "—"}
                 </span>
@@ -327,20 +346,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <main className="flex-1 px-5 pb-24 pt-6 md:px-8 md:pb-8 md:pt-8">
             <div className="mx-auto w-full max-w-7xl">{children}</div>
           </main>
-
         </div>
       </div>
     </div>
   );
 }
 
-function SidebarSection({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function SidebarSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mb-4">
       <div className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -368,7 +380,8 @@ function SidebarLink({
         "transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
       )}
       activeProps={{
-        className: "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-foreground/60 -ml-px",
+        className:
+          "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-foreground/60 -ml-px",
       }}
     >
       <Icon className="h-3.5 w-3.5 shrink-0 opacity-80 group-hover:opacity-100" />

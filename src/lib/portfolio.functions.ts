@@ -57,67 +57,67 @@ async function atomicAdjustCash(userId: string, delta: number): Promise<number> 
 export const refreshEodPrices = createServerFn({ method: "POST" })
   .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
   .handler(async () => {
-  // ARCH-01: System-level operation always uses admin client
-  const db = getAdminDatabaseClient();
-  const today = new Date().toISOString().slice(0, 10);
+    // ARCH-01: System-level operation always uses admin client
+    const db = getAdminDatabaseClient();
+    const today = new Date().toISOString().slice(0, 10);
 
-  // 1. Distinct tickers from holdings
-  const { data: holdings, error: hErr } = await db
-    .from("holdings")
-    .select("ticker")
-    .gt("total_lot", 0);
-  if (hErr) throw new Error(hErr.message);
+    // 1. Distinct tickers from holdings
+    const { data: holdings, error: hErr } = await db
+      .from("holdings")
+      .select("ticker")
+      .gt("total_lot", 0);
+    if (hErr) throw new Error(hErr.message);
 
-  const tickers = Array.from(new Set((holdings ?? []).map((h) => h.ticker)));
-  if (tickers.length === 0) {
-    return { updated: 0, tickers: [], message: "No active holdings to update" };
-  }
+    const tickers = Array.from(new Set((holdings ?? []).map((h) => h.ticker)));
+    if (tickers.length === 0) {
+      return { updated: 0, tickers: [], message: "No active holdings to update" };
+    }
 
-  // 2. Fetch from Yahoo + IHSG benchmark
-  const yahooSymbols = tickers.map(toYahoo);
-  const benchmarkSymbols = ["^JKSE"]; // IHSG
-  const allSymbols = [...yahooSymbols, ...benchmarkSymbols];
-  const quotes = await fetchYahooQuotes(allSymbols);
+    // 2. Fetch from Yahoo + IHSG benchmark
+    const yahooSymbols = tickers.map(toYahoo);
+    const benchmarkSymbols = ["^JKSE"]; // IHSG
+    const allSymbols = [...yahooSymbols, ...benchmarkSymbols];
+    const quotes = await fetchYahooQuotes(allSymbols);
 
-  // 3. Upsert eod_prices
-  const eodRows = Object.entries(quotes)
-    .filter(([sym]) => sym.endsWith(".JK"))
-    .map(([sym, close]) => ({
-      ticker: fromYahoo(sym),
-      date: today,
-      close,
-      source: "yahoo",
-    }));
+    // 3. Upsert eod_prices
+    const eodRows = Object.entries(quotes)
+      .filter(([sym]) => sym.endsWith(".JK"))
+      .map(([sym, close]) => ({
+        ticker: fromYahoo(sym),
+        date: today,
+        close,
+        source: "yahoo",
+      }));
 
-  if (eodRows.length > 0) {
-    const { error } = await db
-      .from("eod_prices")
-      .upsert(eodRows, { onConflict: "ticker,date" });
-    if (error) throw new Error(error.message);
-  }
+    if (eodRows.length > 0) {
+      const { error } = await db.from("eod_prices").upsert(eodRows, { onConflict: "ticker,date" });
+      if (error) throw new Error(error.message);
+    }
 
-  // IHSG benchmark
-  if (quotes["^JKSE"]) {
-    await db
-      .from("benchmark_prices")
-      .upsert(
-        [{ symbol: "IHSG" as const, date: today, value: quotes["^JKSE"] }],
-        { onConflict: "symbol,date" },
-      );
-  }
+    // IHSG benchmark
+    if (quotes["^JKSE"]) {
+      await db
+        .from("benchmark_prices")
+        .upsert([{ symbol: "IHSG" as const, date: today, value: quotes["^JKSE"] }], {
+          onConflict: "symbol,date",
+        });
+    }
 
-  // 4. Recompute snapshots + KBAI
-  await recomputeSnapshotsAndKbai(db, today);
+    // 4. Recompute snapshots + KBAI
+    await recomputeSnapshotsAndKbai(db, today);
 
-  await insertAuditLog({
-    action: "market.refresh_prices",
-    metadata: { count: eodRows.length, today },
+    await insertAuditLog({
+      action: "market.refresh_prices",
+      metadata: { count: eodRows.length, today },
+    });
+
+    return { updated: eodRows.length, tickers: eodRows.map((r) => r.ticker) };
   });
 
-  return { updated: eodRows.length, tickers: eodRows.map((r) => r.ticker) };
-});
-
-async function recomputeSnapshotsAndKbai(db: ReturnType<typeof getAdminDatabaseClient>, date: string) {
+async function recomputeSnapshotsAndKbai(
+  db: ReturnType<typeof getAdminDatabaseClient>,
+  date: string,
+) {
   // Get all holdings + eod prices for the date
   const [{ data: holdings }, { data: prices }] = await Promise.all([
     db.from("holdings").select("user_id, ticker, total_lot, avg_price"),
@@ -149,9 +149,7 @@ async function recomputeSnapshotsAndKbai(db: ReturnType<typeof getAdminDatabaseC
   }));
 
   if (snapshotRows.length > 0) {
-    await db
-      .from("portfolio_snapshots")
-      .upsert(snapshotRows, { onConflict: "user_id,date" });
+    await db.from("portfolio_snapshots").upsert(snapshotRows, { onConflict: "user_id,date" });
   }
 
   // KBAI = average % return across users (base 100)
@@ -169,19 +167,17 @@ async function recomputeSnapshotsAndKbai(db: ReturnType<typeof getAdminDatabaseC
   const prevVal = prev?.[0]?.value ? Number(prev[0].value) : indexValue;
   const pct = prevVal > 0 ? ((indexValue - prevVal) / prevVal) * 100 : 0;
 
-  await db
-    .from("kbai_index")
-    .upsert(
-      [
-        {
-          date,
-          value: indexValue,
-          pct_change: pct,
-          member_count: snapshotRows.length,
-        },
-      ],
-      { onConflict: "date" },
-    );
+  await db.from("kbai_index").upsert(
+    [
+      {
+        date,
+        value: indexValue,
+        pct_change: pct,
+        member_count: snapshotRows.length,
+      },
+    ],
+    { onConflict: "date" },
+  );
 }
 
 // ============================================
@@ -346,7 +342,11 @@ export const adminCreateUser = createServerFn({ method: "POST" })
     z.object({
       email: z.string().email(),
       password: z.string().min(6),
-      username: z.string().min(2).max(50).regex(/^[a-zA-Z0-9_]+$/),
+      username: z
+        .string()
+        .min(2)
+        .max(50)
+        .regex(/^[a-zA-Z0-9_]+$/),
       display_name: z.string().min(1).max(100).optional(),
     }),
   )
@@ -426,10 +426,9 @@ export const adminGrantRole = createServerFn({ method: "POST" })
 
     await supabaseAdmin
       .from("user_roles")
-      .upsert(
-        [{ user_id: data.target_user_id, role: data.role as never }],
-        { onConflict: "user_id,role" },
-      );
+      .upsert([{ user_id: data.target_user_id, role: data.role as never }], {
+        onConflict: "user_id,role",
+      });
     return { ok: true };
   });
 
@@ -440,7 +439,12 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
       target_user_id: z.string().uuid(),
       email: z.string().email().optional(),
       password: z.string().min(6).optional(),
-      username: z.string().min(2).max(50).regex(/^[a-zA-Z0-9_]+$/).optional(),
+      username: z
+        .string()
+        .min(2)
+        .max(50)
+        .regex(/^[a-zA-Z0-9_]+$/)
+        .optional(),
       display_name: z.string().min(1).max(100).optional(),
     }),
   )

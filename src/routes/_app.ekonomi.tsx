@@ -17,7 +17,13 @@ export const Route = createFileRoute("/_app/ekonomi")({
 });
 
 const TABS: Array<{
-  to: "/ekonomi" | "/ekonomi/macro" | "/ekonomi/global" | "/ekonomi/komoditas" | "/ekonomi/calendar" | "/ekonomi/ai-brief";
+  to:
+    | "/ekonomi"
+    | "/ekonomi/macro"
+    | "/ekonomi/global"
+    | "/ekonomi/komoditas"
+    | "/ekonomi/calendar"
+    | "/ekonomi/ai-brief";
   label: string;
   icon: typeof BarChart3;
   exact?: boolean;
@@ -39,8 +45,8 @@ function EkonomiLayout() {
         </p>
         <h1 className="text-2xl font-semibold tracking-tight">Ekonomi Terminal</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Monitoring makroekonomi nasional & global. Sumber data publik: World Bank, Yahoo
-          Finance, FRED. Selalu validasi sebelum mengambil keputusan investasi.
+          Monitoring makroekonomi nasional & global. Sumber data publik: World Bank, Yahoo Finance,
+          FRED. Selalu validasi sebelum mengambil keputusan investasi.
         </p>
       </header>
 

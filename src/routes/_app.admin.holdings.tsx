@@ -5,10 +5,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { fmtIDR, fmtNum } from "@/lib/format";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
@@ -132,7 +141,10 @@ function AdminHoldingsPage() {
 
   const toggleSort = (key: string) => {
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortKey(key); setSortDir("desc"); }
+    else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
   };
 
   return (
@@ -155,7 +167,9 @@ function AdminHoldingsPage() {
               <SelectContent>
                 <SelectItem value="all">All users</SelectItem>
                 {(profilesQ.data ?? []).map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.username}</SelectItem>
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.username}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -185,14 +199,68 @@ function AdminHoldingsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableHead label="User" k="username" cur={sortKey} dir={sortDir} onClick={toggleSort} />
-                  <SortableHead label="Ticker" k="ticker" cur={sortKey} dir={sortDir} onClick={toggleSort} />
-                  <SortableHead label="Lot" k="total_lot" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
-                  <SortableHead label="Avg Price" k="avg_price" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
-                  <SortableHead label="Last" k="last" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
-                  <SortableHead label="Value" k="value" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
-                  <SortableHead label="P/L" k="pl" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
-                  <SortableHead label="% Pool" k="pct_pool" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
+                  <SortableHead
+                    label="User"
+                    k="username"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                  />
+                  <SortableHead
+                    label="Ticker"
+                    k="ticker"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                  />
+                  <SortableHead
+                    label="Lot"
+                    k="total_lot"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="right"
+                  />
+                  <SortableHead
+                    label="Avg Price"
+                    k="avg_price"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="right"
+                  />
+                  <SortableHead
+                    label="Last"
+                    k="last"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="right"
+                  />
+                  <SortableHead
+                    label="Value"
+                    k="value"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="right"
+                  />
+                  <SortableHead
+                    label="P/L"
+                    k="pl"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="right"
+                  />
+                  <SortableHead
+                    label="% Pool"
+                    k="pct_pool"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="right"
+                  />
                   <TableHead className="w-32 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                     Allocation
                   </TableHead>
@@ -202,7 +270,9 @@ function AdminHoldingsPage() {
                 {sorted.map((h) => (
                   <TableRow key={h.id}>
                     <TableCell>{h.username}</TableCell>
-                    <TableCell className="font-mono text-[12px] font-semibold">{h.ticker}</TableCell>
+                    <TableCell className="font-mono text-[12px] font-semibold">
+                      {h.ticker}
+                    </TableCell>
                     <TableCell className="text-right">{h.total_lot}</TableCell>
                     <TableCell className="text-right">{fmtNum(Number(h.avg_price))}</TableCell>
                     <TableCell className="text-right">{fmtNum(h.last)}</TableCell>
@@ -240,9 +310,19 @@ function AdminHoldingsPage() {
 }
 
 function SortableHead({
-  label, k, cur, dir, onClick, align = "left",
+  label,
+  k,
+  cur,
+  dir,
+  onClick,
+  align = "left",
 }: {
-  label: string; k: string; cur: string; dir: SortDir; onClick: (k: string) => void; align?: "left" | "right";
+  label: string;
+  k: string;
+  cur: string;
+  dir: SortDir;
+  onClick: (k: string) => void;
+  align?: "left" | "right";
 }) {
   const active = cur === k;
   const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;

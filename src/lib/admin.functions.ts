@@ -37,7 +37,9 @@ export const adminListAuditLogs = createServerFn({ method: "POST" })
     // DUP-04: userId is from authenticated context, not client input
     let q = supabaseAdmin
       .from("audit_logs")
-      .select("id, user_id, username, action, entity, entity_id, metadata, ip_address, user_agent, created_at")
+      .select(
+        "id, user_id, username, action, entity, entity_id, metadata, ip_address, user_agent, created_at",
+      )
       .order("created_at", { ascending: false })
       .limit(data.limit);
     if (data.action) q = q.eq("action", data.action);
@@ -96,7 +98,9 @@ export const adminListSessions = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     let q = supabaseAdmin
       .from("user_sessions")
-      .select("id, user_id, username, device_label, user_agent, ip_address, is_active, last_seen_at, created_at, ended_at")
+      .select(
+        "id, user_id, username, device_label, user_agent, ip_address, is_active, last_seen_at, created_at, ended_at",
+      )
       .order("last_seen_at", { ascending: false })
       .limit(data.limit);
     if (data.only_active) q = q.eq("is_active", true);
@@ -147,17 +151,15 @@ export const adminUpdateSetting = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const userId = (context as { userId: string }).userId;
-    const { error } = await supabaseAdmin
-      .from("system_settings")
-      .upsert(
-        {
-          key: data.key,
-          value: data.value,
-          updated_by: userId,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "key" },
-      );
+    const { error } = await supabaseAdmin.from("system_settings").upsert(
+      {
+        key: data.key,
+        value: data.value,
+        updated_by: userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -189,7 +191,7 @@ export const fetchSmfNav = createServerFn({ method: "POST" })
       const arr = Array.isArray(json)
         ? json
         : Array.isArray((json as { data?: unknown }).data)
-          ? ((json as { data: Array<{ Date: string; Nav: number }> }).data)
+          ? (json as { data: Array<{ Date: string; Nav: number }> }).data
           : [];
       return {
         ok: true,

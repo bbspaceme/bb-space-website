@@ -17,7 +17,11 @@ export const Route = createFileRoute("/_app/admin/insight-ai")({
 
 function InsightAiPage() {
   const auth = useAuth();
-  const [result, setResult] = useState<{ content: string; generated_at: string; users_analyzed: number } | null>(null);
+  const [result, setResult] = useState<{
+    content: string;
+    generated_at: string;
+    users_analyzed: number;
+  } | null>(null);
 
   const refreshMut = useMutation({
     mutationFn: async () => {
@@ -45,7 +49,8 @@ function InsightAiPage() {
         <CardContent className="space-y-2 p-6">
           {!result && !refreshMut.isPending && (
             <p className="py-12 text-center text-[13px] text-muted-foreground">
-              Klik <strong>Refresh Insight</strong> untuk menganalisis seluruh data komunitas dengan AI.
+              Klik <strong>Refresh Insight</strong> untuk menganalisis seluruh data komunitas dengan
+              AI.
               <br />
               <span className="text-[11px]">
                 AI akan membaca holdings, cash balance, dan harga terkini dari semua user.
@@ -61,7 +66,11 @@ function InsightAiPage() {
           {result && (
             <>
               <div className="border-b border-border pb-3 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                Generated: {format(new Date(result.generated_at), "EEE, dd MMM yyyy HH:mm", { locale: idLocale })} · {result.users_analyzed} user dianalisis
+                Generated:{" "}
+                {format(new Date(result.generated_at), "EEE, dd MMM yyyy HH:mm", {
+                  locale: idLocale,
+                })}{" "}
+                · {result.users_analyzed} user dianalisis
               </div>
               <article className="prose prose-sm prose-invert max-w-none pt-4">
                 <ReactMarkdown>{result.content}</ReactMarkdown>

@@ -54,7 +54,7 @@ export function getServerDatabaseClient(accessToken?: string) {
     // BREAKING: No longer silently fallback to admin client
     throw new Error(
       "getServerDatabaseClient() requires accessToken. " +
-        "Use getUserScopedDatabaseClient(token) or getAdminDatabaseClient() explicitly."
+        "Use getUserScopedDatabaseClient(token) or getAdminDatabaseClient() explicitly.",
     );
   }
   return getUserScopedDatabaseClient(accessToken);

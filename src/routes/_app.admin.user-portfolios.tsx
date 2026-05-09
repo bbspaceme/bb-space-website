@@ -4,7 +4,12 @@ import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { fmtIDR } from "@/lib/format";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
@@ -36,7 +41,9 @@ function UserPortfoliosPage() {
   const cashQ = useQuery({
     queryKey: ["admin-all-cash"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("cash_balances").select("user_id, balance, updated_at");
+      const { data, error } = await supabase
+        .from("cash_balances")
+        .select("user_id, balance, updated_at");
       if (error) throw error;
       return data ?? [];
     },
@@ -45,8 +52,10 @@ function UserPortfoliosPage() {
     queryKey: ["admin-all-prices"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("eod_prices").select("ticker, close, date")
-        .order("date", { ascending: false }).limit(5000);
+        .from("eod_prices")
+        .select("ticker, close, date")
+        .order("date", { ascending: false })
+        .limit(5000);
       if (error) throw error;
       const map = new Map<string, number>();
       for (const p of data ?? []) {
@@ -79,8 +88,12 @@ function UserPortfoliosPage() {
         user_id: p.id,
         username: p.username,
         display_name: p.display_name,
-        cash, market_value: h.value, cost_basis: h.cost,
-        positions: h.positions, equity, pl,
+        cash,
+        market_value: h.value,
+        cost_basis: h.cost,
+        positions: h.positions,
+        equity,
+        pl,
       };
     });
   }, [profilesQ.data, cashQ.data, holdingsQ.data, pricesQ.data]);
@@ -104,7 +117,10 @@ function UserPortfoliosPage() {
 
   const toggleSort = (k: string) => {
     if (k === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortKey(k); setSortDir("desc"); }
+    else {
+      setSortKey(k);
+      setSortDir("desc");
+    }
   };
 
   return (
@@ -119,23 +135,77 @@ function UserPortfoliosPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <SortableHead label="User" k="username" cur={sortKey} dir={sortDir} onClick={toggleSort} />
-                <SortableHead label="Cash" k="cash" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
-                <SortableHead label="Market Value" k="market_value" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
-                <SortableHead label="Cost" k="cost_basis" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
-                <SortableHead label="P/L" k="pl" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
-                <SortableHead label="Equity" k="equity" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
-                <SortableHead label="Positions" k="positions" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
+                <SortableHead
+                  label="User"
+                  k="username"
+                  cur={sortKey}
+                  dir={sortDir}
+                  onClick={toggleSort}
+                />
+                <SortableHead
+                  label="Cash"
+                  k="cash"
+                  cur={sortKey}
+                  dir={sortDir}
+                  onClick={toggleSort}
+                  align="right"
+                />
+                <SortableHead
+                  label="Market Value"
+                  k="market_value"
+                  cur={sortKey}
+                  dir={sortDir}
+                  onClick={toggleSort}
+                  align="right"
+                />
+                <SortableHead
+                  label="Cost"
+                  k="cost_basis"
+                  cur={sortKey}
+                  dir={sortDir}
+                  onClick={toggleSort}
+                  align="right"
+                />
+                <SortableHead
+                  label="P/L"
+                  k="pl"
+                  cur={sortKey}
+                  dir={sortDir}
+                  onClick={toggleSort}
+                  align="right"
+                />
+                <SortableHead
+                  label="Equity"
+                  k="equity"
+                  cur={sortKey}
+                  dir={sortDir}
+                  onClick={toggleSort}
+                  align="right"
+                />
+                <SortableHead
+                  label="Positions"
+                  k="positions"
+                  cur={sortKey}
+                  dir={sortDir}
+                  onClick={toggleSort}
+                  align="right"
+                />
               </TableRow>
             </TableHeader>
             <TableBody className="text-[13px] tabular">
               {sorted.map((u) => (
                 <TableRow key={u.user_id}>
-                  <TableCell className="font-mono text-[12px] font-semibold">{u.username}</TableCell>
+                  <TableCell className="font-mono text-[12px] font-semibold">
+                    {u.username}
+                  </TableCell>
                   <TableCell className="text-right">{fmtIDR(u.cash)}</TableCell>
                   <TableCell className="text-right">{fmtIDR(u.market_value)}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">{fmtIDR(u.cost_basis)}</TableCell>
-                  <TableCell className={cn("text-right font-medium", u.pl >= 0 ? "text-pos" : "text-neg")}>
+                  <TableCell className="text-right text-muted-foreground">
+                    {fmtIDR(u.cost_basis)}
+                  </TableCell>
+                  <TableCell
+                    className={cn("text-right font-medium", u.pl >= 0 ? "text-pos" : "text-neg")}
+                  >
                     {fmtIDR(u.pl)}
                   </TableCell>
                   <TableCell className="text-right font-medium">{fmtIDR(u.equity)}</TableCell>
@@ -158,9 +228,19 @@ function UserPortfoliosPage() {
 }
 
 function SortableHead({
-  label, k, cur, dir, onClick, align = "left",
+  label,
+  k,
+  cur,
+  dir,
+  onClick,
+  align = "left",
 }: {
-  label: string; k: string; cur: string; dir: SortDir; onClick: (k: string) => void; align?: "left" | "right";
+  label: string;
+  k: string;
+  cur: string;
+  dir: SortDir;
+  onClick: (k: string) => void;
+  align?: "left" | "right";
 }) {
   const active = cur === k;
   const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;

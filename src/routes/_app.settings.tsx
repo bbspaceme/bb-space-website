@@ -7,21 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DataState } from "@/components/data-state";
 import { ShieldCheck, Bell, Trash2, Plus, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  start2faSetup,
-  verify2faSetup,
-  disable2fa,
-  get2faStatus,
-} from "@/lib/twofa.functions";
-import {
-  listPriceAlerts,
-  createPriceAlert,
-  deletePriceAlert,
-} from "@/lib/notifications.functions";
+import { start2faSetup, verify2faSetup, disable2fa, get2faStatus } from "@/lib/twofa.functions";
+import { listPriceAlerts, createPriceAlert, deletePriceAlert } from "@/lib/notifications.functions";
 import { toast } from "sonner";
 import QRCode from "qrcode";
 
@@ -37,7 +34,9 @@ function SettingsPage() {
   return (
     <div className="space-y-6">
       <div className="border-b border-border pb-4">
-        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Akun</div>
+        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          Akun
+        </div>
         <h2 className="mt-1 font-serif text-h1 font-semibold tracking-tight">Settings</h2>
         <p className="mt-1.5 text-caption text-muted-foreground">
           Kelola keamanan akun & notifikasi.
@@ -60,7 +59,9 @@ function TwoFactorCard() {
   const disable = useServerFn(disable2fa);
 
   const statusQ = useQuery({ queryKey: ["2fa-status"], queryFn: () => status() });
-  const [setup, setSetup] = useState<{ otpauth_url: string; secret: string; qr: string } | null>(null);
+  const [setup, setSetup] = useState<{ otpauth_url: string; secret: string; qr: string } | null>(
+    null,
+  );
   const [code, setCode] = useState("");
   const [recovery, setRecovery] = useState<string[] | null>(null);
   const [copied, setCopied] = useState(false);
@@ -139,7 +140,11 @@ function TwoFactorCard() {
                     Scan QR code dengan authenticator app, lalu masukkan 6-digit kode.
                   </p>
                   <div className="flex items-start gap-3">
-                    <img src={setup.qr} alt="QR 2FA" className="h-32 w-32 rounded-sm bg-white p-1" />
+                    <img
+                      src={setup.qr}
+                      alt="QR 2FA"
+                      className="h-32 w-32 rounded-sm bg-white p-1"
+                    />
                     <div className="flex-1 space-y-2">
                       <Label className="text-caption">Manual key</Label>
                       <div className="flex items-center gap-1">
@@ -303,10 +308,14 @@ function PriceAlertsCard() {
                     <span className="font-mono font-semibold">{a.ticker}</span>
                     <span className="text-muted-foreground">
                       {a.condition === "above" ? "≥" : "≤"}{" "}
-                      <span className="font-mono">{Number(a.threshold).toLocaleString("id-ID")}</span>
+                      <span className="font-mono">
+                        {Number(a.threshold).toLocaleString("id-ID")}
+                      </span>
                     </span>
                     {a.triggered_at && (
-                      <span className="rounded-sm bg-pos/20 px-1.5 py-0.5 text-[10px] text-pos">triggered</span>
+                      <span className="rounded-sm bg-pos/20 px-1.5 py-0.5 text-[10px] text-pos">
+                        triggered
+                      </span>
                     )}
                   </div>
                   <button

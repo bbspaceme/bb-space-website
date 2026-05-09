@@ -67,13 +67,13 @@ export const verify2faSetup = createServerFn({ method: "POST" })
     const totp = buildTotp(row.secret, email);
     const delta = totp.validate({ token: data.code, window: 1 });
     if (delta === null) throw new Error("Kode salah atau kadaluarsa.");
-    
+
     // SEC-03: Generate plaintext recovery codes, hash them for storage
     const recoveryPlaintext = generateRecoveryCodes();
     const recoveryHashed = await Promise.all(
-      recoveryPlaintext.map((code) => hashRecoveryCode(code))
+      recoveryPlaintext.map((code) => hashRecoveryCode(code)),
     );
-    
+
     await supabaseAdmin
       .from("user_2fa")
       .update({
@@ -83,7 +83,7 @@ export const verify2faSetup = createServerFn({ method: "POST" })
         recovery_codes: recoveryHashed, // Store hashes, not plaintext
       })
       .eq("user_id", userId);
-    
+
     // Return plaintext codes to user (only shown once)
     return { ok: true, recovery_codes: recoveryPlaintext };
   });

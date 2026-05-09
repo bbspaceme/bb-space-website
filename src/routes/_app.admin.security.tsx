@@ -8,7 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ShieldCheck, LogOut } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -51,8 +58,7 @@ function AdminSecurityPage() {
   });
 
   const revokeMut = useMutation({
-    mutationFn: (session_id: string) =>
-      adminRevokeSession({ data: { session_id } }),
+    mutationFn: (session_id: string) => adminRevokeSession({ data: { session_id } }),
     onSuccess: () => {
       toast.success("Session ditandai revoked");
       qc.invalidateQueries({ queryKey: ["admin-sessions"] });
@@ -68,19 +74,25 @@ function AdminSecurityPage() {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <Card className="rounded-sm border-border">
           <CardContent className="p-4">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Sesi aktif</div>
+            <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Sesi aktif
+            </div>
             <div className="font-mono text-2xl font-semibold">{activeCount}</div>
           </CardContent>
         </Card>
         <Card className="rounded-sm border-border">
           <CardContent className="p-4">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Total tracked</div>
+            <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Total tracked
+            </div>
             <div className="font-mono text-2xl font-semibold">{rows.length}</div>
           </CardContent>
         </Card>
         <Card className="rounded-sm border-border">
           <CardContent className="p-4">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Status</div>
+            <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Status
+            </div>
             <div className="text-[12px] mt-1 text-pos">Live tracking aktif</div>
           </CardContent>
         </Card>
@@ -93,7 +105,9 @@ function AdminSecurityPage() {
           </CardTitle>
           <div className="flex items-center gap-2">
             <Switch id="active-only" checked={activeOnly} onCheckedChange={setActiveOnly} />
-            <Label htmlFor="active-only" className="text-[11px]">Hanya aktif</Label>
+            <Label htmlFor="active-only" className="text-[11px]">
+              Hanya aktif
+            </Label>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -111,15 +125,27 @@ function AdminSecurityPage() {
               </TableHeader>
               <TableBody>
                 {q.isLoading && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Memuat...</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      Memuat...
+                    </TableCell>
+                  </TableRow>
                 )}
                 {!q.isLoading && rows.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada sesi tercatat</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      Belum ada sesi tercatat
+                    </TableCell>
+                  </TableRow>
                 )}
                 {rows.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="text-[12px] font-medium">{r.username ?? r.user_id.slice(0, 8)}</TableCell>
-                    <TableCell className="text-[12px]">{r.device_label ?? parseUA(r.user_agent)}</TableCell>
+                    <TableCell className="text-[12px] font-medium">
+                      {r.username ?? r.user_id.slice(0, 8)}
+                    </TableCell>
+                    <TableCell className="text-[12px]">
+                      {r.device_label ?? parseUA(r.user_agent)}
+                    </TableCell>
                     <TableCell>
                       {r.is_active ? (
                         <Badge className="bg-pos text-background hover:bg-pos">Active</Badge>

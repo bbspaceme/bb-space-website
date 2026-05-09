@@ -4,7 +4,11 @@ import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { fmtPct } from "@/lib/format";
 
@@ -41,8 +45,10 @@ function InsightPage() {
     queryKey: ["admin-all-prices"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("eod_prices").select("ticker, close, date")
-        .order("date", { ascending: false }).limit(5000);
+        .from("eod_prices")
+        .select("ticker, close, date")
+        .order("date", { ascending: false })
+        .limit(5000);
       if (error) throw error;
       const map = new Map<string, number>();
       for (const p of data ?? []) {
@@ -62,7 +68,8 @@ function InsightPage() {
       const value = last * h.total_lot * 100;
       const cost = Number(h.avg_price) * h.total_lot * 100;
       const cur = agg.get(h.ticker) ?? { value: 0, cost: 0 };
-      cur.value += value; cur.cost += cost;
+      cur.value += value;
+      cur.cost += cost;
       agg.set(h.ticker, cur);
     }
     const total = Array.from(agg.values()).reduce((s, x) => s + x.value, 0);
@@ -93,7 +100,8 @@ function InsightPage() {
       const value = last * h.total_lot * 100;
       const cost = Number(h.avg_price) * h.total_lot * 100;
       const cur = agg.get(h.ticker) ?? { value: 0, cost: 0 };
-      cur.value += value; cur.cost += cost;
+      cur.value += value;
+      cur.cost += cost;
       agg.set(h.ticker, cur);
     }
     const total = Array.from(agg.values()).reduce((s, x) => s + x.value, 0);
@@ -104,7 +112,11 @@ function InsightPage() {
       .sort((a, b) => b.value - a.value);
     const username = profilesQ.data?.find((p) => p.id === selectedUser)?.username ?? "";
     return {
-      rows, total, totalCost, equity, cash: cashAmt,
+      rows,
+      total,
+      totalCost,
+      equity,
+      cash: cashAmt,
       pl: total - totalCost,
       plPct: totalCost > 0 ? ((total - totalCost) / totalCost) * 100 : 0,
       username,
@@ -137,7 +149,11 @@ function InsightPage() {
                 <span
                   className={
                     "mt-1 h-1.5 w-1.5 shrink-0 rounded-full " +
-                    (line.tone === "pos" ? "bg-pos" : line.tone === "neg" ? "bg-neg" : "bg-muted-foreground")
+                    (line.tone === "pos"
+                      ? "bg-pos"
+                      : line.tone === "neg"
+                        ? "bg-neg"
+                        : "bg-muted-foreground")
                   }
                 />
                 <p className="text-[13px] leading-relaxed text-foreground/85">{line.text}</p>
@@ -159,28 +175,44 @@ function InsightPage() {
             </SelectTrigger>
             <SelectContent>
               {(profilesQ.data ?? []).map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.username}</SelectItem>
+                <SelectItem key={p.id} value={p.id}>
+                  {p.username}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </CardHeader>
         <CardContent className="space-y-4 p-5">
           {!selectedUser ? (
-            <p className="text-[13px] text-muted-foreground">Pilih user di atas untuk melihat insight personal.</p>
+            <p className="text-[13px] text-muted-foreground">
+              Pilih user di atas untuk melihat insight personal.
+            </p>
           ) : userInsight && userInsight.rows.length === 0 ? (
             <p className="text-[13px] text-muted-foreground">User ini belum punya holding.</p>
           ) : (
             <>
               <div className="grid grid-cols-2 gap-3 border-b border-border pb-4 text-[12px]">
-                <div><span className="text-muted-foreground">P/L: </span><span className={userInsight!.pl >= 0 ? "text-pos" : "text-neg"}>{fmtPct(userInsight!.plPct)}</span></div>
-                <div><span className="text-muted-foreground">Cash %: </span>{userInsight!.cashPct.toFixed(1)}%</div>
+                <div>
+                  <span className="text-muted-foreground">P/L: </span>
+                  <span className={userInsight!.pl >= 0 ? "text-pos" : "text-neg"}>
+                    {fmtPct(userInsight!.plPct)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Cash %: </span>
+                  {userInsight!.cashPct.toFixed(1)}%
+                </div>
               </div>
               {perUserInsight.map((line, i) => (
                 <div key={i} className="flex gap-3">
                   <span
                     className={
                       "mt-1 h-1.5 w-1.5 shrink-0 rounded-full " +
-                      (line.tone === "pos" ? "bg-pos" : line.tone === "neg" ? "bg-neg" : "bg-muted-foreground")
+                      (line.tone === "pos"
+                        ? "bg-pos"
+                        : line.tone === "neg"
+                          ? "bg-neg"
+                          : "bg-muted-foreground")
                     }
                   />
                   <p className="text-[13px] leading-relaxed text-foreground/85">{line.text}</p>
@@ -215,14 +247,23 @@ function buildInsight(
     });
   }
   const top3 = alloc.slice(0, 3).reduce((s, r) => s + r.pct, 0);
-  out.push({ text: `Top-3 ticker mengisi ${top3.toFixed(1)}% dari ${scope === "community" ? "pool komunitas" : "equity user"}.` });
+  out.push({
+    text: `Top-3 ticker mengisi ${top3.toFixed(1)}% dari ${scope === "community" ? "pool komunitas" : "equity user"}.`,
+  });
   out.push({
     text: `Aggregate unrealized P/L ${plPct >= 0 ? "+" : ""}${plPct.toFixed(2)}%.`,
     tone: plPct >= 0 ? "pos" : "neg",
   });
   if (scope === "user" && typeof cashPct === "number") {
-    if (cashPct > 30) out.push({ text: `Cash ratio ${cashPct.toFixed(1)}% tergolong tinggi — peluang deploy ke posisi baru.` });
-    else if (cashPct < 5) out.push({ text: `Cash ratio rendah (${cashPct.toFixed(1)}%) — buffer terbatas untuk peluang.`, tone: "neg" });
+    if (cashPct > 30)
+      out.push({
+        text: `Cash ratio ${cashPct.toFixed(1)}% tergolong tinggi — peluang deploy ke posisi baru.`,
+      });
+    else if (cashPct < 5)
+      out.push({
+        text: `Cash ratio rendah (${cashPct.toFixed(1)}%) — buffer terbatas untuk peluang.`,
+        tone: "neg",
+      });
   }
   return out;
 }

@@ -81,7 +81,10 @@ export const getCommodityQuotes = createServerFn({ method: "GET" })
     const results = await Promise.all(
       COMMODITIES.map(async (c) => {
         const q = await fetchYahooQuoteDetail(c.symbol);
-        return { ...c, ...(q ?? { price: null, previousClose: null, pctChange: null, currency: null }) };
+        return {
+          ...c,
+          ...(q ?? { price: null, previousClose: null, pctChange: null, currency: null }),
+        };
       }),
     );
     return { asOf: new Date().toISOString(), items: results };
@@ -104,7 +107,10 @@ export const getGlobalQuotes = createServerFn({ method: "GET" })
     const items = await Promise.all(
       GLOBAL_SYMBOLS.map(async (s) => {
         const q = await fetchYahooQuoteDetail(s.symbol);
-        return { ...s, ...(q ?? { price: null, previousClose: null, pctChange: null, currency: null }) };
+        return {
+          ...s,
+          ...(q ?? { price: null, previousClose: null, pctChange: null, currency: null }),
+        };
       }),
     );
     return { asOf: new Date().toISOString(), items };

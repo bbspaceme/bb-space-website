@@ -4,7 +4,14 @@ import { useAuth } from "@/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ScrollText } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -35,8 +42,12 @@ function ActivityPage() {
   return (
     <div className="space-y-4">
       <div className="border-b border-border pb-4">
-        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Personal</div>
-        <h2 className="mt-1 font-serif text-2xl font-semibold tracking-tight md:text-3xl">Activity Log</h2>
+        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          Personal
+        </div>
+        <h2 className="mt-1 font-serif text-2xl font-semibold tracking-tight md:text-3xl">
+          Activity Log
+        </h2>
         <p className="mt-1.5 max-w-3xl text-[12px] leading-relaxed text-muted-foreground">
           Riwayat aktivitas akun Anda — login, transaksi, perubahan watchlist, dan setting.
         </p>
@@ -91,7 +102,9 @@ function ActivityPage() {
                       )}
                     </TableCell>
                     <TableCell className="max-w-[420px] truncate font-mono text-[10px] text-muted-foreground">
-                      {r.metadata && typeof r.metadata === "object" && Object.keys(r.metadata as object).length > 0
+                      {r.metadata &&
+                      typeof r.metadata === "object" &&
+                      Object.keys(r.metadata as object).length > 0
                         ? JSON.stringify(r.metadata)
                         : "—"}
                     </TableCell>

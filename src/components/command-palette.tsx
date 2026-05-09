@@ -34,7 +34,12 @@ import {
   Hash,
 } from "lucide-react";
 
-type Item = { to: string; label: string; group: string; icon: React.ComponentType<{ className?: string }> };
+type Item = {
+  to: string;
+  label: string;
+  group: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
 
 const MEMBER: Item[] = [
   { to: "/community", label: "Dashboard", group: "Workspace", icon: Users },
@@ -49,7 +54,12 @@ const ADVISOR: Item[] = [
   { to: "/analisis/screener", label: "Stock Screener", group: "Analisis", icon: Search },
   { to: "/analisis/valuation", label: "DCF Valuation", group: "Analisis", icon: Calculator },
   { to: "/analisis/earnings", label: "Earnings Analysis", group: "Analisis", icon: TrendingUp },
-  { to: "/analisis/portfolio", label: "Portfolio Construction", group: "Analisis", icon: Briefcase },
+  {
+    to: "/analisis/portfolio",
+    label: "Portfolio Construction",
+    group: "Analisis",
+    icon: Briefcase,
+  },
   { to: "/analisis/technical", label: "Technical Analysis", group: "Analisis", icon: Activity },
   { to: "/analisis/dividend", label: "Dividend Strategy", group: "Analisis", icon: Coins },
   { to: "/watchlist", label: "Watchlist", group: "Personal", icon: Star },
@@ -90,9 +100,10 @@ export function CommandPalette() {
   const tickerMatches = useMemo(() => {
     const q = query.trim().toUpperCase();
     if (q.length < 1) return [];
-    return IDX_EMITEN.filter(
-      (e) => e.code.includes(q) || e.name.toUpperCase().includes(q),
-    ).slice(0, 8);
+    return IDX_EMITEN.filter((e) => e.code.includes(q) || e.name.toUpperCase().includes(q)).slice(
+      0,
+      8,
+    );
   }, [query]);
 
   if (!auth.isAuthenticated) return null;

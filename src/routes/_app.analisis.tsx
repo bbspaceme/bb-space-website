@@ -111,9 +111,9 @@ function AnalisisHub() {
           <span className="text-muted-foreground">Decide like an institution.</span>
         </h2>
         <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
-          Enam modul analisis berbasis framework institusional — dari DCF valuation,
-          stock screening, hingga dividend strategy. Dibangun untuk advisor yang
-          membutuhkan presisi setara desk research bank investasi.
+          Enam modul analisis berbasis framework institusional — dari DCF valuation, stock
+          screening, hingga dividend strategy. Dibangun untuk advisor yang membutuhkan presisi
+          setara desk research bank investasi.
         </p>
       </div>
 
@@ -170,9 +170,8 @@ function AnalisisHub() {
 
       {/* Disclaimer */}
       <p className="border-t border-border pt-4 text-[10px] leading-relaxed text-muted-foreground">
-        Informasi yang disajikan hanya untuk tujuan edukasi dan riset. Bukan
-        merupakan rekomendasi investasi. Selalu konsultasikan keputusan investasi
-        dengan penasihat keuangan berlisensi.
+        Informasi yang disajikan hanya untuk tujuan edukasi dan riset. Bukan merupakan rekomendasi
+        investasi. Selalu konsultasikan keputusan investasi dengan penasihat keuangan berlisensi.
       </p>
     </div>
   );

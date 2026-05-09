@@ -15,9 +15,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { adminCreateUser, adminGrantRole, adminDeleteUser, adminListUsers, adminUpdateUser } from "@/lib/portfolio.functions";
+import {
+  adminCreateUser,
+  adminGrantRole,
+  adminDeleteUser,
+  adminListUsers,
+  adminUpdateUser,
+} from "@/lib/portfolio.functions";
 import { toast } from "sonner";
 import { UserPlus, Shield, Trash2, Pencil, LineChart } from "lucide-react";
 import { format } from "date-fns";
@@ -31,7 +44,12 @@ function AdminUsersPage() {
   const auth = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<null | { id: string; email: string; username: string; display_name: string | null }>(null);
+  const [editing, setEditing] = useState<null | {
+    id: string;
+    email: string;
+    username: string;
+    display_name: string | null;
+  }>(null);
 
   const usersQ = useQuery({
     queryKey: ["admin-users"],
@@ -54,8 +72,7 @@ function AdminUsersPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (target_user_id: string) =>
-      adminDeleteUser({ data: { target_user_id } }),
+    mutationFn: (target_user_id: string) => adminDeleteUser({ data: { target_user_id } }),
     onSuccess: () => {
       toast.success("User deleted");
       qc.invalidateQueries({ queryKey: ["admin-users"] });
@@ -113,12 +130,21 @@ function AdminUsersPage() {
                           </Badge>
                         ))}
                       </TableCell>
-                      <TableCell>{format(new Date(u.created_at), "dd MMM yyyy", { locale: idLocale })}</TableCell>
+                      <TableCell>
+                        {format(new Date(u.created_at), "dd MMM yyyy", { locale: idLocale })}
+                      </TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setEditing({ id: u.id, email: u.email, username: u.username, display_name: u.display_name })}
+                          onClick={() =>
+                            setEditing({
+                              id: u.id,
+                              email: u.email,
+                              username: u.username,
+                              display_name: u.display_name,
+                            })
+                          }
                         >
                           <Pencil className="h-3 w-3" /> Edit
                         </Button>
@@ -127,7 +153,12 @@ function AdminUsersPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              if (!confirm(`Jadikan ${u.username} sebagai admin? Mereka akan punya akses penuh ke sistem.`)) return;
+                              if (
+                                !confirm(
+                                  `Jadikan ${u.username} sebagai admin? Mereka akan punya akses penuh ke sistem.`,
+                                )
+                              )
+                                return;
                               grantMut.mutate({ target_user_id: u.id, role: "admin" });
                             }}
                           >
@@ -138,7 +169,9 @@ function AdminUsersPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => grantMut.mutate({ target_user_id: u.id, role: "advisor" })}
+                            onClick={() =>
+                              grantMut.mutate({ target_user_id: u.id, role: "advisor" })
+                            }
                           >
                             <LineChart className="h-3 w-3" /> Make advisor
                           </Button>
@@ -240,7 +273,11 @@ function CreateUserDialog({ adminId, onDone }: { adminId: string; onDone: () => 
         </div>
         <div className="space-y-2">
           <Label>Display Name (opsional)</Label>
-          <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={100} />
+          <Input
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            maxLength={100}
+          />
         </div>
         <div className="space-y-2">
           <Label>Password (min 6 char)</Label>
@@ -325,7 +362,11 @@ function EditUserDialog({
           </div>
           <div className="space-y-2">
             <Label>Display Name</Label>
-            <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={100} />
+            <Input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={100}
+            />
           </div>
           <div className="space-y-2">
             <Label>Password baru (opsional)</Label>

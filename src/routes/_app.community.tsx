@@ -147,9 +147,7 @@ function CommunityPage() {
             <h2 className="text-[13px] font-semibold uppercase tracking-[0.14em]">
               Index Performance
             </h2>
-            <span className="text-[11px] text-muted-foreground">
-              Normalized · base 100
-            </span>
+            <span className="text-[11px] text-muted-foreground">Normalized · base 100</span>
           </div>
           <div className="inline-flex overflow-hidden rounded-sm border border-border">
             {(["1M", "3M", "1Y"] as Range[]).map((r) => (
@@ -176,7 +174,11 @@ function CommunityPage() {
             <div className="h-[360px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 10, right: 24, left: 0, bottom: 8 }}>
-                  <CartesianGrid stroke="var(--color-border)" strokeDasharray="2 4" vertical={false} />
+                  <CartesianGrid
+                    stroke="var(--color-border)"
+                    strokeDasharray="2 4"
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="date"
                     stroke="var(--color-muted-foreground)"
@@ -211,7 +213,9 @@ function CommunityPage() {
                       marginBottom: 4,
                     }}
                     formatter={(v: number) => fmtNum(v)}
-                    labelFormatter={(d) => format(new Date(d as string), "dd MMM yyyy", { locale: idLocale })}
+                    labelFormatter={(d) =>
+                      format(new Date(d as string), "dd MMM yyyy", { locale: idLocale })
+                    }
                   />
                   <Legend
                     verticalAlign="top"
@@ -225,11 +229,46 @@ function CommunityPage() {
                       color: "var(--color-muted-foreground)",
                     }}
                   />
-                  <Line type="monotone" dataKey="KBAI" stroke="var(--color-chart-1)" strokeWidth={1.75} dot={false} connectNulls />
-                  <Line type="monotone" dataKey="IHSG" stroke="var(--color-chart-2)" strokeWidth={1.25} dot={false} connectNulls />
-                  <Line type="monotone" dataKey="GOLD" stroke="var(--color-chart-3)" strokeWidth={1.25} dot={false} connectNulls />
-                  <Line type="monotone" dataKey="BTC" stroke="var(--color-chart-4)" strokeWidth={1.25} dot={false} connectNulls />
-                  <Line type="monotone" dataKey="SMF" stroke="var(--color-chart-5)" strokeWidth={1.25} dot={false} connectNulls />
+                  <Line
+                    type="monotone"
+                    dataKey="KBAI"
+                    stroke="var(--color-chart-1)"
+                    strokeWidth={1.75}
+                    dot={false}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="IHSG"
+                    stroke="var(--color-chart-2)"
+                    strokeWidth={1.25}
+                    dot={false}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="GOLD"
+                    stroke="var(--color-chart-3)"
+                    strokeWidth={1.25}
+                    dot={false}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="BTC"
+                    stroke="var(--color-chart-4)"
+                    strokeWidth={1.25}
+                    dot={false}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="SMF"
+                    stroke="var(--color-chart-5)"
+                    strokeWidth={1.25}
+                    dot={false}
+                    connectNulls
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -244,9 +283,7 @@ function CommunityPage() {
             <h2 className="text-[13px] font-semibold uppercase tracking-[0.14em]">
               Community Equity
             </h2>
-            <span className="text-[11px] text-muted-foreground">
-              IDR · Equity + Holdings + P/L
-            </span>
+            <span className="text-[11px] text-muted-foreground">IDR · Equity + Holdings + P/L</span>
           </div>
           <div className="inline-flex overflow-hidden rounded-sm border border-border">
             {(["1M", "3M", "1Y"] as Range[]).map((r) => (
@@ -273,7 +310,11 @@ function CommunityPage() {
             <div className="h-[360px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={equityQ.data} margin={{ top: 10, right: 24, left: 0, bottom: 8 }}>
-                  <CartesianGrid stroke="var(--color-border)" strokeDasharray="2 4" vertical={false} />
+                  <CartesianGrid
+                    stroke="var(--color-border)"
+                    strokeDasharray="2 4"
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="date"
                     stroke="var(--color-muted-foreground)"
@@ -315,7 +356,9 @@ function CommunityPage() {
                       marginBottom: 4,
                     }}
                     formatter={(v: number) => fmtNum(v)}
-                    labelFormatter={(d) => format(new Date(d as string), "dd MMM yyyy", { locale: idLocale })}
+                    labelFormatter={(d) =>
+                      format(new Date(d as string), "dd MMM yyyy", { locale: idLocale })
+                    }
                   />
                   <Legend
                     verticalAlign="top"
@@ -329,16 +372,33 @@ function CommunityPage() {
                       color: "var(--color-muted-foreground)",
                     }}
                   />
-                  <Line type="monotone" dataKey="Equity" stroke="var(--color-chart-1)" strokeWidth={1.75} dot={false} />
-                  <Line type="monotone" dataKey="Holdings" stroke="var(--color-chart-2)" strokeWidth={1.25} dot={false} />
-                  <Line type="monotone" dataKey="P/L" stroke="var(--color-chart-4)" strokeWidth={1.25} dot={false} />
+                  <Line
+                    type="monotone"
+                    dataKey="Equity"
+                    stroke="var(--color-chart-1)"
+                    strokeWidth={1.75}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="Holdings"
+                    stroke="var(--color-chart-2)"
+                    strokeWidth={1.25}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="P/L"
+                    stroke="var(--color-chart-4)"
+                    strokeWidth={1.25}
+                    dot={false}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           )}
         </div>
       </section>
-
     </div>
   );
 }
@@ -371,11 +431,7 @@ function Stat({
         <div
           className={
             "mt-1 text-[11px] tabular " +
-            (tone === "pos"
-              ? "text-pos"
-              : tone === "neg"
-                ? "text-neg"
-                : "text-muted-foreground")
+            (tone === "pos" ? "text-pos" : tone === "neg" ? "text-neg" : "text-muted-foreground")
           }
         >
           {sub}
@@ -451,4 +507,3 @@ function buildChartData(
     };
   });
 }
-

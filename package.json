@@ -1,6 +1,14 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "bb-space-website",
   "private": true,
+  "description": "BB Space website: investment analytics and portfolio dashboard built with React Start and Cloudflare.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bbspaceme/bb-space-website.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "sideEffects": false,
   "type": "module",
   "scripts": {
@@ -9,6 +17,8 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "check": "npm run lint && npm run build",
+    "ci": "npm ci",
     "format": "prettier --write ."
   },
   "dependencies": {

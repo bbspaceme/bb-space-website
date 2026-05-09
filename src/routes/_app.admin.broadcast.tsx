@@ -83,15 +83,13 @@ function BroadcastAdminPage() {
   const deleteMut = useMutation({
     mutationFn: async () => {
       if (!latestQ.data?.id) throw new Error("Tidak ada broadcast untuk dihapus");
-      const { error } = await supabase
-        .from("broadcasts")
-        .delete()
-        .eq("id", latestQ.data.id);
+      const { error } = await supabase.from("broadcasts").delete().eq("id", latestQ.data.id);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Broadcast dihapus");
-      setTitle(""); setBody("");
+      setTitle("");
+      setBody("");
       qc.invalidateQueries({ queryKey: ["latest-broadcast"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal"),
@@ -108,12 +106,20 @@ function BroadcastAdminPage() {
         <CardContent className="space-y-4 p-5">
           <div className="space-y-2">
             <Label htmlFor="b-title">Judul</Label>
-            <Input id="b-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Mis. Update pasar 1 Mei 2026" maxLength={200} />
+            <Input
+              id="b-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Mis. Update pasar 1 Mei 2026"
+              maxLength={200}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="b-body">Pesan</Label>
             <Textarea
-              id="b-body" value={body} onChange={(e) => setBody(e.target.value)}
+              id="b-body"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
               rows={10}
               placeholder="Tulis insight pasar / arahan portofolio untuk semua member..."
               className="font-mono text-[13px]"
@@ -123,12 +129,18 @@ function BroadcastAdminPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={() => saveMut.mutate()} disabled={!title.trim() || !body.trim() || saveMut.isPending}>
+            <Button
+              onClick={() => saveMut.mutate()}
+              disabled={!title.trim() || !body.trim() || saveMut.isPending}
+            >
               {saveMut.isPending ? "Mengirim..." : "Kirim Broadcast"}
             </Button>
             {latestQ.data && (
               <Button
-                variant="outline" onClick={() => { if (confirm("Hapus broadcast saat ini?")) deleteMut.mutate(); }}
+                variant="outline"
+                onClick={() => {
+                  if (confirm("Hapus broadcast saat ini?")) deleteMut.mutate();
+                }}
                 disabled={deleteMut.isPending}
               >
                 <Trash2 className="h-3.5 w-3.5" /> Hapus
@@ -148,13 +160,17 @@ function BroadcastAdminPage() {
           {latestQ.data ? (
             <>
               <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-                {format(new Date(latestQ.data.created_at), "EEE, dd MMM yyyy HH:mm", { locale: idLocale })}
+                {format(new Date(latestQ.data.created_at), "EEE, dd MMM yyyy HH:mm", {
+                  locale: idLocale,
+                })}
               </div>
               <div className="text-[11px] text-muted-foreground">
                 oleh @{latestQ.data.posted_by_username}
               </div>
               <h3 className="pt-2 text-[14px] font-semibold">{latestQ.data.title}</h3>
-              <p className="whitespace-pre-wrap text-[13px] text-foreground/85">{latestQ.data.body}</p>
+              <p className="whitespace-pre-wrap text-[13px] text-foreground/85">
+                {latestQ.data.body}
+              </p>
             </>
           ) : (
             <p className="text-[13px] text-muted-foreground">Belum ada broadcast aktif.</p>

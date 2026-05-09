@@ -80,7 +80,11 @@ function EkonomiDashboard() {
                       {c.label}
                     </div>
                     <div className="mt-1 font-mono text-xl font-semibold tabular-nums">
-                      {c.v ? (c.fmt ? c.fmt(c.v.value) : `${fmtNum(c.v.value, 2)}${c.unit === "%" ? "%" : ""}`) : "—"}
+                      {c.v
+                        ? c.fmt
+                          ? c.fmt(c.v.value)
+                          : `${fmtNum(c.v.value, 2)}${c.unit === "%" ? "%" : ""}`
+                        : "—"}
                     </div>
                     <div className="mt-0.5 text-[10px] text-muted-foreground">
                       {c.v ? `Per ${c.v.year}` : c.unit}
@@ -124,7 +128,8 @@ function EkonomiDashboard() {
                   </thead>
                   <tbody className="tabular-nums">
                     {d.items.map((it) => {
-                      const Icon = it.pctChange == null ? Minus : it.pctChange >= 0 ? ArrowUp : ArrowDown;
+                      const Icon =
+                        it.pctChange == null ? Minus : it.pctChange >= 0 ? ArrowUp : ArrowDown;
                       const color =
                         it.pctChange == null
                           ? "text-muted-foreground"

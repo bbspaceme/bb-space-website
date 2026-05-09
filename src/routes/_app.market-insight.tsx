@@ -48,10 +48,16 @@ function MarketInsightPage() {
             <>
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
                 <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                  Broadcast: {format(new Date(latestQ.data.created_at), "EEEE, dd MMMM yyyy", { locale: idLocale })}
+                  Broadcast:{" "}
+                  {format(new Date(latestQ.data.created_at), "EEEE, dd MMMM yyyy", {
+                    locale: idLocale,
+                  })}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
-                  oleh <span className="font-mono font-semibold text-foreground">@{latestQ.data.posted_by_username}</span>
+                  oleh{" "}
+                  <span className="font-mono font-semibold text-foreground">
+                    @{latestQ.data.posted_by_username}
+                  </span>
                 </div>
               </div>
               <h2 className="text-2xl font-semibold tracking-tight">{latestQ.data.title}</h2>

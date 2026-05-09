@@ -3,21 +3,58 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Briefcase, Star, Newspaper, LineChart, Globe, Users, ChevronRight } from "lucide-react";
+import {
+  Sparkles,
+  Briefcase,
+  Star,
+  Newspaper,
+  LineChart,
+  Globe,
+  Users,
+  ChevronRight,
+} from "lucide-react";
 
 type Step = { icon: React.ComponentType<{ className?: string }>; title: string; body: string };
 
 const MEMBER_STEPS: Step[] = [
-  { icon: Users, title: "Selamat datang di KBAI Terminal", body: "Platform komunitas untuk tracking portfolio saham IDX dengan indeks komunitas KBAI." },
-  { icon: Briefcase, title: "Portfolio kamu", body: "Catat transaksi BUY/SELL, kelola cash, lihat P/L realtime. Mulai dari menu Portfolio." },
-  { icon: Star, title: "Watchlist", body: "Pantau saham tanpa harus hold. Tambahkan ticker yang sedang kamu pelajari." },
-  { icon: Newspaper, title: "Market Insight", body: "Broadcast dari Advisor — analisis pasar harian. Cek menu Market Insight." },
+  {
+    icon: Users,
+    title: "Selamat datang di KBAI Terminal",
+    body: "Platform komunitas untuk tracking portfolio saham IDX dengan indeks komunitas KBAI.",
+  },
+  {
+    icon: Briefcase,
+    title: "Portfolio kamu",
+    body: "Catat transaksi BUY/SELL, kelola cash, lihat P/L realtime. Mulai dari menu Portfolio.",
+  },
+  {
+    icon: Star,
+    title: "Watchlist",
+    body: "Pantau saham tanpa harus hold. Tambahkan ticker yang sedang kamu pelajari.",
+  },
+  {
+    icon: Newspaper,
+    title: "Market Insight",
+    body: "Broadcast dari Advisor — analisis pasar harian. Cek menu Market Insight.",
+  },
 ];
 
 const ADVISOR_STEPS: Step[] = [
-  { icon: Sparkles, title: "Selamat datang Advisor", body: "Akses penuh ke modul EquiSight — research, valuasi, dan komunitas." },
-  { icon: LineChart, title: "Modul Analisis", body: "Screener, DCF Valuation, Earnings, Technical, Dividend — semua AI-powered." },
-  { icon: Globe, title: "Modul Ekonomi (BARU)", body: "Macro Indonesia, global markets, komoditas, AI brief harian." },
+  {
+    icon: Sparkles,
+    title: "Selamat datang Advisor",
+    body: "Akses penuh ke modul EquiSight — research, valuasi, dan komunitas.",
+  },
+  {
+    icon: LineChart,
+    title: "Modul Analisis",
+    body: "Screener, DCF Valuation, Earnings, Technical, Dividend — semua AI-powered.",
+  },
+  {
+    icon: Globe,
+    title: "Modul Ekonomi (BARU)",
+    body: "Macro Indonesia, global markets, komoditas, AI brief harian.",
+  },
 ];
 
 const STORAGE_KEY = "kbai-onboarding-shown";
@@ -86,7 +123,12 @@ export function OnboardingTour() {
           ))}
         </div>
         <div className="flex items-center justify-between pt-2">
-          <Button variant="ghost" size="sm" onClick={finish} className="text-caption text-muted-foreground">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={finish}
+            className="text-caption text-muted-foreground"
+          >
             Skip
           </Button>
           <Button

@@ -39,7 +39,9 @@ function ValuationPage() {
           </CardHeader>
           <CardContent className="space-y-5">
             <div>
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Ticker</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Ticker
+              </Label>
               <Input
                 className="mt-2 font-mono uppercase"
                 placeholder="BBCA"
@@ -48,7 +50,9 @@ function ValuationPage() {
               />
             </div>
             <div>
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Nama Perusahaan</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Nama Perusahaan
+              </Label>
               <Input
                 className="mt-2"
                 placeholder="Auto-fill dari ticker"
@@ -56,7 +60,11 @@ function ValuationPage() {
                 onChange={(e) => setCompany(e.target.value)}
               />
             </div>
-            <Button className="w-full" onClick={() => mutation.mutate()} disabled={!ticker || mutation.isPending}>
+            <Button
+              className="w-full"
+              onClick={() => mutation.mutate()}
+              disabled={!ticker || mutation.isPending}
+            >
               {mutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -82,7 +90,9 @@ function ValuationPage() {
             ) : mutation.isError ? (
               <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
                 <AlertTriangle className="h-6 w-6 text-destructive" />
-                <p className="text-[12px] text-muted-foreground">{(mutation.error as Error).message}</p>
+                <p className="text-[12px] text-muted-foreground">
+                  {(mutation.error as Error).message}
+                </p>
               </div>
             ) : mutation.data ? (
               <DcfReport data={mutation.data} />
@@ -112,7 +122,10 @@ function DcfReport({ data }: { data: Awaited<ReturnType<typeof runDcfValuation>>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Harga Pasar" value={fmtIDR(data.current_price)} />
         <Stat label="Intrinsic Value" value={fmtIDR(data.intrinsic_value)} />
-        <Stat label="Upside" value={`${data.upside_pct >= 0 ? "+" : ""}${data.upside_pct.toFixed(1)}%`} />
+        <Stat
+          label="Upside"
+          value={`${data.upside_pct >= 0 ? "+" : ""}${data.upside_pct.toFixed(1)}%`}
+        />
         <div className={`rounded-sm border px-3 py-2 ${verdictColor}`}>
           <div className="font-mono text-[10px] uppercase tracking-wider opacity-70">Verdict</div>
           <div className="mt-0.5 font-serif text-base font-semibold">{data.verdict}</div>
@@ -148,8 +161,12 @@ function DcfReport({ data }: { data: Awaited<ReturnType<typeof runDcfValuation>>
             Asumsi
           </div>
           <div className="space-y-1 text-[12px]">
-            <div>WACC: <span className="font-mono">{data.wacc.toFixed(2)}%</span></div>
-            <div>Terminal Growth: <span className="font-mono">{data.terminal_growth.toFixed(2)}%</span></div>
+            <div>
+              WACC: <span className="font-mono">{data.wacc.toFixed(2)}%</span>
+            </div>
+            <div>
+              Terminal Growth: <span className="font-mono">{data.terminal_growth.toFixed(2)}%</span>
+            </div>
             <ul className="ml-4 list-disc space-y-0.5 text-muted-foreground">
               {data.assumptions.slice(0, 5).map((a, i) => (
                 <li key={i}>{a}</li>
@@ -167,8 +184,12 @@ function DcfReport({ data }: { data: Awaited<ReturnType<typeof runDcfValuation>>
                 {data.sensitivity.map((s, i) => (
                   <tr key={i} className="border-t border-border first:border-t-0">
                     <td className="px-2 py-1 font-mono">{s.wacc.toFixed(1)}%</td>
-                    <td className="px-2 py-1 font-mono text-muted-foreground">{s.growth.toFixed(1)}%</td>
-                    <td className="px-2 py-1 text-right font-mono tabular-nums">{fmtIDR(s.value)}</td>
+                    <td className="px-2 py-1 font-mono text-muted-foreground">
+                      {s.growth.toFixed(1)}%
+                    </td>
+                    <td className="px-2 py-1 text-right font-mono tabular-nums">
+                      {fmtIDR(s.value)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -183,7 +204,9 @@ function DcfReport({ data }: { data: Awaited<ReturnType<typeof runDcfValuation>>
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-sm border border-border bg-card/50 px-3 py-2">
-      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-0.5 font-serif text-base font-semibold tabular-nums">{value}</div>
     </div>
   );

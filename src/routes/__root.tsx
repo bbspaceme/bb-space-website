@@ -1,4 +1,10 @@
-import { Outlet, Link, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
+import {
+  Outlet,
+  Link,
+  createRootRouteWithContext,
+  HeadContent,
+  Scripts,
+} from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/auth";
@@ -36,13 +42,33 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "KBAI Terminal — Portfolio & Equity Intelligence" },
-      { name: "description", content: "KBAI Terminal: portfolio tracking saham IDX, indeks komunitas, dan modul analisis EquiSight." },
+      {
+        name: "description",
+        content:
+          "KBAI Terminal: portfolio tracking saham IDX, indeks komunitas, dan modul analisis EquiSight.",
+      },
       { property: "og:title", content: "KBAI Terminal — Portfolio & Equity Intelligence" },
       { name: "twitter:title", content: "KBAI Terminal — Portfolio & Equity Intelligence" },
-      { property: "og:description", content: "KBAI Terminal: portfolio tracking saham IDX, indeks komunitas, dan modul analisis EquiSight." },
-      { name: "twitter:description", content: "KBAI Terminal: portfolio tracking saham IDX, indeks komunitas, dan modul analisis EquiSight." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f9dd2085-90fc-4512-8692-d796a643d9b4/id-preview-9b96e589--3beea67b-fa5d-4e0b-8e4c-90d64f6a10b7.lovable.app-1776776870730.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f9dd2085-90fc-4512-8692-d796a643d9b4/id-preview-9b96e589--3beea67b-fa5d-4e0b-8e4c-90d64f6a10b7.lovable.app-1776776870730.png" },
+      {
+        property: "og:description",
+        content:
+          "KBAI Terminal: portfolio tracking saham IDX, indeks komunitas, dan modul analisis EquiSight.",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "KBAI Terminal: portfolio tracking saham IDX, indeks komunitas, dan modul analisis EquiSight.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f9dd2085-90fc-4512-8692-d796a643d9b4/id-preview-9b96e589--3beea67b-fa5d-4e0b-8e4c-90d64f6a10b7.lovable.app-1776776870730.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f9dd2085-90fc-4512-8692-d796a643d9b4/id-preview-9b96e589--3beea67b-fa5d-4e0b-8e4c-90d64f6a10b7.lovable.app-1776776870730.png",
+      },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],

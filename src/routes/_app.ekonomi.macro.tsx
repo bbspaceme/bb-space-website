@@ -80,13 +80,7 @@ function MacroPage() {
   );
 }
 
-function ChartCard({
-  title,
-  data,
-}: {
-  title: string;
-  data: { year: number; value: number }[];
-}) {
+function ChartCard({ title, data }: { title: string; data: { year: number; value: number }[] }) {
   return (
     <Card>
       <CardHeader className="pb-1">

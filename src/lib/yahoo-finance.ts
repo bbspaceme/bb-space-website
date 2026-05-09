@@ -15,12 +15,10 @@ const YAHOO_HEADERS = {
  * @param symbols Array of Yahoo Finance symbols (e.g., ["BBCA.JK", "BBRI.JK"])
  * @returns Map of symbol -> regularMarketPrice
  */
-export async function fetchYahooQuotes(
-  symbols: string[]
-): Promise<Record<string, number>> {
+export async function fetchYahooQuotes(symbols: string[]): Promise<Record<string, number>> {
   if (symbols.length === 0) return {};
   const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
-    symbols.join(",")
+    symbols.join(","),
   )}`;
   const res = await fetch(url, { headers: YAHOO_HEADERS });
   if (!res.ok) throw new Error(`Yahoo quote error: ${res.status}`);
@@ -44,10 +42,10 @@ export async function fetchYahooQuotes(
 export async function fetchYahooChart(
   symbol: string,
   fromUnix: number,
-  toUnix: number
+  toUnix: number,
 ): Promise<Array<{ date: string; close: number }>> {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
-    symbol
+    symbol,
   )}?period1=${fromUnix}&period2=${toUnix}&interval=1d`;
   const res = await fetch(url, { headers: YAHOO_HEADERS });
   if (!res.ok) return [];
@@ -88,7 +86,7 @@ export async function fetchYahooQuoteDetail(symbol: string): Promise<{
   currency: string;
 } | null> {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
-    symbol
+    symbol,
   )}?range=5d&interval=1d`;
   const res = await fetch(url, { headers: YAHOO_HEADERS });
   if (!res.ok) return null;

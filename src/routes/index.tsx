@@ -77,9 +77,7 @@ function LandingPage() {
       (entries) => {
         if (entries[0].isIntersecting) {
           setTimeout(() => {
-            root
-              .querySelectorAll(".chart-line")
-              .forEach((l) => l.classList.add("drawn"));
+            root.querySelectorAll(".chart-line").forEach((l) => l.classList.add("drawn"));
           }, 300);
           chartObs.disconnect();
         }
@@ -147,7 +145,5 @@ function LandingPage() {
     };
   }, [navigate]);
 
-  return (
-    <div ref={containerRef} dangerouslySetInnerHTML={{ __html: landingHtml }} />
-  );
+  return <div ref={containerRef} dangerouslySetInnerHTML={{ __html: landingHtml }} />;
 }

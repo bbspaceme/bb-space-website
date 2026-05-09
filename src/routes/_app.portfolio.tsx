@@ -71,10 +71,7 @@ function PortfolioPage() {
     enabled: !!userId,
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("holdings")
-        .select("*")
-        .eq("user_id", userId!);
+      const { data, error } = await supabase.from("holdings").select("*").eq("user_id", userId!);
       if (error) throw error;
       return data;
     },
@@ -214,7 +211,9 @@ function PortfolioPage() {
             disabled={refreshMut.isPending}
             className="h-8 rounded-sm text-[11px] uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground"
           >
-            <RefreshCw className={refreshMut.isPending ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
+            <RefreshCw
+              className={refreshMut.isPending ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"}
+            />
             Refresh prices
           </Button>
         </div>
@@ -222,9 +221,24 @@ function PortfolioPage() {
 
       {/* Summary strip */}
       <section className="grid grid-cols-1 gap-px overflow-hidden rounded-sm border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Total Equity" value={fmtIDR(totalEquity)} sub="Holdings + Cash" tooltip="Nilai pasar holdings + saldo cash. Snapshot per harga EOD terakhir." />
-        <Stat label="Market Value" value={fmtIDR(totalValue)} sub={`${rows.length} positions`} tooltip="Lot × harga EOD × 100 saham per lot." />
-        <Stat label="Cash Balance" value={fmtIDR(cashBalance)} sub="Idle funds" tooltip="Saldo cash yang belum diinvestasikan, otomatis berkurang saat BUY dan bertambah saat SELL." />
+        <Stat
+          label="Total Equity"
+          value={fmtIDR(totalEquity)}
+          sub="Holdings + Cash"
+          tooltip="Nilai pasar holdings + saldo cash. Snapshot per harga EOD terakhir."
+        />
+        <Stat
+          label="Market Value"
+          value={fmtIDR(totalValue)}
+          sub={`${rows.length} positions`}
+          tooltip="Lot × harga EOD × 100 saham per lot."
+        />
+        <Stat
+          label="Cash Balance"
+          value={fmtIDR(cashBalance)}
+          sub="Idle funds"
+          tooltip="Saldo cash yang belum diinvestasikan, otomatis berkurang saat BUY dan bertambah saat SELL."
+        />
         <Stat
           label="Unrealized P/L"
           value={fmtIDR(totalPL)}
@@ -250,21 +264,32 @@ function PortfolioPage() {
             <div className="space-y-1">
               <h3 className="font-serif text-lg font-semibold">Belum ada posisi</h3>
               <p className="max-w-sm text-[12px] text-muted-foreground">
-                Mulai catat holding pertama Anda. Tambahkan saldo cash terlebih dahulu, lalu klik Buy untuk mencatat pembelian.
+                Mulai catat holding pertama Anda. Tambahkan saldo cash terlebih dahulu, lalu klik
+                Buy untuk mencatat pembelian.
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">
               {cashBalance <= 0 && (
-                <Button size="sm" variant="outline" onClick={() => setCashOpen(true)} className="h-8 rounded-sm text-[12px] uppercase tracking-[0.12em]">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCashOpen(true)}
+                  className="h-8 rounded-sm text-[12px] uppercase tracking-[0.12em]"
+                >
                   <Wallet className="mr-1.5 h-3.5 w-3.5" /> Set Cash
                 </Button>
               )}
-              <Button size="sm" onClick={() => setOpenDialog("BUY")} className="h-8 rounded-sm bg-foreground text-[12px] uppercase tracking-[0.12em] text-background hover:bg-foreground/90">
+              <Button
+                size="sm"
+                onClick={() => setOpenDialog("BUY")}
+                className="h-8 rounded-sm bg-foreground text-[12px] uppercase tracking-[0.12em] text-background hover:bg-foreground/90"
+              >
                 <Plus className="mr-1.5 h-3.5 w-3.5" /> Tambah Holding Pertama
               </Button>
             </div>
             <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <Sparkles className="h-3 w-3" /> Tip: gunakan <span className="font-mono">⌘K</span> untuk navigasi cepat.
+              <Sparkles className="h-3 w-3" /> Tip: gunakan <span className="font-mono">⌘K</span>{" "}
+              untuk navigasi cepat.
             </p>
           </div>
         ) : (
@@ -284,7 +309,10 @@ function PortfolioPage() {
               </thead>
               <tbody className="text-[13px] tabular">
                 {rows.map((r) => (
-                  <tr key={r.id} className="border-b border-border/60 last:border-0 hover:bg-accent/40">
+                  <tr
+                    key={r.id}
+                    className="border-b border-border/60 last:border-0 hover:bg-accent/40"
+                  >
                     <td className="px-4 py-2.5">
                       <span className="font-mono text-[12px] font-semibold tracking-wide">
                         {r.ticker}
@@ -303,7 +331,11 @@ function PortfolioPage() {
                       {fmtIDR(r.cost)}
                     </td>
                     <td className="px-4 py-2.5 text-right font-medium">
-                      {r.value != null ? fmtIDR(r.value) : <span className="text-muted-foreground">—</span>}
+                      {r.value != null ? (
+                        fmtIDR(r.value)
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td
                       className={cn(
@@ -340,10 +372,14 @@ function PortfolioPage() {
                     {fmtIDR(totalCost)}
                   </td>
                   <td className="px-4 py-2.5 text-right">{fmtIDR(totalValue)}</td>
-                  <td className={cn("px-4 py-2.5 text-right", totalPL >= 0 ? "text-pos" : "text-neg")}>
+                  <td
+                    className={cn("px-4 py-2.5 text-right", totalPL >= 0 ? "text-pos" : "text-neg")}
+                  >
                     {fmtIDR(totalPL)}
                   </td>
-                  <td className={cn("px-4 py-2.5 text-right", totalPL >= 0 ? "text-pos" : "text-neg")}>
+                  <td
+                    className={cn("px-4 py-2.5 text-right", totalPL >= 0 ? "text-pos" : "text-neg")}
+                  >
                     {fmtPct(totalPLPct)}
                   </td>
                 </tr>
@@ -399,19 +435,40 @@ function PortfolioPage() {
                     );
                     const pct = (Math.abs(a.contrib) / maxAbs) * 100;
                     return (
-                      <tr key={a.ticker} className="border-b border-border/60 last:border-0 hover:bg-accent/40">
-                        <td className="px-4 py-2.5 font-mono text-[12px] font-semibold">{a.ticker}</td>
-                        <td className="px-4 py-2.5 text-right text-muted-foreground">{fmtPct(a.weight * 100)}</td>
-                        <td className={cn("px-4 py-2.5 text-right", a.ret >= 0 ? "text-pos" : "text-neg")}>
+                      <tr
+                        key={a.ticker}
+                        className="border-b border-border/60 last:border-0 hover:bg-accent/40"
+                      >
+                        <td className="px-4 py-2.5 font-mono text-[12px] font-semibold">
+                          {a.ticker}
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground">
+                          {fmtPct(a.weight * 100)}
+                        </td>
+                        <td
+                          className={cn(
+                            "px-4 py-2.5 text-right",
+                            a.ret >= 0 ? "text-pos" : "text-neg",
+                          )}
+                        >
                           {fmtPct(a.ret * 100)}
                         </td>
-                        <td className={cn("px-4 py-2.5 text-right font-medium", a.contrib >= 0 ? "text-pos" : "text-neg")}>
-                          {a.contrib >= 0 ? "+" : ""}{a.contrib.toFixed(2)} pp
+                        <td
+                          className={cn(
+                            "px-4 py-2.5 text-right font-medium",
+                            a.contrib >= 0 ? "text-pos" : "text-neg",
+                          )}
+                        >
+                          {a.contrib >= 0 ? "+" : ""}
+                          {a.contrib.toFixed(2)} pp
                         </td>
                         <td className="px-4 py-2.5">
                           <div className="relative h-2 w-full bg-border/50">
                             <div
-                              className={cn("absolute top-0 h-full", a.contrib >= 0 ? "bg-pos/70 left-1/2" : "bg-neg/70 right-1/2")}
+                              className={cn(
+                                "absolute top-0 h-full",
+                                a.contrib >= 0 ? "bg-pos/70 left-1/2" : "bg-neg/70 right-1/2",
+                              )}
                               style={{ width: `${pct / 2}%` }}
                             />
                             <div className="absolute inset-y-0 left-1/2 w-px bg-border" />
@@ -455,7 +512,10 @@ function PortfolioPage() {
               </thead>
               <tbody className="text-[13px] tabular">
                 {(txnsQ.data ?? []).map((t) => (
-                  <tr key={t.id} className="border-b border-border/60 last:border-0 hover:bg-accent/40">
+                  <tr
+                    key={t.id}
+                    className="border-b border-border/60 last:border-0 hover:bg-accent/40"
+                  >
                     <td className="px-4 py-2.5 text-muted-foreground">
                       {format(new Date(t.transacted_at), "dd MMM yyyy", { locale: idLocale })}
                     </td>
@@ -463,9 +523,7 @@ function PortfolioPage() {
                       <span
                         className={cn(
                           "inline-block rounded-sm border px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider",
-                          t.side === "BUY"
-                            ? "border-pos/40 text-pos"
-                            : "border-neg/40 text-neg",
+                          t.side === "BUY" ? "border-pos/40 text-pos" : "border-neg/40 text-neg",
                         )}
                       >
                         {t.side}
@@ -604,8 +662,7 @@ function TransactionDialog({
   const notional = lotN * priceN * 100;
   const tickerUpper = ticker.trim().toUpperCase();
   const matchedEmiten = IDX_EMITEN.find((e) => e.code === tickerUpper);
-  const ownedLot =
-    holdings.find((h) => h.ticker === tickerUpper)?.total_lot ?? 0;
+  const ownedLot = holdings.find((h) => h.ticker === tickerUpper)?.total_lot ?? 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

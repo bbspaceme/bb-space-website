@@ -18,7 +18,16 @@ export const Route = createFileRoute("/_app/analisis/screener")({
   component: ScreenerPage,
 });
 
-const SECTORS = ["Perbankan", "Energi", "Konsumer", "Telco", "Properti", "Tambang", "Infrastruktur", "Healthcare"];
+const SECTORS = [
+  "Perbankan",
+  "Energi",
+  "Konsumer",
+  "Telco",
+  "Properti",
+  "Tambang",
+  "Infrastruktur",
+  "Healthcare",
+];
 
 function ScreenerPage() {
   const [risk, setRisk] = useState<"Conservative" | "Moderate" | "Aggressive">("Moderate");
@@ -51,14 +60,18 @@ function ScreenerPage() {
           </CardHeader>
           <CardContent className="space-y-5">
             <div>
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Profil Risiko</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Profil Risiko
+              </Label>
               <div className="mt-2 grid grid-cols-3 gap-1 rounded-sm border border-border p-1">
                 {(["Conservative", "Moderate", "Aggressive"] as const).map((r) => (
                   <button
                     key={r}
                     onClick={() => setRisk(r)}
                     className={`rounded-sm px-2 py-1.5 text-[11px] font-medium transition ${
-                      risk === r ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                      risk === r
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {r}
@@ -83,11 +96,20 @@ function ScreenerPage() {
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                 Horizon: {horizon[0]} tahun
               </Label>
-              <Slider value={horizon} onValueChange={setHorizon} min={1} max={10} step={1} className="mt-3" />
+              <Slider
+                value={horizon}
+                onValueChange={setHorizon}
+                min={1}
+                max={10}
+                step={1}
+                className="mt-3"
+              />
             </div>
 
             <div>
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Preferensi Sektor</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Preferensi Sektor
+              </Label>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {SECTORS.map((s) => (
                   <label key={s} className="flex items-center gap-2 text-[12px]">
@@ -103,7 +125,11 @@ function ScreenerPage() {
               </div>
             </div>
 
-            <Button className="w-full" onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+            <Button
+              className="w-full"
+              onClick={() => mutation.mutate()}
+              disabled={mutation.isPending}
+            >
               {mutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -130,11 +156,15 @@ function ScreenerPage() {
             ) : mutation.isError ? (
               <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
                 <AlertTriangle className="h-6 w-6 text-destructive" />
-                <p className="text-[12px] text-muted-foreground">{(mutation.error as Error).message}</p>
+                <p className="text-[12px] text-muted-foreground">
+                  {(mutation.error as Error).message}
+                </p>
               </div>
             ) : mutation.data ? (
               <div className="space-y-4">
-                <p className="text-[12px] leading-relaxed text-foreground/80">{mutation.data.summary}</p>
+                <p className="text-[12px] leading-relaxed text-foreground/80">
+                  {mutation.data.summary}
+                </p>
                 <div className="overflow-x-auto rounded-sm border border-border">
                   <table className="w-full text-[12px]">
                     <thead>
@@ -153,12 +183,18 @@ function ScreenerPage() {
                           <td className="px-3 py-2 font-mono font-semibold">{t.ticker}</td>
                           <td className="px-3 py-2">
                             <div className="font-medium">{t.name}</div>
-                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{t.sector}</div>
-                            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{t.thesis}</p>
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                              {t.sector}
+                            </div>
+                            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                              {t.thesis}
+                            </p>
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums">{fmtNum(t.pe, 1)}</td>
                           <td className="px-3 py-2 text-right tabular-nums">{fmtNum(t.roe, 1)}</td>
-                          <td className="px-3 py-2 text-right tabular-nums">{fmtNum(t.growth, 1)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            {fmtNum(t.growth, 1)}
+                          </td>
                           <td className="px-3 py-2 text-right">
                             <span className="inline-block rounded-sm border border-border px-1.5 py-0.5 font-mono text-[10px]">
                               {t.risk_score}/10

@@ -91,12 +91,19 @@ export function NotificationBell() {
                   <h4 className="truncate text-body font-semibold">{n.title}</h4>
                   <span
                     className="font-mono text-[10px] text-muted-foreground"
-                    title={format(new Date(n.created_at), "dd MMM yyyy HH:mm", { locale: idLocale })}
+                    title={format(new Date(n.created_at), "dd MMM yyyy HH:mm", {
+                      locale: idLocale,
+                    })}
                   >
-                    {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: idLocale })}
+                    {formatDistanceToNow(new Date(n.created_at), {
+                      addSuffix: true,
+                      locale: idLocale,
+                    })}
                   </span>
                 </div>
-                {n.body && <p className="mt-0.5 line-clamp-2 text-caption text-muted-foreground">{n.body}</p>}
+                {n.body && (
+                  <p className="mt-0.5 line-clamp-2 text-caption text-muted-foreground">{n.body}</p>
+                )}
                 <div className="mt-1 inline-block rounded-sm bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
                   {n.kind}
                 </div>

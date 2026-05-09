@@ -59,7 +59,7 @@ export function exportPortfolioPdf(d: PortfolioPdfData) {
     ["Cash", `Rp ${fmt(d.cash)}`],
     ["Unrealized P/L", `${totalPL >= 0 ? "+" : ""}Rp ${fmt(totalPL)} (${totalPLPct.toFixed(2)}%)`],
   ];
-  let y = 100;
+  const y = 100;
   stats.forEach(([k, v], i) => {
     const x = margin + (i % 2) * ((pageW - margin * 2) / 2);
     doc.setTextColor(120);
@@ -97,7 +97,8 @@ export function exportPortfolioPdf(d: PortfolioPdfData) {
   });
 
   // Footer disclaimer
-  const finalY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 200;
+  const finalY =
+    (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 200;
   doc.setFontSize(7);
   doc.setTextColor(140);
   doc.text(

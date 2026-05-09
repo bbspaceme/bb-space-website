@@ -15,11 +15,15 @@ export const listWatchlist = createServerFn({ method: "GET" })
 
 export const addWatchlist = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
-  .inputValidator(z.object({ ticker: z.string().min(1).max(10), note: z.string().max(200).optional() }))
+  .inputValidator(
+    z.object({ ticker: z.string().min(1).max(10), note: z.string().max(200).optional() }),
+  )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("watchlist")
-      .insert({ user_id: context.userId, ticker: data.ticker.toUpperCase(), note: data.note ?? null });
+    const { error } = await context.supabase.from("watchlist").insert({
+      user_id: context.userId,
+      ticker: data.ticker.toUpperCase(),
+      note: data.note ?? null,
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

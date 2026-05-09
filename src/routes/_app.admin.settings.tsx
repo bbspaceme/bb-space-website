@@ -75,7 +75,9 @@ function AdminSettingsPage() {
         <CardContent className="space-y-3 p-4">
           <div className="flex items-end gap-2">
             <div className="flex-1 space-y-1">
-              <Label className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Fund ID</Label>
+              <Label className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                Fund ID
+              </Label>
               <Input
                 value={smfFundId}
                 onChange={(e) => setSmfFundId(e.target.value.replace(/[^0-9]/g, ""))}
@@ -84,7 +86,9 @@ function AdminSettingsPage() {
               />
             </div>
             <Button onClick={() => smfMut.mutate()} disabled={smfMut.isPending}>
-              <RefreshCw className={smfMut.isPending ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
+              <RefreshCw
+                className={smfMut.isPending ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"}
+              />
               Tarik NAV
             </Button>
           </div>

@@ -5,11 +5,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { fmtIDR, fmtNum } from "@/lib/format";
 import { format } from "date-fns";
@@ -43,8 +52,10 @@ function AdminTransactionsPage() {
     queryKey: ["admin-all-transactions-full"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("transactions").select("*")
-        .order("transacted_at", { ascending: false }).limit(2000);
+        .from("transactions")
+        .select("*")
+        .order("transacted_at", { ascending: false })
+        .limit(2000);
       if (error) throw error;
       return data ?? [];
     },
@@ -88,7 +99,10 @@ function AdminTransactionsPage() {
 
   const toggleSort = (k: string) => {
     if (k === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortKey(k); setSortDir("desc"); }
+    else {
+      setSortKey(k);
+      setSortDir("desc");
+    }
   };
 
   return (
@@ -101,25 +115,45 @@ function AdminTransactionsPage() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-3">
           <div>
-            <label className="mb-1 block text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">User</label>
+            <label className="mb-1 block text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              User
+            </label>
             <Select value={userFilter} onValueChange={setUserFilter}>
-              <SelectTrigger className="h-9 rounded-sm"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 rounded-sm">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All users</SelectItem>
                 {(profilesQ.data ?? []).map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.username}</SelectItem>
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.username}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
-            <label className="mb-1 block text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Ticker</label>
-            <Input value={tickerFilter} onChange={(e) => setTickerFilter(e.target.value.toUpperCase())} placeholder="e.g. BBCA" className="h-9 rounded-sm font-mono text-[13px]" />
+            <label className="mb-1 block text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              Ticker
+            </label>
+            <Input
+              value={tickerFilter}
+              onChange={(e) => setTickerFilter(e.target.value.toUpperCase())}
+              placeholder="e.g. BBCA"
+              className="h-9 rounded-sm font-mono text-[13px]"
+            />
           </div>
           <div>
-            <label className="mb-1 block text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Side</label>
-            <Select value={sideFilter} onValueChange={(v) => setSideFilter(v as "all" | "BUY" | "SELL")}>
-              <SelectTrigger className="h-9 rounded-sm"><SelectValue /></SelectTrigger>
+            <label className="mb-1 block text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              Side
+            </label>
+            <Select
+              value={sideFilter}
+              onValueChange={(v) => setSideFilter(v as "all" | "BUY" | "SELL")}
+            >
+              <SelectTrigger className="h-9 rounded-sm">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All sides</SelectItem>
                 <SelectItem value="BUY">BUY only</SelectItem>
@@ -163,23 +197,79 @@ function AdminTransactionsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableHead label="Date" k="transacted_at" cur={sortKey} dir={sortDir} onClick={toggleSort} />
-                  <SortableHead label="User" k="username" cur={sortKey} dir={sortDir} onClick={toggleSort} />
-                  <SortableHead label="Ticker" k="ticker" cur={sortKey} dir={sortDir} onClick={toggleSort} />
-                  <SortableHead label="Side" k="side" cur={sortKey} dir={sortDir} onClick={toggleSort} />
-                  <SortableHead label="Lot" k="lot" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
-                  <SortableHead label="Price" k="price" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
-                  <SortableHead label="Notional" k="notional" cur={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
+                  <SortableHead
+                    label="Date"
+                    k="transacted_at"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                  />
+                  <SortableHead
+                    label="User"
+                    k="username"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                  />
+                  <SortableHead
+                    label="Ticker"
+                    k="ticker"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                  />
+                  <SortableHead
+                    label="Side"
+                    k="side"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                  />
+                  <SortableHead
+                    label="Lot"
+                    k="lot"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="right"
+                  />
+                  <SortableHead
+                    label="Price"
+                    k="price"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="right"
+                  />
+                  <SortableHead
+                    label="Notional"
+                    k="notional"
+                    cur={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    align="right"
+                  />
                 </TableRow>
               </TableHeader>
               <TableBody className="text-[13px] tabular">
                 {sorted.map((t) => (
                   <TableRow key={t.id}>
-                    <TableCell>{format(new Date(t.transacted_at), "dd MMM yyyy", { locale: idLocale })}</TableCell>
-                    <TableCell>{t.username}</TableCell>
-                    <TableCell className="font-mono text-[12px] font-semibold">{t.ticker}</TableCell>
                     <TableCell>
-                      <Badge variant={t.side === "BUY" ? "default" : "secondary"} className={cn(t.side === "BUY" ? "bg-pos/15 text-pos border-pos/30" : "bg-neg/15 text-neg border-neg/30")}>
+                      {format(new Date(t.transacted_at), "dd MMM yyyy", { locale: idLocale })}
+                    </TableCell>
+                    <TableCell>{t.username}</TableCell>
+                    <TableCell className="font-mono text-[12px] font-semibold">
+                      {t.ticker}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={t.side === "BUY" ? "default" : "secondary"}
+                        className={cn(
+                          t.side === "BUY"
+                            ? "bg-pos/15 text-pos border-pos/30"
+                            : "bg-neg/15 text-neg border-neg/30",
+                        )}
+                      >
                         {t.side}
                       </Badge>
                     </TableCell>
@@ -205,9 +295,19 @@ function AdminTransactionsPage() {
 }
 
 function SortableHead({
-  label, k, cur, dir, onClick, align = "left",
+  label,
+  k,
+  cur,
+  dir,
+  onClick,
+  align = "left",
 }: {
-  label: string; k: string; cur: string; dir: SortDir; onClick: (k: string) => void; align?: "left" | "right";
+  label: string;
+  k: string;
+  cur: string;
+  dir: SortDir;
+  onClick: (k: string) => void;
+  align?: "left" | "right";
 }) {
   const active = cur === k;
   const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;

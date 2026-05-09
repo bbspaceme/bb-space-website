@@ -32,10 +32,7 @@ export async function hashRecoveryCode(code: string): Promise<string> {
 /**
  * Verify a recovery code against a stored hash
  */
-export async function verifyRecoveryCode(
-  code: string,
-  storedHash: string
-): Promise<boolean> {
+export async function verifyRecoveryCode(code: string, storedHash: string): Promise<boolean> {
   const [salt] = storedHash.split("$");
   if (!salt) return false;
 

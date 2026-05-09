@@ -6,7 +6,14 @@ import { adminListAuditLogs } from "@/lib/admin.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ScrollText, Search, FileDown } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -90,21 +97,37 @@ function AdminAuditPage() {
               </TableHeader>
               <TableBody>
                 {q.isLoading && (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Memuat...</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      Memuat...
+                    </TableCell>
+                  </TableRow>
                 )}
                 {!q.isLoading && rows.length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Belum ada aktivitas tercatat</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      Belum ada aktivitas tercatat
+                    </TableCell>
+                  </TableRow>
                 )}
                 {rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-mono text-[11px] text-muted-foreground">
                       {format(new Date(r.created_at), "dd MMM HH:mm:ss", { locale: idLocale })}
                     </TableCell>
-                    <TableCell className="text-[12px]">{r.username ?? <span className="text-muted-foreground">—</span>}</TableCell>
-                    <TableCell><Badge variant="outline" className="font-mono text-[10px]">{r.action}</Badge></TableCell>
+                    <TableCell className="text-[12px]">
+                      {r.username ?? <span className="text-muted-foreground">—</span>}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono text-[10px]">
+                        {r.action}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-[12px]">
                       {r.entity ?? "—"}
-                      {r.entity_id && <span className="text-muted-foreground"> · {r.entity_id.slice(0, 8)}</span>}
+                      {r.entity_id && (
+                        <span className="text-muted-foreground"> · {r.entity_id.slice(0, 8)}</span>
+                      )}
                     </TableCell>
                     <TableCell className="font-mono text-[10px] text-muted-foreground max-w-[400px] truncate">
                       {r.metadata && Object.keys(r.metadata).length > 0

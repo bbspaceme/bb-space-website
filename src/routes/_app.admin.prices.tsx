@@ -15,7 +15,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { fmtNum } from "@/lib/format";
 import { refreshEodPrices } from "@/lib/portfolio.functions";
 import {
@@ -41,7 +47,9 @@ function AdminPricesPage() {
   const [backfillFrom, setBackfillFrom] = useState(
     format(new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), "yyyy-MM-dd", { locale: idLocale }),
   );
-  const [backfillTo, setBackfillTo] = useState(format(new Date(), "yyyy-MM-dd", { locale: idLocale }));
+  const [backfillTo, setBackfillTo] = useState(
+    format(new Date(), "yyyy-MM-dd", { locale: idLocale }),
+  );
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const eodQ = useQuery({
@@ -72,7 +80,8 @@ function AdminPricesPage() {
   });
 
   const refreshMut = useMutation({
-    mutationFn: () => refreshEodPrices({ data: accessToken ? { access_token: accessToken } : undefined }),
+    mutationFn: () =>
+      refreshEodPrices({ data: accessToken ? { access_token: accessToken } : undefined }),
     onSuccess: (res) => {
       toast.success(`${res.updated} harga diperbarui via Yahoo Finance`);
       qc.invalidateQueries({ queryKey: ["admin-eod-prices"] });
@@ -82,11 +91,10 @@ function AdminPricesPage() {
   });
 
   const intradayMut = useMutation({
-    mutationFn: () => refreshIntradayPrices({ data: accessToken ? { access_token: accessToken } : undefined }),
+    mutationFn: () =>
+      refreshIntradayPrices({ data: accessToken ? { access_token: accessToken } : undefined }),
     onSuccess: (res) => {
-      toast.success(
-        `Intraday: ${res.updated} ticker + IHSG ${res.ihsg ? fmtNum(res.ihsg) : "—"}`,
-      );
+      toast.success(`Intraday: ${res.updated} ticker + IHSG ${res.ihsg ? fmtNum(res.ihsg) : "—"}`);
       qc.invalidateQueries({ queryKey: ["admin-eod-prices"] });
       qc.invalidateQueries({ queryKey: ["admin-bench-prices"] });
     },
@@ -131,7 +139,10 @@ function AdminPricesPage() {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.eod), "EOD Prices");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.benchmark), "Benchmarks");
-      XLSX.writeFile(wb, `kbai-market-data-${format(new Date(), "yyyyMMdd-HHmm", { locale: idLocale })}.xlsx`);
+      XLSX.writeFile(
+        wb,
+        `kbai-market-data-${format(new Date(), "yyyyMMdd-HHmm", { locale: idLocale })}.xlsx`,
+      );
       toast.success(`Export OK: ${res.eod.length} EOD + ${res.benchmark.length} benchmark`);
     },
     onError: (e) => toast.error(e.message),
@@ -148,11 +159,19 @@ function AdminPricesPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => intradayMut.mutate()} disabled={intradayMut.isPending} variant="default">
+            <Button
+              onClick={() => intradayMut.mutate()}
+              disabled={intradayMut.isPending}
+              variant="default"
+            >
               <Activity className={intradayMut.isPending ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
               Refresh Intraday (real-time)
             </Button>
-            <Button onClick={() => refreshMut.mutate()} disabled={refreshMut.isPending} variant="secondary">
+            <Button
+              onClick={() => refreshMut.mutate()}
+              disabled={refreshMut.isPending}
+              variant="secondary"
+            >
               <RefreshCw className={refreshMut.isPending ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
               Refresh EOD + Snapshot KBAI
             </Button>
@@ -231,10 +250,14 @@ function AdminPricesPage() {
               <TableBody>
                 {(eodQ.data ?? []).map((p) => (
                   <TableRow key={p.id}>
-                    <TableCell>{format(new Date(p.date), "dd MMM yyyy", { locale: idLocale })}</TableCell>
+                    <TableCell>
+                      {format(new Date(p.date), "dd MMM yyyy", { locale: idLocale })}
+                    </TableCell>
                     <TableCell className="font-medium">{p.ticker}</TableCell>
                     <TableCell className="text-right">{fmtNum(Number(p.close))}</TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{p.source ?? "—"}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">
+                      {p.source ?? "—"}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -260,7 +283,9 @@ function AdminPricesPage() {
               <TableBody>
                 {(benchQ.data ?? []).map((b) => (
                   <TableRow key={b.id}>
-                    <TableCell>{format(new Date(b.date), "dd MMM yyyy", { locale: idLocale })}</TableCell>
+                    <TableCell>
+                      {format(new Date(b.date), "dd MMM yyyy", { locale: idLocale })}
+                    </TableCell>
                     <TableCell className="font-medium">{b.symbol}</TableCell>
                     <TableCell className="text-right">{fmtNum(Number(b.value))}</TableCell>
                   </TableRow>
@@ -309,15 +334,18 @@ function ManualBenchmarkForm() {
       <CardHeader>
         <CardTitle>Input Manual Benchmark</CardTitle>
         <CardDescription>
-          IHSG, GOLD, dan BTC diisi otomatis oleh refresh engine. Input manual untuk
-          SMF (Sucorinvest Maxi Fund) — sumber NAB: cermati.com / bibit.id / pasardana.id.
+          IHSG, GOLD, dan BTC diisi otomatis oleh refresh engine. Input manual untuk SMF
+          (Sucorinvest Maxi Fund) — sumber NAB: cermati.com / bibit.id / pasardana.id.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="grid gap-3 sm:grid-cols-4 sm:items-end">
           <div className="space-y-2">
             <Label>Symbol</Label>
-            <Select value={symbol} onValueChange={(v) => setSymbol(v as "IHSG" | "GOLD" | "BTC" | "SMF")}>
+            <Select
+              value={symbol}
+              onValueChange={(v) => setSymbol(v as "IHSG" | "GOLD" | "BTC" | "SMF")}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
