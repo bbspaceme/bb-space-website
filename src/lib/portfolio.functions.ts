@@ -117,7 +117,7 @@ export const refreshEodPrices = createServerFn({ method: "POST" })
   return { updated: eodRows.length, tickers: eodRows.map((r) => r.ticker) };
 });
 
-async function recomputeSnapshotsAndKbai(db: ReturnType<typeof getServerDatabaseClient>, date: string) {
+async function recomputeSnapshotsAndKbai(db: ReturnType<typeof getAdminDatabaseClient>, date: string) {
   // Get all holdings + eod prices for the date
   const [{ data: holdings }, { data: prices }] = await Promise.all([
     db.from("holdings").select("user_id, ticker, total_lot, avg_price"),

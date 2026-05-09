@@ -30,7 +30,7 @@ export function NotificationBell() {
     queryFn: () => list(),
   });
 
-  const items = q.data ?? [];
+  const items = Array.isArray(q.data) ? q.data : [];
   const unread = items.filter((n) => !n.read_at).length;
 
   const markAll = useMutation({

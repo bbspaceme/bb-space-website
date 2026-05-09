@@ -24,7 +24,7 @@ export const attachSupabaseAuth = createMiddleware({ type: "function" }).client(
 const requireAdminAuth = createMiddleware({ type: "function" }).server(
   async ({ context, next }) => {
     // requireSupabaseAuth already ran and provides userId
-    const userId = (context as { userId?: string })?.userId;
+    const userId = ((context ?? {}) as { userId?: string }).userId;
     if (!userId) {
       throw new Response("Unauthorized: No user ID", { status: 401 });
     }
@@ -41,7 +41,7 @@ const requireAdminAuth = createMiddleware({ type: "function" }).server(
 
     return next({
       context: {
-        ...context,
+        ...((context ?? {}) as Record<string, unknown>),
         userId, // Already verified to be admin
       },
     });
@@ -60,7 +60,7 @@ export const adminAuthMiddleware = [
  */
 const requireAdvisorAuth = createMiddleware({ type: "function" }).server(
   async ({ context, next }) => {
-    const userId = (context as { userId?: string })?.userId;
+    const userId = ((context ?? {}) as { userId?: string }).userId;
     if (!userId) {
       throw new Response("Unauthorized: No user ID", { status: 401 });
     }
@@ -80,7 +80,7 @@ const requireAdvisorAuth = createMiddleware({ type: "function" }).server(
 
     return next({
       context: {
-        ...context,
+        ...((context ?? {}) as Record<string, unknown>),
         userId,
       },
     });
