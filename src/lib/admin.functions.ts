@@ -126,10 +126,10 @@ export const adminRevokeSession = createServerFn({ method: "POST" })
 // SYSTEM SETTINGS
 // ============================================
 export const adminListSettings = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ admin_user_id: z.string().uuid() }))
   .middleware(adminAuthMiddleware)
   .inputValidator(z.object({}))
-  .handler(async () => {pabaseAdmin
+  .handler(async () => {
+    const { data: rows, error } = await supabaseAdmin
       .from("system_settings")
       .select("key, value, updated_at")
       .order("key", { ascending: true });
