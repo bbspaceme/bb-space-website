@@ -1,19 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
-
-async function assertAdmin(admin_user_id: string) {
-  const { data: roles } = await supabaseAdmin
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", admin_user_id);
-  if (!roles?.some((r) => String(r.role) === "admin")) {
-    throw new Error("Forbidden: admin role required");
-  }
-}
+import { insertAuditLog } from "@/lib/audit.functions";
+import { adminAuthMiddleware } from "@/lib/admin-middleware";
 
 // ============================================
-// AUDIT LOGS
+// AUDIT LOGS — DUP-03: Consolidated implementation
 // ============================================
 export const writeAuditLog = createServerFn({ method: "POST" })
   .inputValidator(
@@ -28,29 +20,21 @@ export const writeAuditLog = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    await supabaseAdmin.from("audit_logs").insert({
-      user_id: data.user_id ?? null,
-      username: data.username ?? null,
-      action: data.action,
-      entity: data.entity ?? null,
-      entity_id: data.entity_id ?? null,
-      metadata: data.metadata ?? {},
-      user_agent: data.user_agent ?? null,
-    });
+    await insertAuditLog(data);
     return { ok: true };
   });
 
 export const adminListAuditLogs = createServerFn({ method: "POST" })
+  .middleware(adminAuthMiddleware)
   .inputValidator(
     z.object({
-      admin_user_id: z.string().uuid(),
       limit: z.number().int().min(1).max(500).default(200),
       action: z.string().max(80).optional(),
       user_id: z.string().uuid().optional(),
     }),
   )
-  .handler(async ({ data }) => {
-    await assertAdmin(data.admin_user_id);
+  .handler(async ({ context, data }) => {
+    // DUP-04: userId is from authenticated context, not client input
     let q = supabaseAdmin
       .from("audit_logs")
       .select("id, user_id, username, action, entity, entity_id, metadata, ip_address, user_agent, created_at")
@@ -102,15 +86,14 @@ export const recordSession = createServerFn({ method: "POST" })
   });
 
 export const adminListSessions = createServerFn({ method: "POST" })
+  .middleware(adminAuthMiddleware)
   .inputValidator(
     z.object({
-      admin_user_id: z.string().uuid(),
       only_active: z.boolean().default(false),
       limit: z.number().int().min(1).max(500).default(200),
     }),
   )
   .handler(async ({ data }) => {
-    await assertAdmin(data.admin_user_id);
     let q = supabaseAdmin
       .from("user_sessions")
       .select("id, user_id, username, device_label, user_agent, ip_address, is_active, last_seen_at, created_at, ended_at")
@@ -123,14 +106,13 @@ export const adminListSessions = createServerFn({ method: "POST" })
   });
 
 export const adminRevokeSession = createServerFn({ method: "POST" })
+  .middleware(adminAuthMiddleware)
   .inputValidator(
     z.object({
-      admin_user_id: z.string().uuid(),
       session_id: z.string().uuid(),
     }),
   )
   .handler(async ({ data }) => {
-    await assertAdmin(data.admin_user_id);
     const { error } = await supabaseAdmin
       .from("user_sessions")
       .update({ is_active: false, ended_at: new Date().toISOString() })
@@ -145,9 +127,9 @@ export const adminRevokeSession = createServerFn({ method: "POST" })
 // ============================================
 export const adminListSettings = createServerFn({ method: "POST" })
   .inputValidator(z.object({ admin_user_id: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    await assertAdmin(data.admin_user_id);
-    const { data: rows, error } = await supabaseAdmin
+  .middleware(adminAuthMiddleware)
+  .inputValidator(z.object({}))
+  .handler(async () => {pabaseAdmin
       .from("system_settings")
       .select("key, value, updated_at")
       .order("key", { ascending: true });
@@ -156,22 +138,22 @@ export const adminListSettings = createServerFn({ method: "POST" })
   });
 
 export const adminUpdateSetting = createServerFn({ method: "POST" })
+  .middleware(adminAuthMiddleware)
   .inputValidator(
     z.object({
-      admin_user_id: z.string().uuid(),
       key: z.string().min(1).max(80),
       value: z.any(),
     }),
   )
-  .handler(async ({ data }) => {
-    await assertAdmin(data.admin_user_id);
+  .handler(async ({ context, data }) => {
+    const userId = (context as { userId: string }).userId;
     const { error } = await supabaseAdmin
       .from("system_settings")
       .upsert(
         {
           key: data.key,
           value: data.value,
-          updated_by: data.admin_user_id,
+          updated_by: userId,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "key" },

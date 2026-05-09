@@ -1,75 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { IDX_TICKERS, toYahoo, fromYahoo } from "@/lib/idx-tickers";
-import { getServerDatabaseClient } from "@/lib/backend-client.server";
-
-// ============================================
-// Yahoo Finance helpers
-// ============================================
-const YAHOO_HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-  Accept: "application/json",
-};
-
-/**
- * Real-time intraday quote (delay ~15min).
- * Returns map of yahooSymbol -> regularMarketPrice.
- */
-async function fetchYahooQuote(symbols: string[]): Promise<Record<string, number>> {
-  if (symbols.length === 0) return {};
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
-    symbols.join(","),
-  )}`;
-  const res = await fetch(url, { headers: YAHOO_HEADERS });
-  if (!res.ok) throw new Error(`Yahoo quote error: ${res.status}`);
-  const json = (await res.json()) as {
-    quoteResponse?: { result?: Array<{ symbol: string; regularMarketPrice?: number }> };
-  };
-  const out: Record<string, number> = {};
-  for (const q of json.quoteResponse?.result ?? []) {
-    if (typeof q.regularMarketPrice === "number") out[q.symbol] = q.regularMarketPrice;
-  }
-  return out;
-}
-
-/**
- * Historical EOD via Yahoo chart endpoint.
- * Returns array of { date: 'YYYY-MM-DD', close: number }.
- */
-async function fetchYahooChart(
-  symbol: string,
-  fromUnix: number,
-  toUnix: number,
-): Promise<Array<{ date: string; close: number }>> {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
-    symbol,
-  )}?period1=${fromUnix}&period2=${toUnix}&interval=1d`;
-  const res = await fetch(url, { headers: YAHOO_HEADERS });
-  if (!res.ok) return [];
-  const json = (await res.json()) as {
-    chart?: {
-      result?: Array<{
-        timestamp?: number[];
-        indicators?: { quote?: Array<{ close?: (number | null)[] }> };
-      }>;
-    };
-  };
-  const r = json.chart?.result?.[0];
-  const ts = r?.timestamp ?? [];
-  const cl = r?.indicators?.quote?.[0]?.close ?? [];
-  const out: Array<{ date: string; close: number }> = [];
-  for (let i = 0; i < ts.length; i++) {
-    const c = cl[i];
-    if (typeof c === "number" && Number.isFinite(c)) {
-      out.push({
-        date: new Date(ts[i] * 1000).toISOString().slice(0, 10),
-        close: c,
-      });
-    }
-  }
-  return out;
-}
+import { getAdminDatabaseClient } from "@/lib/backend-client.server";
+import { fetchYahooQuotes, fetchYahooChart } from "@/lib/yahoo-finance";
 
 // ============================================
 // CoinGecko BTC helpers (no API key needed)
@@ -84,7 +17,7 @@ async function fetchBtcSpotUsd(): Promise<number | null> {
     const j = (await res.json()) as { bitcoin?: { usd?: number } };
     return typeof j.bitcoin?.usd === "number" ? j.bitcoin.usd : null;
   } catch {
-    const yahoo = await fetchYahooQuote(["BTC-USD"]);
+    const yahoo = await fetchYahooQuotes(["BTC-USD"]);
     return yahoo["BTC-USD"] ?? null;
   }
 }
@@ -176,8 +109,9 @@ async function recomputeKbaiRange(db: ReturnType<typeof getServerDatabaseClient>
 // ============================================
 export const refreshIntradayPrices = createServerFn({ method: "POST" })
   .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
-  .handler(async ({ data }) => {
-  const db = getServerDatabaseClient(data?.access_token);
+  .handler(async () => {
+  // ARCH-01: System-level operation always uses admin client
+  const db = getAdminDatabaseClient();
   const today = new Date().toISOString().slice(0, 10);
 
   // Tickers from holdings + always include the IDX_TICKERS basket
@@ -194,7 +128,7 @@ export const refreshIntradayPrices = createServerFn({ method: "POST" })
   const quotes: Record<string, number> = {};
   for (let i = 0; i < yahooSymbols.length; i += batchSize) {
     const batch = yahooSymbols.slice(i, i + batchSize);
-    const got = await fetchYahooQuote([...batch, "^JKSE"]);
+    const got = await fetchYahooQuotes([...batch, "^JKSE"]);
     Object.assign(quotes, got);
   }
 
@@ -229,7 +163,7 @@ export const refreshIntradayPrices = createServerFn({ method: "POST" })
 
   // GOLD benchmark via Yahoo (GC=F continuous gold futures)
   let goldUpdated = false;
-  const goldQuote = await fetchYahooQuote(["GC=F"]);
+  const goldQuote = await fetchYahooQuotes(["GC=F"]);
   if (goldQuote["GC=F"]) {
     const { error } = await db
       .from("benchmark_prices")

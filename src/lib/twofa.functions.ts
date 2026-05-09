@@ -3,6 +3,7 @@ import { z } from "zod";
 import { TOTP, Secret } from "otpauth";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { hashRecoveryCode, verifyRecoveryCode } from "./crypto.functions";
 
 const ISSUER = "KBAI Terminal";
 
@@ -66,17 +67,25 @@ export const verify2faSetup = createServerFn({ method: "POST" })
     const totp = buildTotp(row.secret, email);
     const delta = totp.validate({ token: data.code, window: 1 });
     if (delta === null) throw new Error("Kode salah atau kadaluarsa.");
-    const recovery = generateRecoveryCodes();
+    
+    // SEC-03: Generate plaintext recovery codes, hash them for storage
+    const recoveryPlaintext = generateRecoveryCodes();
+    const recoveryHashed = await Promise.all(
+      recoveryPlaintext.map((code) => hashRecoveryCode(code))
+    );
+    
     await supabaseAdmin
       .from("user_2fa")
       .update({
         enabled: true,
         enrolled_at: new Date().toISOString(),
         last_used_at: new Date().toISOString(),
-        recovery_codes: recovery,
+        recovery_codes: recoveryHashed, // Store hashes, not plaintext
       })
       .eq("user_id", userId);
-    return { ok: true, recovery_codes: recovery };
+    
+    // Return plaintext codes to user (only shown once)
+    return { ok: true, recovery_codes: recoveryPlaintext };
   });
 
 export const disable2fa = createServerFn({ method: "POST" })
@@ -95,4 +104,36 @@ export const get2faStatus = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .maybeSingle();
     return { enabled: !!data?.enabled, enrolled_at: data?.enrolled_at ?? null };
+  });
+
+/**
+ * Verify recovery code during login
+ * SEC-03: Recovery codes are now stored as hashes, verified with constant-time comparison
+ * Returns true if code is valid, false otherwise
+ * Note: Does NOT mark code as used (application layer should track this separately)
+ */
+export const verifyRecoveryCodeForLogin = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ userId: z.string().uuid(), recovery_code: z.string() }))
+  .handler(async ({ data }) => {
+    const { userId, recovery_code } = data;
+    const { data: row } = await supabaseAdmin
+      .from("user_2fa")
+      .select("recovery_codes, enabled")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!row?.enabled || !row.recovery_codes || row.recovery_codes.length === 0) {
+      return { ok: false, message: "2FA tidak diaktifkan atau recovery codes tidak tersedia" };
+    }
+
+    // Check if provided code matches any stored hash
+    const hashedCodes = row.recovery_codes as string[];
+    for (const hashedCode of hashedCodes) {
+      const isValid = await verifyRecoveryCode(recovery_code, hashedCode);
+      if (isValid) {
+        return { ok: true };
+      }
+    }
+
+    return { ok: false, message: "Recovery code tidak valid" };
   });

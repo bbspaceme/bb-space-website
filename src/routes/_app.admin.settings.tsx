@@ -25,12 +25,12 @@ function AdminSettingsPage() {
   const settingsQ = useQuery({
     queryKey: ["system-settings"],
     enabled: !!auth.user?.id,
-    queryFn: () => adminListSettings({ data: { admin_user_id: auth.user!.id } }),
+    queryFn: () => adminListSettings({ data: {} }),
   });
 
   const updateMut = useMutation({
     mutationFn: (vars: { key: string; value: unknown }) =>
-      adminUpdateSetting({ data: { admin_user_id: auth.user!.id, key: vars.key, value: vars.value } }),
+      adminUpdateSetting({ data: { key: vars.key, value: vars.value } }),
     onSuccess: () => {
       toast.success("Setting tersimpan");
       qc.invalidateQueries({ queryKey: ["system-settings"] });

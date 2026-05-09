@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authedMiddleware } from "@/lib/with-auth";
+import { fetchYahooQuoteDetail } from "@/lib/yahoo-finance";
 
 // ============== World Bank API ==============
 // Indicator examples: NY.GDP.MKTP.KD.ZG (GDP growth), FP.CPI.TOTL.ZG (CPI), SL.UEM.TOTL.ZS (Unemployment)
@@ -74,42 +75,12 @@ const COMMODITIES = [
   { symbol: "ZC=F", name: "Corn" },
 ];
 
-async function fetchYahooQuote(symbol: string) {
-  // Use chart endpoint as quote endpoint requires auth in some regions
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d`;
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; KBAITerminal/1.0; +https://kbai.lovable.app)",
-      Accept: "application/json",
-    },
-  });
-  if (!res.ok) return null;
-  const j = (await res.json()) as {
-    chart?: {
-      result?: Array<{
-        meta?: { regularMarketPrice?: number; previousClose?: number; chartPreviousClose?: number; currency?: string };
-      }>;
-    };
-  };
-  const m = j.chart?.result?.[0]?.meta;
-  if (!m?.regularMarketPrice) return null;
-  const prev = m.previousClose ?? m.chartPreviousClose ?? m.regularMarketPrice;
-  const pct = prev ? ((m.regularMarketPrice - prev) / prev) * 100 : 0;
-  return {
-    price: m.regularMarketPrice,
-    previousClose: prev,
-    pctChange: pct,
-    currency: m.currency ?? "USD",
-  };
-}
-
 export const getCommodityQuotes = createServerFn({ method: "GET" })
   .middleware(authedMiddleware)
   .handler(async () => {
     const results = await Promise.all(
       COMMODITIES.map(async (c) => {
-        const q = await fetchYahooQuote(c.symbol);
+        const q = await fetchYahooQuoteDetail(c.symbol);
         return { ...c, ...(q ?? { price: null, previousClose: null, pctChange: null, currency: null }) };
       }),
     );
@@ -132,7 +103,7 @@ export const getGlobalQuotes = createServerFn({ method: "GET" })
   .handler(async () => {
     const items = await Promise.all(
       GLOBAL_SYMBOLS.map(async (s) => {
-        const q = await fetchYahooQuote(s.symbol);
+        const q = await fetchYahooQuoteDetail(s.symbol);
         return { ...s, ...(q ?? { price: null, previousClose: null, pctChange: null, currency: null }) };
       }),
     );

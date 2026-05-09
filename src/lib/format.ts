@@ -12,6 +12,3 @@ export const fmtNum = (n: number | null | undefined, digits = 2) =>
 
 export const fmtPct = (n: number | null | undefined) =>
   n == null ? "—" : `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
-
-// Convert IDX ticker (e.g. BBCA) to Yahoo symbol (BBCA.JK)
-export const toYahoo = (ticker: string) => `${ticker.toUpperCase().replace(/\.JK$/, "")}.JK`;

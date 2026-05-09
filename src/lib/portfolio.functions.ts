@@ -1,61 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
-import { getServerDatabaseClient } from "@/lib/backend-client.server";
-
-async function logAudit(
-  action: string,
-  user_id: string | null,
-  metadata: Record<string, unknown> = {},
-  entity?: string,
-  entity_id?: string,
-) {
-  try {
-    await supabaseAdmin.from("audit_logs").insert({
-      action,
-      user_id,
-      entity: entity ?? null,
-      entity_id: entity_id ?? null,
-      metadata: metadata as never,
-    });
-  } catch {
-    /* swallow audit failures */
-  }
-}
-
-// ============================================
-// Yahoo Finance EOD price refresh
-// ============================================
-async function fetchYahooQuote(symbols: string[]): Promise<Record<string, number>> {
-  if (symbols.length === 0) return {};
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
-    symbols.join(","),
-  )}`;
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-      Accept: "application/json",
-    },
-  });
-  if (!res.ok) throw new Error(`Yahoo Finance error: ${res.status}`);
-  const json = (await res.json()) as {
-    quoteResponse?: { result?: Array<{ symbol: string; regularMarketPrice?: number }> };
-  };
-  const out: Record<string, number> = {};
-  for (const q of json.quoteResponse?.result ?? []) {
-    if (typeof q.regularMarketPrice === "number") out[q.symbol] = q.regularMarketPrice;
-  }
-  return out;
-}
-
-const toYahoo = (t: string) => `${t.toUpperCase().replace(/\.JK$/, "")}.JK`;
-const fromYahoo = (s: string) => s.replace(/\.JK$/, "");
+import { getAdminDatabaseClient } from "@/lib/backend-client.server";
+import { fetchYahooQuotes } from "@/lib/yahoo-finance";
+import { toYahoo, fromYahoo } from "@/lib/idx-tickers";
+import { insertAuditLog } from "@/lib/audit.functions";
+import { adminAuthMiddleware } from "@/lib/admin-middleware";
 
 export const refreshEodPrices = createServerFn({ method: "POST" })
   .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
-  .handler(async ({ data }) => {
-  const db = getServerDatabaseClient(data?.access_token);
+  .handler(async () => {
+  // ARCH-01: System-level operation always uses admin client
+  const db = getAdminDatabaseClient();
   const today = new Date().toISOString().slice(0, 10);
 
   // 1. Distinct tickers from holdings
@@ -74,7 +30,7 @@ export const refreshEodPrices = createServerFn({ method: "POST" })
   const yahooSymbols = tickers.map(toYahoo);
   const benchmarkSymbols = ["^JKSE"]; // IHSG
   const allSymbols = [...yahooSymbols, ...benchmarkSymbols];
-  const quotes = await fetchYahooQuote(allSymbols);
+  const quotes = await fetchYahooQuotes(allSymbols);
 
   // 3. Upsert eod_prices
   const eodRows = Object.entries(quotes)
@@ -106,7 +62,10 @@ export const refreshEodPrices = createServerFn({ method: "POST" })
   // 4. Recompute snapshots + KBAI
   await recomputeSnapshotsAndKbai(db, today);
 
-  await logAudit("market.refresh_prices", null, { count: eodRows.length, today });
+  await insertAuditLog({
+    action: "market.refresh_prices",
+    metadata: { count: eodRows.length, today },
+  });
 
   return { updated: eodRows.length, tickers: eodRows.map((r) => r.ticker) };
 });
@@ -338,13 +297,13 @@ export const submitTransaction = createServerFn({ method: "POST" })
     await supabaseAdmin.from("holdings").delete().eq("user_id", data.user_id);
     if (rows.length > 0) await supabaseAdmin.from("holdings").insert(rows);
 
-    await logAudit(
-      `tx.${data.side.toLowerCase()}`,
-      data.user_id,
-      { ticker: data.ticker, lot: data.lot, price: data.price, notional },
-      "transaction",
-      tx.id,
-    );
+    await insertAuditLog({
+      action: `tx.${data.side.toLowerCase()}`,
+      user_id: data.user_id,
+      metadata: { ticker: data.ticker, lot: data.lot, price: data.price, notional },
+      entity: "transaction",
+      entity_id: tx.id,
+    });
 
     return { ok: true, balance: newBalance };
   });
@@ -394,9 +353,9 @@ export const adjustCash = createServerFn({ method: "POST" })
 // Admin: create user account
 // ============================================
 export const adminCreateUser = createServerFn({ method: "POST" })
+  .middleware(adminAuthMiddleware)
   .inputValidator(
     z.object({
-      admin_user_id: z.string().uuid(),
       email: z.string().email(),
       password: z.string().min(6),
       username: z.string().min(2).max(50).regex(/^[a-zA-Z0-9_]+$/),
@@ -404,15 +363,7 @@ export const adminCreateUser = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    // Verify caller is admin
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.admin_user_id);
-    if (!roles?.some((r) => r.role === "admin")) {
-      throw new Error("Forbidden: admin role required");
-    }
-
+    // DUP-04: userId is verified from middleware, not client input
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
@@ -429,14 +380,10 @@ export const adminCreateUser = createServerFn({ method: "POST" })
 // audit wrapper note: adminCreateUser/Update/Delete/GrantRole logged via writeAuditLog client-side after success
 
 export const adminListUsers = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ admin_user_id: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.admin_user_id);
-    if (!roles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
-
+  .middleware(adminAuthMiddleware)
+  .inputValidator(z.object({}))
+  .handler(async () => {
+    // DUP-04: Admin role verified by middleware
     const [{ data: profiles, error: profileErr }, { data: allRoles, error: rolesErr }, authUsers] =
       await Promise.all([
         supabaseAdmin.from("profiles").select("id, username, display_name, created_at"),
@@ -464,21 +411,15 @@ export const adminListUsers = createServerFn({ method: "POST" })
 // Admin: promote user to admin
 // ============================================
 export const adminGrantRole = createServerFn({ method: "POST" })
+  .middleware(adminAuthMiddleware)
   .inputValidator(
     z.object({
-      admin_user_id: z.string().uuid(),
       target_user_id: z.string().uuid(),
       role: z.enum(["admin", "user", "advisor"]),
     }),
   )
   .handler(async ({ data }) => {
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.admin_user_id);
-    if (!roles?.some((r) => r.role === "admin")) {
-      throw new Error("Forbidden");
-    }
+    // DUP-04: Admin verified by middleware
     await supabaseAdmin
       .from("user_roles")
       .upsert(
@@ -489,9 +430,9 @@ export const adminGrantRole = createServerFn({ method: "POST" })
   });
 
 export const adminUpdateUser = createServerFn({ method: "POST" })
+  .middleware(adminAuthMiddleware)
   .inputValidator(
     z.object({
-      admin_user_id: z.string().uuid(),
       target_user_id: z.string().uuid(),
       email: z.string().email().optional(),
       password: z.string().min(6).optional(),
@@ -500,12 +441,7 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.admin_user_id);
-    if (!roles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
-
+    // DUP-04: Admin verified by middleware
     if (data.email || data.password) {
       const { error } = await supabaseAdmin.auth.admin.updateUserById(data.target_user_id, {
         ...(data.email ? { email: data.email } : {}),
@@ -533,13 +469,10 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
 // Admin: delete user
 // ============================================
 export const adminDeleteUser = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ admin_user_id: z.string().uuid(), target_user_id: z.string().uuid() }))
+  .middleware(adminAuthMiddleware)
+  .inputValidator(z.object({ target_user_id: z.string().uuid() }))
   .handler(async ({ data }) => {
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.admin_user_id);
-    if (!roles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
+    // DUP-04: Admin verified by middleware
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.target_user_id);
     if (error) throw new Error(error.message);
     return { ok: true };
