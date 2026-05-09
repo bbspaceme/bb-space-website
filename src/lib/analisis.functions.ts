@@ -1,8 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { callLovableAi } from "@/lib/ai-client";
 import { authedMiddleware } from "@/lib/with-auth";
-
-const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 async function callAiTool<T>(opts: {
   system: string;
@@ -12,39 +11,27 @@ async function callAiTool<T>(opts: {
   parameters: Record<string, unknown>;
   model?: string;
 }): Promise<T> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
-  const res = await fetch(LOVABLE_AI_URL, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: opts.model ?? "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: opts.system },
-        { role: "user", content: opts.user },
-      ],
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: opts.toolName,
-            description: opts.description,
-            parameters: opts.parameters,
-          },
-        },
-      ],
-      tool_choice: { type: "function", function: { name: opts.toolName } },
-    }),
-  });
-  if (!res.ok) {
-    if (res.status === 429) throw new Error("Rate limit. Coba lagi sebentar.");
-    if (res.status === 402) throw new Error("Kuota AI habis. Top-up workspace credits.");
-    const t = await res.text();
-    throw new Error(`AI error: ${res.status} ${t.slice(0, 200)}`);
-  }
-  const json = (await res.json()) as {
+  const json = await callLovableAi<{
     choices?: { message?: { tool_calls?: { function?: { arguments?: string } }[] } }[];
-  };
+  }>({
+    model: opts.model ?? "google/gemini-2.5-flash",
+    messages: [
+      { role: "system", content: opts.system },
+      { role: "user", content: opts.user },
+    ],
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: opts.toolName,
+          description: opts.description,
+          parameters: opts.parameters,
+        },
+      },
+    ],
+    tool_choice: { type: "function", function: { name: opts.toolName } },
+  });
+
   const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
   if (!args) throw new Error("AI tidak mengembalikan output terstruktur.");
   return JSON.parse(args) as T;

@@ -7,18 +7,7 @@ import { createMiddleware } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-// Client-side: attach auth token
-export const attachSupabaseAuth = createMiddleware({ type: "function" }).client(
-  async ({ next }) => {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    return next({
-      sendContext: {},
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-  },
-);
+import { attachSupabaseAuth } from "@/lib/with-auth";
 
 // Server-side: validate admin role from authenticated user
 const requireAdminAuth = createMiddleware({ type: "function" }).server(

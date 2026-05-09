@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+# Ensure local auto-sync is configured and no accidental sensitive files are committed.
+# This hook is intentionally simple to avoid creating commit loops.
+
+if [ -f "./auto-sync.sh" ]; then
+  echo "🔄 Running auto-sync before commit..."
+  ./auto-sync.sh
+fi
+
+echo "✅ pre-commit hook complete"

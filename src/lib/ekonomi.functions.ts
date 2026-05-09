@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { callLovableAi } from "@/lib/ai-client";
 import { authedMiddleware } from "@/lib/with-auth";
 import { fetchYahooQuoteDetail } from "@/lib/yahoo-finance";
 
@@ -117,8 +118,6 @@ export const getGlobalQuotes = createServerFn({ method: "GET" })
   });
 
 // ============== AI Daily Macro Brief ==============
-const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
 export const generateMacroBrief = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator(
@@ -127,31 +126,16 @@ export const generateMacroBrief = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY tidak terkonfigurasi");
-    const res = await fetch(LOVABLE_AI_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content:
-              "Anda adalah Chief Economist KBAI Terminal. Susun briefing makroekonomi Indonesia 1 halaman: kondisi global, dampak ke IDR/IHSG, sektor terpengaruh, dan 3 watchpoint minggu ini. Gunakan bahasa Indonesia, lugas, terstruktur dengan heading. Selalu tutup dengan disclaimer 'Bukan rekomendasi investasi'.",
-          },
-          { role: "user", content: data.summary_data },
-        ],
-      }),
+    const j = await callLovableAi<{ choices?: { message?: { content?: string } }[] }>({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        {
+          role: "system",
+          content:
+            "Anda adalah Chief Economist KBAI Terminal. Susun briefing makroekonomi Indonesia 1 halaman: kondisi global, dampak ke IDR/IHSG, sektor terpengaruh, dan 3 watchpoint minggu ini. Gunakan bahasa Indonesia, lugas, terstruktur dengan heading. Selalu tutup dengan disclaimer 'Bukan rekomendasi investasi'.",
+        },
+        { role: "user", content: data.summary_data },
+      ],
     });
-    if (!res.ok) {
-      if (res.status === 429) throw new Error("Rate limit AI. Coba lagi sebentar.");
-      if (res.status === 402) throw new Error("Kuota AI habis. Top-up workspace credits.");
-      throw new Error(`AI error ${res.status}`);
-    }
-    const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     return { brief: j.choices?.[0]?.message?.content ?? "" };
   });

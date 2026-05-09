@@ -707,7 +707,6 @@ function TransactionDialog({
     try {
       await submitTransaction({
         data: {
-          user_id: userId,
           ticker: tk,
           side,
           lot: lotN,
@@ -892,7 +891,13 @@ function CashDialog({
     onClose();
   };
 
-  const amtN = parseFloat(amount.replace(/[,.]/g, "")) || 0;
+  const parseIDR = (value: string): number => {
+    const cleaned = value.replace(/[^0-9]/g, "");
+    const parsed = parseInt(cleaned, 10);
+    return Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
+  };
+
+  const amtN = parseIDR(amount);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -908,7 +913,6 @@ function CashDialog({
     try {
       await adjustCash({
         data: {
-          user_id: userId,
           movement_type: type,
           amount: amtN,
           occurred_at: date,

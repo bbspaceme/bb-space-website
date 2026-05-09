@@ -1,11 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
+import { adminAuthMiddleware } from "@/lib/admin-middleware";
+import { authedMiddleware } from "@/lib/with-auth";
 import { getAdminDatabaseClient } from "@/lib/backend-client.server";
 import { fetchYahooQuotes } from "@/lib/yahoo-finance";
 import { toYahoo, fromYahoo } from "@/lib/idx-tickers";
 import { insertAuditLog } from "@/lib/audit.functions";
-import { adminAuthMiddleware } from "@/lib/admin-middleware";
 
 export type TxnInput = {
   ticker: string;
@@ -55,6 +56,7 @@ async function atomicAdjustCash(userId: string, delta: number): Promise<number> 
 }
 
 export const refreshEodPrices = createServerFn({ method: "POST" })
+  .middleware(adminAuthMiddleware)
   .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
   .handler(async () => {
     // ARCH-01: System-level operation always uses admin client
@@ -184,22 +186,26 @@ async function recomputeSnapshotsAndKbai(
 // Recompute holdings for a user (server-side, bypasses RLS)
 // ============================================
 export const recomputeHoldings = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ user_id: z.string().uuid() }))
-  .handler(async ({ data }) => {
+  .middleware(authedMiddleware)
+  .inputValidator(z.object({}).optional())
+  .handler(async ({ context }) => {
+    const userId = (context as { userId?: string }).userId;
+    if (!userId) throw new Error("Unauthorized");
+
     const { data: txns, error } = await supabaseAdmin
       .from("transactions")
       .select("ticker, side, lot, price, transacted_at, created_at")
-      .eq("user_id", data.user_id)
+      .eq("user_id", userId)
       .order("transacted_at", { ascending: true })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
 
     const rows = computeHoldingsFromTxns(txns ?? []).map((r) => ({
       ...r,
-      user_id: data.user_id,
+      user_id: userId,
     }));
 
-    await supabaseAdmin.from("holdings").delete().eq("user_id", data.user_id);
+    await supabaseAdmin.from("holdings").delete().eq("user_id", userId);
     if (rows.length > 0) await supabaseAdmin.from("holdings").insert(rows);
 
     return { count: rows.length };
@@ -209,9 +215,9 @@ export const recomputeHoldings = createServerFn({ method: "POST" })
 // Submit transaction (BUY/SELL) — validates holdings & cash, posts cash movement
 // ============================================
 export const submitTransaction = createServerFn({ method: "POST" })
+  .middleware(authedMiddleware)
   .inputValidator(
     z.object({
-      user_id: z.string().uuid(),
       ticker: z
         .string()
         .min(1)
@@ -223,7 +229,10 @@ export const submitTransaction = createServerFn({ method: "POST" })
       transacted_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     }),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ context, data }) => {
+    const userId = (context as { userId?: string }).userId;
+    if (!userId) throw new Error("Unauthorized");
+
     const today = new Date().toISOString().slice(0, 10);
     if (data.transacted_at > today) {
       throw new Error("Tanggal tidak boleh lebih dari hari ini");
@@ -234,7 +243,7 @@ export const submitTransaction = createServerFn({ method: "POST" })
       const { data: h } = await supabaseAdmin
         .from("holdings")
         .select("total_lot")
-        .eq("user_id", data.user_id)
+        .eq("user_id", userId)
         .eq("ticker", data.ticker)
         .maybeSingle();
       const owned = h?.total_lot ?? 0;
@@ -249,7 +258,7 @@ export const submitTransaction = createServerFn({ method: "POST" })
     const { data: tx, error: txErr } = await supabaseAdmin
       .from("transactions")
       .insert({
-        user_id: data.user_id,
+        user_id: userId,
         ticker: data.ticker,
         side: data.side,
         lot: data.lot,
@@ -263,33 +272,33 @@ export const submitTransaction = createServerFn({ method: "POST" })
     // Cash movement: BUY → cash turun, SELL → cash naik
     const delta = data.side === "BUY" ? -notional : notional;
     await supabaseAdmin.from("cash_movements").insert({
-      user_id: data.user_id,
+      user_id: userId,
       movement_type: data.side,
       amount: delta,
       ref_transaction_id: tx.id,
       occurred_at: data.transacted_at,
     });
 
-    const newBalance = await atomicAdjustCash(data.user_id, delta);
+    const newBalance = await atomicAdjustCash(userId, delta);
 
     // Recompute holdings inline (reuse logic)
     const { data: txns } = await supabaseAdmin
       .from("transactions")
       .select("ticker, side, lot, price, transacted_at, created_at")
-      .eq("user_id", data.user_id)
+      .eq("user_id", userId)
       .order("transacted_at", { ascending: true })
       .order("created_at", { ascending: true });
 
     const rows = computeHoldingsFromTxns(txns ?? []).map((r) => ({
       ...r,
-      user_id: data.user_id,
+      user_id: userId,
     }));
-    await supabaseAdmin.from("holdings").delete().eq("user_id", data.user_id);
+    await supabaseAdmin.from("holdings").delete().eq("user_id", userId);
     if (rows.length > 0) await supabaseAdmin.from("holdings").insert(rows);
 
     await insertAuditLog({
       action: `tx.${data.side.toLowerCase()}`,
-      user_id: data.user_id,
+      user_id: userId,
       metadata: { ticker: data.ticker, lot: data.lot, price: data.price, notional },
       entity: "transaction",
       entity_id: tx.id,
@@ -302,34 +311,37 @@ export const submitTransaction = createServerFn({ method: "POST" })
 // Cash deposit / withdraw / adjust (manual)
 // ============================================
 export const adjustCash = createServerFn({ method: "POST" })
+  .middleware(authedMiddleware)
   .inputValidator(
     z.object({
-      user_id: z.string().uuid(),
       movement_type: z.enum(["DEPOSIT", "WITHDRAW", "ADJUST"]),
       amount: z.number().positive(),
       occurred_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       note: z.string().max(255).optional(),
     }),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ context, data }) => {
+    const userId = (context as { userId?: string }).userId;
+    if (!userId) throw new Error("Unauthorized");
+
     const delta = data.movement_type === "WITHDRAW" ? -data.amount : data.amount;
     const { data: cur } = await supabaseAdmin
       .from("cash_balances")
       .select("balance")
-      .eq("user_id", data.user_id)
+      .eq("user_id", userId)
       .maybeSingle();
     const curBal = Number(cur?.balance ?? 0);
     if (data.movement_type === "WITHDRAW" && curBal + delta < 0) {
       throw new Error(`Saldo tidak cukup. Saldo saat ini: ${curBal.toLocaleString("id-ID")}`);
     }
     await supabaseAdmin.from("cash_movements").insert({
-      user_id: data.user_id,
+      user_id: userId,
       movement_type: data.movement_type,
       amount: delta,
       occurred_at: data.occurred_at,
       note: data.note ?? null,
     });
-    const newBalance = await atomicAdjustCash(data.user_id, delta);
+    const newBalance = await atomicAdjustCash(userId, delta);
     return { balance: newBalance };
   });
 
@@ -505,8 +517,18 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
 // Bootstrap: promote first user to admin (only if no admin exists)
 // ============================================
 export const bootstrapAdmin = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ user_id: z.string().uuid() }))
+  .inputValidator(
+    z.object({
+      user_id: z.string().uuid(),
+      bootstrap_secret: z.string().min(32),
+    }),
+  )
   .handler(async ({ data }) => {
+    const expected = process.env.BOOTSTRAP_SECRET;
+    if (!expected || data.bootstrap_secret !== expected) {
+      throw new Response("Forbidden", { status: 403 });
+    }
+
     const { data: existing } = await supabaseAdmin
       .from("user_roles")
       .select("user_id")

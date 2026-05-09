@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
+import { authedMiddleware } from "@/lib/with-auth";
 import { insertAuditLog } from "@/lib/audit.functions";
 import { adminAuthMiddleware } from "@/lib/admin-middleware";
 
@@ -8,9 +9,9 @@ import { adminAuthMiddleware } from "@/lib/admin-middleware";
 // AUDIT LOGS — DUP-03: Consolidated implementation
 // ============================================
 export const writeAuditLog = createServerFn({ method: "POST" })
+  .middleware(authedMiddleware)
   .inputValidator(
     z.object({
-      user_id: z.string().uuid().optional(),
       username: z.string().max(100).optional(),
       action: z.string().min(1).max(80),
       entity: z.string().max(80).optional(),
@@ -19,8 +20,13 @@ export const writeAuditLog = createServerFn({ method: "POST" })
       user_agent: z.string().max(500).optional(),
     }),
   )
-  .handler(async ({ data }) => {
-    await insertAuditLog(data);
+  .handler(async ({ context, data }) => {
+    const userId = (context as { userId?: string }).userId;
+    if (!userId) throw new Error("Unauthorized");
+    await insertAuditLog({
+      ...data,
+      user_id: userId,
+    });
     return { ok: true };
   });
 

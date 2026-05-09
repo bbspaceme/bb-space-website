@@ -23,6 +23,9 @@
     "deploy": "vercel --prod",
     "deploy:preview": "vercel",
     "deploy:wrangler": "wrangler publish",
+    "sync": "./auto-sync.sh",
+    "watch:sync": "./watch-sync.sh",
+    "install:git-hooks": "git config core.hooksPath .githooks",
     "format": "prettier --write ."
   },
   "dependencies": {

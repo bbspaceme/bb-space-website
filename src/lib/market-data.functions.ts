@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { adminAuthMiddleware } from "@/lib/admin-middleware";
 import { IDX_TICKERS, toYahoo, fromYahoo } from "@/lib/idx-tickers";
 import { getAdminDatabaseClient } from "@/lib/backend-client.server";
 import { fetchYahooQuotes, fetchYahooChart } from "@/lib/yahoo-finance";
@@ -136,6 +137,7 @@ async function recomputeKbaiRange(
 // Updates eod_prices for TODAY using regularMarketPrice
 // ============================================
 export const refreshIntradayPrices = createServerFn({ method: "POST" })
+  .middleware(adminAuthMiddleware)
   .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
   .handler(async () => {
     // ARCH-01: System-level operation always uses admin client
@@ -221,6 +223,7 @@ export const refreshIntradayPrices = createServerFn({ method: "POST" })
 // for all IDX_TICKERS + IHSG
 // ============================================
 export const backfillEodFromApril = createServerFn({ method: "POST" })
+  .middleware(adminAuthMiddleware)
   .inputValidator(
     z.object({
       from_date: z.string().min(8), // 'YYYY-MM-DD'
@@ -333,6 +336,7 @@ export const backfillEodFromApril = createServerFn({ method: "POST" })
 // Admin-only — RLS enforces this on the DB layer.
 // ============================================
 export const deleteAllMarketData = createServerFn({ method: "POST" })
+  .middleware(adminAuthMiddleware)
   .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
   .handler(async ({ data }) => {
     const db = getAdminDatabaseClient();

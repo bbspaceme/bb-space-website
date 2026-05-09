@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { callLovableAi } from "@/lib/ai-client";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { advisorAuthMiddleware } from "@/lib/admin-middleware";
 
@@ -98,9 +99,6 @@ export const generateAiInsight = createServerFn({ method: "POST" })
     };
 
     // Call Lovable AI
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
-
     const systemPrompt = `Kamu adalah analis investasi senior untuk komunitas KBAI (Indonesian Stock Exchange).
 Berikan insight strategis dalam Bahasa Indonesia, padat dan actionable. Output dalam markdown dengan struktur:
 
@@ -121,25 +119,13 @@ Berikan insight strategis dalam Bahasa Indonesia, padat dan actionable. Output d
 
     const userPrompt = `Berikut data internal komunitas (JSON):\n\n${JSON.stringify(payload, null, 2)}`;
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
+    const aiJson = await callLovableAi<{ choices?: { message?: { content?: string } }[] }>({
+      model: "google/gemini-2.5-pro",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
     });
-
-    if (!aiRes.ok) {
-      if (aiRes.status === 429) throw new Error("Rate limit. Coba lagi sebentar.");
-      if (aiRes.status === 402) throw new Error("Kuota AI habis. Top-up workspace credits.");
-      const t = await aiRes.text();
-      throw new Error(`AI error: ${aiRes.status} ${t.slice(0, 200)}`);
-    }
-    const aiJson = (await aiRes.json()) as { choices?: { message?: { content?: string } }[] };
     const content = aiJson.choices?.[0]?.message?.content ?? "(no response)";
     return { content, generated_at: new Date().toISOString(), users_analyzed: usersSummary.length };
   });

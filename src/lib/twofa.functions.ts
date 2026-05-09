@@ -3,6 +3,7 @@ import { z } from "zod";
 import { TOTP, Secret } from "otpauth";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { insertAuditLog } from "./audit.functions";
 import { hashRecoveryCode, verifyRecoveryCode } from "./crypto.functions";
 
 const ISSUER = "KBAI Terminal";
@@ -116,6 +117,22 @@ export const verifyRecoveryCodeForLogin = createServerFn({ method: "POST" })
   .inputValidator(z.object({ userId: z.string().uuid(), recovery_code: z.string() }))
   .handler(async ({ data }) => {
     const { userId, recovery_code } = data;
+    const rateLimitWindow = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count, error: countError } = await supabaseAdmin
+      .from("audit_logs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("action", "auth.recovery_code_fail")
+      .gte("created_at", rateLimitWindow);
+
+    if (countError) {
+      console.warn("Failed to read 2FA rate limit history:", countError.message);
+    }
+
+    if ((count ?? 0) >= 5) {
+      throw new Error("Terlalu banyak percobaan gagal. Coba lagi dalam 1 jam.");
+    }
+
     const { data: row } = await supabaseAdmin
       .from("user_2fa")
       .select("recovery_codes, enabled")
@@ -126,7 +143,6 @@ export const verifyRecoveryCodeForLogin = createServerFn({ method: "POST" })
       return { ok: false, message: "2FA tidak diaktifkan atau recovery codes tidak tersedia" };
     }
 
-    // Check if provided code matches any stored hash
     const hashedCodes = row.recovery_codes as string[];
     let matchedIndex = -1;
 
@@ -139,6 +155,11 @@ export const verifyRecoveryCodeForLogin = createServerFn({ method: "POST" })
     }
 
     if (matchedIndex === -1) {
+      await insertAuditLog({
+        user_id: userId,
+        action: "auth.recovery_code_fail",
+        metadata: { reason: "invalid recovery code" },
+      });
       return { ok: false, message: "Recovery code tidak valid" };
     }
 
