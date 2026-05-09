@@ -8,29 +8,9 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 export default defineConfig({
   plugins: [
     TanStackRouterVite({ autoCodeSplitting: true }),
-    tanstackStart({ target: "node" }), // ← Node.js target for Vercel, not Cloudflare
+    tanstackStart({ target: "node" }),
     react(),
     tailwindcss(),
     tsconfigPaths(),
   ],
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          // Only apply manualChunks for client build, not SSR
-          if (id.includes("node_modules")) {
-            if (id.includes("react") || id.includes("react-dom")) {
-              return "vendor";
-            }
-            if (id.includes("@tanstack/react-router")) {
-              return "router";
-            }
-            if (id.includes("@radix-ui")) {
-              return "ui";
-            }
-          }
-        },
-      },
-    },
-  },
 });
