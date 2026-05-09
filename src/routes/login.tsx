@@ -45,14 +45,12 @@ function LoginPage() {
           await Promise.all([
             recordSession({
               data: {
-                user_id: data.user.id,
                 username: username.trim(),
                 user_agent: navigator.userAgent,
               },
             }).catch(() => null),
             writeAuditLog({
               data: {
-                user_id: data.user.id,
                 username: username.trim(),
                 action: "auth.login",
                 user_agent: navigator.userAgent,
@@ -64,8 +62,7 @@ function LoginPage() {
         /* swallow */
       }
       toast.success("Berhasil masuk");
-      // Wait briefly for auth state to propagate
-      window.location.href = "/community";
+      navigate({ to: "/community" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Login gagal";
       toast.error(msg);

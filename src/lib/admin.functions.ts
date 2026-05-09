@@ -59,28 +59,30 @@ export const adminListAuditLogs = createServerFn({ method: "POST" })
 // SESSIONS / DEVICE TRACKING
 // ============================================
 export const recordSession = createServerFn({ method: "POST" })
+  .middleware(authedMiddleware)
   .inputValidator(
     z.object({
-      user_id: z.string().uuid(),
       username: z.string().max(100).optional(),
       device_label: z.string().max(120).optional(),
       user_agent: z.string().max(500).optional(),
     }),
   )
-  .handler(async ({ data }) => {
-    // End previous active sessions for the same user_agent (one device = one active row)
+  .handler(async ({ context, data }) => {
+    const userId = (context as { userId?: string }).userId;
+    if (!userId) throw new Error("Unauthorized");
+
     if (data.user_agent) {
       await supabaseAdmin
         .from("user_sessions")
         .update({ is_active: false, ended_at: new Date().toISOString() })
-        .eq("user_id", data.user_id)
+        .eq("user_id", userId)
         .eq("user_agent", data.user_agent)
         .eq("is_active", true);
     }
     const { data: row, error } = await supabaseAdmin
       .from("user_sessions")
       .insert({
-        user_id: data.user_id,
+        user_id: userId,
         username: data.username ?? null,
         device_label: data.device_label ?? null,
         user_agent: data.user_agent ?? null,
