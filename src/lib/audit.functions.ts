@@ -28,7 +28,7 @@ export async function insertAuditLog(input: AuditLogInput): Promise<void> {
       username: input.username ?? null,
       entity: input.entity ?? null,
       entity_id: input.entity_id ?? null,
-      metadata: input.metadata ?? {},
+      metadata: (input.metadata ?? {}) as never,
       user_agent: input.user_agent ?? null,
     });
   } catch (error) {

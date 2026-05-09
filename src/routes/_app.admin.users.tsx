@@ -37,14 +37,14 @@ function AdminUsersPage() {
     queryKey: ["admin-users"],
     enabled: !!auth.user?.id,
     queryFn: async () => {
-      return adminListUsers({ data: { admin_user_id: auth.user!.id } });
+      return adminListUsers({ data: {} });
     },
   });
 
   const grantMut = useMutation({
     mutationFn: (vars: { target_user_id: string; role: "admin" | "user" | "advisor" }) =>
       adminGrantRole({
-        data: { admin_user_id: auth.user!.id, target_user_id: vars.target_user_id, role: vars.role },
+        data: { target_user_id: vars.target_user_id, role: vars.role },
       }),
     onSuccess: () => {
       toast.success("Role updated");
@@ -55,7 +55,7 @@ function AdminUsersPage() {
 
   const deleteMut = useMutation({
     mutationFn: (target_user_id: string) =>
-      adminDeleteUser({ data: { admin_user_id: auth.user!.id, target_user_id } }),
+      adminDeleteUser({ data: { target_user_id } }),
     onSuccess: () => {
       toast.success("User deleted");
       qc.invalidateQueries({ queryKey: ["admin-users"] });
@@ -189,7 +189,6 @@ function CreateUserDialog({ adminId, onDone }: { adminId: string; onDone: () => 
     try {
       await adminCreateUser({
         data: {
-          admin_user_id: adminId,
           email: email.trim(),
           password,
           username: username.trim(),
@@ -277,7 +276,6 @@ function EditUserDialog({
     try {
       await adminUpdateUser({
         data: {
-          admin_user_id: adminId,
           target_user_id: user.id,
           email: email.trim(),
           username: username.trim(),
