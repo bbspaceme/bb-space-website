@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+// @ts-expect-error - dist/server/index.js is generated at build time
 import serverEntry from "../dist/server/index.js";
 
 function getRequestUrl(req: IncomingMessage) {
@@ -24,10 +25,20 @@ function setResponseHeaders(res: ServerResponse, response: Response) {
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   try {
+    // Buffer the request body for non-GET/HEAD requests
+    let body: BodyInit | undefined = undefined;
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      body = Buffer.concat(chunks);
+    }
+
     const request = new Request(getRequestUrl(req), {
       method: req.method,
       headers: req.headers as HeadersInit,
-      body: req.method === "GET" || req.method === "HEAD" ? undefined : req,
+      body: body,
     });
 
     const response = await serverEntry.fetch(request, undefined, undefined);
