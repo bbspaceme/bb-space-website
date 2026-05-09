@@ -46,19 +46,35 @@ function BroadcastAdminPage() {
 
   const saveMut = useMutation({
     mutationFn: async () => {
-      // Replace strategy: delete all old, insert new
-      const { error: delErr } = await supabase.from("broadcasts").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-      if (delErr) throw delErr;
-      const { error } = await supabase.from("broadcasts").insert({
-        title: title.trim(),
-        body: body.trim(),
-        posted_by: auth.user!.id,
-        posted_by_username: auth.username ?? auth.user!.email ?? "advisor",
-      });
-      if (error) throw error;
+      const trimmedTitle = title.trim();
+      const trimmedBody = body.trim();
+      if (!trimmedTitle) throw new Error("Judul broadcast tidak boleh kosong");
+      if (trimmedBody.length < 10) throw new Error("Pesan broadcast minimal 10 karakter");
+
+      if (latestQ.data?.id) {
+        const { error } = await supabase
+          .from("broadcasts")
+          .update({
+            title: trimmedTitle,
+            body: trimmedBody,
+            posted_by: auth.user!.id,
+            posted_by_username: auth.username ?? auth.user!.email ?? "advisor",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", latestQ.data.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("broadcasts").insert({
+          title: trimmedTitle,
+          body: trimmedBody,
+          posted_by: auth.user!.id,
+          posted_by_username: auth.username ?? auth.user!.email ?? "advisor",
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
-      toast.success("Broadcast terkirim ke semua user");
+      toast.success("Broadcast tersimpan");
       qc.invalidateQueries({ queryKey: ["latest-broadcast"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal"),
@@ -66,7 +82,11 @@ function BroadcastAdminPage() {
 
   const deleteMut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("broadcasts").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (!latestQ.data?.id) throw new Error("Tidak ada broadcast untuk dihapus");
+      const { error } = await supabase
+        .from("broadcasts")
+        .delete()
+        .eq("id", latestQ.data.id);
       if (error) throw error;
     },
     onSuccess: () => {

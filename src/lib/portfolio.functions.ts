@@ -7,6 +7,53 @@ import { toYahoo, fromYahoo } from "@/lib/idx-tickers";
 import { insertAuditLog } from "@/lib/audit.functions";
 import { adminAuthMiddleware } from "@/lib/admin-middleware";
 
+export type TxnInput = {
+  ticker: string;
+  side: "BUY" | "SELL";
+  lot: number;
+  price: string | number;
+  transacted_at?: string;
+  created_at?: string;
+};
+
+export function computeHoldingsFromTxns(txns: TxnInput[]) {
+  const map = new Map<string, { lot: number; cost: number; avg: number }>();
+
+  for (const t of txns) {
+    const cur = map.get(t.ticker) ?? { lot: 0, cost: 0, avg: 0 };
+    const price = Number(t.price);
+
+    if (t.side === "BUY") {
+      cur.lot += t.lot;
+      cur.cost += t.lot * price;
+      cur.avg = cur.lot > 0 ? cur.cost / cur.lot : 0;
+    } else {
+      const sold = Math.min(t.lot, cur.lot);
+      cur.lot -= sold;
+      cur.cost -= sold * cur.avg;
+      if (cur.lot === 0) cur.cost = 0;
+    }
+    map.set(t.ticker, cur);
+  }
+
+  return Array.from(map.entries())
+    .filter(([, v]) => v.lot > 0)
+    .map(([ticker, v]) => ({
+      ticker,
+      total_lot: v.lot,
+      avg_price: Number(v.avg.toFixed(4)),
+    }));
+}
+
+async function atomicAdjustCash(userId: string, delta: number): Promise<number> {
+  const { data, error } = await supabaseAdmin.rpc("adjust_cash_balance", {
+    p_user_id: userId,
+    p_delta: delta,
+  });
+  if (error) throw new Error(`Cash balance update gagal: ${error.message}`);
+  return Number(data);
+}
+
 export const refreshEodPrices = createServerFn({ method: "POST" })
   .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
   .handler(async () => {
@@ -151,31 +198,10 @@ export const recomputeHoldings = createServerFn({ method: "POST" })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
 
-    const map = new Map<string, { lot: number; cost: number; avg: number }>();
-    for (const t of txns ?? []) {
-      const cur = map.get(t.ticker) ?? { lot: 0, cost: 0, avg: 0 };
-      const price = Number(t.price);
-      if (t.side === "BUY") {
-        cur.lot += t.lot;
-        cur.cost += t.lot * price;
-        cur.avg = cur.lot > 0 ? cur.cost / cur.lot : 0;
-      } else {
-        const sold = Math.min(t.lot, cur.lot);
-        cur.lot -= sold;
-        cur.cost -= sold * cur.avg;
-        if (cur.lot === 0) cur.cost = 0;
-      }
-      map.set(t.ticker, cur);
-    }
-
-    const rows = Array.from(map.entries())
-      .filter(([, v]) => v.lot > 0)
-      .map(([ticker, v]) => ({
-        user_id: data.user_id,
-        ticker,
-        total_lot: v.lot,
-        avg_price: Number(v.avg.toFixed(4)),
-      }));
+    const rows = computeHoldingsFromTxns(txns ?? []).map((r) => ({
+      ...r,
+      user_id: data.user_id,
+    }));
 
     await supabaseAdmin.from("holdings").delete().eq("user_id", data.user_id);
     if (rows.length > 0) await supabaseAdmin.from("holdings").insert(rows);
@@ -248,19 +274,7 @@ export const submitTransaction = createServerFn({ method: "POST" })
       occurred_at: data.transacted_at,
     });
 
-    // Update cash_balances atomically via RPC-like upsert
-    const { data: cur } = await supabaseAdmin
-      .from("cash_balances")
-      .select("balance")
-      .eq("user_id", data.user_id)
-      .maybeSingle();
-    const newBalance = Number(cur?.balance ?? 0) + delta;
-    await supabaseAdmin
-      .from("cash_balances")
-      .upsert(
-        { user_id: data.user_id, balance: newBalance, updated_at: new Date().toISOString() },
-        { onConflict: "user_id" },
-      );
+    const newBalance = await atomicAdjustCash(data.user_id, delta);
 
     // Recompute holdings inline (reuse logic)
     const { data: txns } = await supabaseAdmin
@@ -270,30 +284,10 @@ export const submitTransaction = createServerFn({ method: "POST" })
       .order("transacted_at", { ascending: true })
       .order("created_at", { ascending: true });
 
-    const map = new Map<string, { lot: number; cost: number; avg: number }>();
-    for (const t of txns ?? []) {
-      const cur = map.get(t.ticker) ?? { lot: 0, cost: 0, avg: 0 };
-      const p = Number(t.price);
-      if (t.side === "BUY") {
-        cur.lot += t.lot;
-        cur.cost += t.lot * p;
-        cur.avg = cur.lot > 0 ? cur.cost / cur.lot : 0;
-      } else {
-        const sold = Math.min(t.lot, cur.lot);
-        cur.lot -= sold;
-        cur.cost -= sold * cur.avg;
-        if (cur.lot === 0) cur.cost = 0;
-      }
-      map.set(t.ticker, cur);
-    }
-    const rows = Array.from(map.entries())
-      .filter(([, v]) => v.lot > 0)
-      .map(([ticker, v]) => ({
-        user_id: data.user_id,
-        ticker,
-        total_lot: v.lot,
-        avg_price: Number(v.avg.toFixed(4)),
-      }));
+    const rows = computeHoldingsFromTxns(txns ?? []).map((r) => ({
+      ...r,
+      user_id: data.user_id,
+    }));
     await supabaseAdmin.from("holdings").delete().eq("user_id", data.user_id);
     if (rows.length > 0) await supabaseAdmin.from("holdings").insert(rows);
 
@@ -329,8 +323,7 @@ export const adjustCash = createServerFn({ method: "POST" })
       .eq("user_id", data.user_id)
       .maybeSingle();
     const curBal = Number(cur?.balance ?? 0);
-    const newBalance = curBal + delta;
-    if (newBalance < 0) {
+    if (data.movement_type === "WITHDRAW" && curBal + delta < 0) {
       throw new Error(`Saldo tidak cukup. Saldo saat ini: ${curBal.toLocaleString("id-ID")}`);
     }
     await supabaseAdmin.from("cash_movements").insert({
@@ -340,12 +333,7 @@ export const adjustCash = createServerFn({ method: "POST" })
       occurred_at: data.occurred_at,
       note: data.note ?? null,
     });
-    await supabaseAdmin
-      .from("cash_balances")
-      .upsert(
-        { user_id: data.user_id, balance: newBalance, updated_at: new Date().toISOString() },
-        { onConflict: "user_id" },
-      );
+    const newBalance = await atomicAdjustCash(data.user_id, delta);
     return { balance: newBalance };
   });
 
@@ -420,6 +408,22 @@ export const adminGrantRole = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     // DUP-04: Admin verified by middleware
+    if (data.role !== "admin") {
+      const { data: currentAdmins } = await supabaseAdmin
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+      const adminCount = currentAdmins?.length ?? 0;
+      const { data: currentRoles } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.target_user_id);
+      const targetIsAdmin = !!currentRoles?.some((r) => String(r.role) === "admin");
+      if (targetIsAdmin && adminCount <= 1) {
+        throw new Error("Tidak bisa demote admin terakhir.");
+      }
+    }
+
     await supabaseAdmin
       .from("user_roles")
       .upsert(
@@ -473,6 +477,21 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
   .inputValidator(z.object({ target_user_id: z.string().uuid() }))
   .handler(async ({ data }) => {
     // DUP-04: Admin verified by middleware
+    const { data: currentAdmins } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+    const adminCount = currentAdmins?.length ?? 0;
+
+    const { data: targetRoles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.target_user_id);
+    const targetIsAdmin = !!targetRoles?.some((r) => String(r.role) === "admin");
+    if (targetIsAdmin && adminCount <= 1) {
+      throw new Error("Tidak bisa menghapus admin terakhir.");
+    }
+
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.target_user_id);
     if (error) throw new Error(error.message);
     return { ok: true };

@@ -63,6 +63,8 @@ function AdminUsersPage() {
     onError: (e) => toast.error(e.message),
   });
 
+  const adminCount = (usersQ.data ?? []).filter((u) => u.roles.includes("admin")).length;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -124,9 +126,10 @@ function AdminUsersPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() =>
-                              grantMut.mutate({ target_user_id: u.id, role: "admin" })
-                            }
+                            onClick={() => {
+                              if (!confirm(`Jadikan ${u.username} sebagai admin? Mereka akan punya akses penuh ke sistem.`)) return;
+                              grantMut.mutate({ target_user_id: u.id, role: "admin" });
+                            }}
                           >
                             <Shield className="h-3 w-3" /> Make admin
                           </Button>
@@ -140,16 +143,22 @@ function AdminUsersPage() {
                             <LineChart className="h-3 w-3" /> Make advisor
                           </Button>
                         )}
-                        {!isSelf && (
+                        {!isSelf && !(isAdmin && adminCount <= 1) && (
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              if (confirm(`Hapus user ${u.username}?`)) deleteMut.mutate(u.id);
+                              const warning = isAdmin
+                                ? `⚠️ Hapus admin ${u.username}? Sisa admin: ${adminCount - 1}`
+                                : `Hapus user ${u.username}?`;
+                              if (confirm(warning)) deleteMut.mutate(u.id);
                             }}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
+                        )}
+                        {!isSelf && isAdmin && adminCount <= 1 && (
+                          <span className="text-[10px] text-muted-foreground">Admin terakhir</span>
                         )}
                       </TableCell>
                     </TableRow>

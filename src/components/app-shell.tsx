@@ -106,6 +106,16 @@ const ADMIN_GROUPS: NavGroup[] = [
       { to: "/admin/security", label: "Security", icon: ShieldCheck },
     ],
   },
+  {
+    label: "Advisory",
+    items: [
+      { to: "/admin/holdings", label: "Holdings", icon: PieChart },
+      { to: "/admin/user-portfolios", label: "User Portfolios", icon: BarChart3 },
+      { to: "/admin/insight", label: "Insight", icon: LineChart },
+      { to: "/admin/insight-ai", label: "Insight AI", icon: Sparkles },
+      { to: "/admin/broadcast", label: "Broadcast", icon: Megaphone },
+    ],
+  },
 ];
 
 const ROUTE_TITLES: Record<string, { title: string; subtitle: string }> = {

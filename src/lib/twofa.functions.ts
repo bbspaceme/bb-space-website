@@ -128,12 +128,30 @@ export const verifyRecoveryCodeForLogin = createServerFn({ method: "POST" })
 
     // Check if provided code matches any stored hash
     const hashedCodes = row.recovery_codes as string[];
-    for (const hashedCode of hashedCodes) {
-      const isValid = await verifyRecoveryCode(recovery_code, hashedCode);
+    let matchedIndex = -1;
+
+    for (let i = 0; i < hashedCodes.length; i++) {
+      const isValid = await verifyRecoveryCode(recovery_code, hashedCodes[i]);
       if (isValid) {
-        return { ok: true };
+        matchedIndex = i;
+        break;
       }
     }
 
-    return { ok: false, message: "Recovery code tidak valid" };
+    if (matchedIndex === -1) {
+      return { ok: false, message: "Recovery code tidak valid" };
+    }
+
+    const remainingCodes = hashedCodes.filter((_, i) => i !== matchedIndex);
+    const { error: updateError } = await supabaseAdmin
+      .from("user_2fa")
+      .update({ recovery_codes: remainingCodes })
+      .eq("user_id", userId);
+
+    if (updateError) {
+      console.error("[2FA] Gagal invalidate recovery code:", updateError);
+      return { ok: false, message: "Gagal memproses recovery code, coba lagi" };
+    }
+
+    return { ok: true, remaining_codes: remainingCodes.length };
   });

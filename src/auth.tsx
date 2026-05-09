@@ -41,11 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
         // Defer DB calls to avoid deadlock
-        setTimeout(() => fetchRoleAndProfile(newSession.user.id), 0);
+        setTimeout(() => {
+          fetchRoleAndProfile(newSession.user.id).finally(() => setIsLoading(false));
+        }, 0);
       } else {
         setIsAdmin(false);
         setIsAdvisor(false);
         setUsername(null);
+        setIsLoading(false);
       }
     });
 

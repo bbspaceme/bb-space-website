@@ -53,6 +53,7 @@ function PortfolioPage() {
   const cashQ = useQuery({
     queryKey: ["cash-balance", userId],
     enabled: !!userId,
+    staleTime: 1000 * 60 * 2,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cash_balances")
@@ -68,6 +69,7 @@ function PortfolioPage() {
   const holdingsQ = useQuery({
     queryKey: ["holdings", userId],
     enabled: !!userId,
+    staleTime: 1000 * 60 * 5,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("holdings")
@@ -83,6 +85,7 @@ function PortfolioPage() {
   const pricesQ = useQuery({
     queryKey: ["latest-prices", tickers.sort().join(",")],
     enabled: tickers.length > 0,
+    staleTime: 1000 * 60 * 15,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("eod_prices")
@@ -101,6 +104,7 @@ function PortfolioPage() {
   const txnsQ = useQuery({
     queryKey: ["transactions", userId],
     enabled: !!userId,
+    staleTime: 1000 * 60 * 2,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("transactions")

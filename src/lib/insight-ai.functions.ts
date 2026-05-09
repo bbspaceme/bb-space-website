@@ -1,19 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { advisorAuthMiddleware } from "@/lib/admin-middleware";
 
 export const generateAiInsight = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ requester_id: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    // Verify advisor or admin
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.requester_id);
-    const isAdvisor = !!roles?.some((r) => r.role === "advisor" || r.role === "admin");
-    if (!isAdvisor) throw new Error("Unauthorized");
-
-    // Aggregate data
+  .middleware(advisorAuthMiddleware)
+  .inputValidator(z.object({}))
+  .handler(async ({ context }) => {
+    // User is already authenticated and authorized by advisorAuthMiddleware
     const [{ data: profiles }, { data: holdings }, { data: cash }, { data: prices }] =
       await Promise.all([
         supabaseAdmin.from("profiles").select("id, username"),

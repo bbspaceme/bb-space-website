@@ -21,7 +21,7 @@ function InsightAiPage() {
 
   const refreshMut = useMutation({
     mutationFn: async () => {
-      return generateAiInsight({ data: { requester_id: auth.user!.id } });
+      return generateAiInsight({ data: {} });
     },
     onSuccess: (data) => {
       setResult(data);

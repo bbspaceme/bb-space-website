@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getCommunityEquitySeries } from "@/lib/community.functions";
 import {
   LineChart,
   Line,
@@ -36,6 +37,7 @@ function CommunityPage() {
 
   const kbaiQ = useQuery({
     queryKey: ["kbai", range],
+    staleTime: 1000 * 60 * 10,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("kbai_index")
@@ -49,6 +51,7 @@ function CommunityPage() {
 
   const benchQ = useQuery({
     queryKey: ["benchmarks", range],
+    staleTime: 1000 * 60 * 10,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("benchmark_prices")
@@ -62,11 +65,13 @@ function CommunityPage() {
 
   const equityQ = useQuery({
     queryKey: ["community-equity", equityRange],
-    queryFn: async () => buildCommunityEquitySeries(equityFromDate),
+    staleTime: 1000 * 60 * 10,
+    queryFn: async () => getCommunityEquitySeries({ data: { from_date: equityFromDate } }),
   });
 
   const memberCountQ = useQuery({
     queryKey: ["community-member-count"],
+    staleTime: 1000 * 60 * 30,
     queryFn: async () => {
       // Hitung hanya akun dengan role 'user' (exclude admin & advisor)
       const { count, error } = await supabase
@@ -447,132 +452,3 @@ function buildChartData(
   });
 }
 
-/**
- * Build community-wide time-series:
- *  - Holdings value (sum across users, marked at each day's EOD price)
- *  - Cash pool (running cumulative cash movement)
- *  - Equity = Holdings + Cash
- *  - P/L = Equity - cumulative net deposits
- * Reconstructs positions day-by-day from `transactions` + `cash_movements`.
- */
-async function buildCommunityEquitySeries(fromDate: string) {
-  const [txnsRes, cashRes] = await Promise.all([
-    supabase
-      .from("transactions")
-      .select("transacted_at, ticker, side, lot, price, user_id")
-      .order("transacted_at", { ascending: true })
-      .limit(20000),
-    supabase
-      .from("cash_movements")
-      .select("occurred_at, amount, movement_type")
-      .order("occurred_at", { ascending: true })
-      .limit(20000),
-  ]);
-  const txns = txnsRes.data ?? [];
-  const cashMoves = cashRes.data ?? [];
-
-  if (txns.length === 0 && cashMoves.length === 0) return [];
-
-  const tickers = Array.from(new Set(txns.map((t) => t.ticker)));
-  const pricesRes = tickers.length
-    ? await supabase
-        .from("eod_prices")
-        .select("ticker, date, close")
-        .in("ticker", tickers)
-        .order("date", { ascending: true })
-    : { data: [] };
-  const prices = pricesRes.data ?? [];
-
-  // pricesByTicker: ticker -> sorted [date, close]
-  const pricesByTicker = new Map<string, { date: string; close: number }[]>();
-  for (const p of prices) {
-    const arr = pricesByTicker.get(p.ticker) ?? [];
-    arr.push({ date: p.date, close: Number(p.close) });
-    pricesByTicker.set(p.ticker, arr);
-  }
-
-  // Build all relevant dates: union of (txn dates, cash dates, EOD dates >= fromDate)
-  const dateSet = new Set<string>();
-  for (const t of txns) if (t.transacted_at >= fromDate) dateSet.add(t.transacted_at);
-  for (const c of cashMoves) if (c.occurred_at >= fromDate) dateSet.add(c.occurred_at);
-  for (const p of prices) if (p.date >= fromDate) dateSet.add(p.date);
-  const dates = Array.from(dateSet).sort();
-  if (dates.length === 0) return [];
-
-  // Sort txns/cash by date for streaming pass
-  const txnsByDate = new Map<string, typeof txns>();
-  for (const t of txns) {
-    const arr = txnsByDate.get(t.transacted_at) ?? [];
-    arr.push(t);
-    txnsByDate.set(t.transacted_at, arr);
-  }
-  const cashByDate = new Map<string, typeof cashMoves>();
-  for (const c of cashMoves) {
-    const arr = cashByDate.get(c.occurred_at) ?? [];
-    arr.push(c);
-    cashByDate.set(c.occurred_at, arr);
-  }
-
-  // Aggregated lot per ticker (community-wide). Avg cost per ticker maintained for cost basis.
-  const lots = new Map<string, number>(); // ticker -> total lots (community)
-  let cash = 0;
-  let netDeposits = 0; // DEPOSIT - WITHDRAW
-
-  // Process pre-period transactions/cash to seed state on `fromDate`
-  const allDatesEver = new Set<string>();
-  for (const t of txns) allDatesEver.add(t.transacted_at);
-  for (const c of cashMoves) allDatesEver.add(c.occurred_at);
-  const everSorted = Array.from(allDatesEver).sort();
-
-  const findPriceAtOrBefore = (ticker: string, date: string): number | null => {
-    const arr = pricesByTicker.get(ticker);
-    if (!arr || arr.length === 0) return null;
-    let lo = 0,
-      hi = arr.length - 1,
-      best = -1;
-    while (lo <= hi) {
-      const mid = (lo + hi) >> 1;
-      if (arr[mid].date <= date) {
-        best = mid;
-        lo = mid + 1;
-      } else hi = mid - 1;
-    }
-    return best >= 0 ? arr[best].close : arr[0].close;
-  };
-
-  const series: { date: string; Equity: number; Holdings: number; "P/L": number }[] = [];
-  for (const date of everSorted) {
-    // apply same-day events
-    for (const t of txnsByDate.get(date) ?? []) {
-      const lot = t.side === "BUY" ? t.lot : -t.lot;
-      lots.set(t.ticker, (lots.get(t.ticker) ?? 0) + lot);
-      const notional = Number(t.price) * t.lot * 100;
-      cash += t.side === "BUY" ? -notional : notional;
-    }
-    for (const c of cashByDate.get(date) ?? []) {
-      const amt = Number(c.amount);
-      cash += amt;
-      if (c.movement_type === "DEPOSIT") netDeposits += amt;
-      else if (c.movement_type === "WITHDRAW") netDeposits += amt; // amt already negative
-    }
-
-    // Only emit for dates >= fromDate
-    if (date < fromDate) continue;
-    let holdings = 0;
-    for (const [ticker, lot] of lots) {
-      if (lot === 0) continue;
-      const price = findPriceAtOrBefore(ticker, date);
-      if (price != null) holdings += price * lot * 100;
-    }
-    const equity = holdings + cash;
-    series.push({
-      date,
-      Equity: Math.round(equity),
-      Holdings: Math.round(holdings),
-      "P/L": Math.round(equity - netDeposits),
-    });
-  }
-  // Forward-fill on EOD dates that have no event
-  // (already covered: we only emit on dates that have events or EOD samples; since we union with prices.date >= fromDate, gaps are minimal)
-  return series;
-}
