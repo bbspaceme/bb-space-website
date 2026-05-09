@@ -58,7 +58,7 @@ async function fetchBtcDailyUsd(
     .map(([date, close]) => ({ date, close }));
 }
 
-async function recomputeKbaiRange(db: ReturnType<typeof getServerDatabaseClient>, fromDate: string, toDate: string) {
+async function recomputeKbaiRange(db: ReturnType<typeof getAdminDatabaseClient>, fromDate: string, toDate: string) {
   const [{ data: holdings }, { data: prices }, { count: memberCount }] = await Promise.all([
     db.from("holdings").select("user_id, ticker, total_lot, avg_price").gt("total_lot", 0),
     db.from("eod_prices").select("ticker, close, date").gte("date", fromDate).lte("date", toDate).order("date", { ascending: true }),
@@ -209,7 +209,7 @@ export const backfillEodFromApril = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    const db = getServerDatabaseClient(data.access_token);
+    const db = getAdminDatabaseClient();
     const fromDate = data.from_date;
     const toDate = data.to_date ?? new Date().toISOString().slice(0, 10);
     const fromUnix = Math.floor(new Date(fromDate + "T00:00:00Z").getTime() / 1000);
@@ -317,7 +317,7 @@ export const backfillEodFromApril = createServerFn({ method: "POST" })
 export const deleteAllMarketData = createServerFn({ method: "POST" })
   .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
   .handler(async ({ data }) => {
-    const db = getServerDatabaseClient(data?.access_token);
+    const db = getAdminDatabaseClient();
     // Use a permissive predicate (delete requires WHERE clause via PostgREST)
     const eod = await db.from("eod_prices").delete().gt("close", -1);
     if (eod.error) throw new Error(`eod: ${eod.error.message}`);
@@ -332,7 +332,7 @@ export const deleteAllMarketData = createServerFn({ method: "POST" })
 export const exportAllMarketData = createServerFn({ method: "POST" })
   .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
   .handler(async ({ data }) => {
-    const db = getServerDatabaseClient(data?.access_token);
+    const db = getAdminDatabaseClient();
     const [eod, bench] = await Promise.all([
       db.from("eod_prices").select("date, ticker, close, source").order("date", { ascending: false }).limit(100000),
       db.from("benchmark_prices").select("date, symbol, value").order("date", { ascending: false }).limit(50000),
