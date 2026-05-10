@@ -47,7 +47,7 @@ export function computeHoldingsFromTxns(txns: TxnInput[]) {
 }
 
 async function atomicAdjustCash(userId: string, delta: number): Promise<number> {
-  const { data, error } = await supabaseAdmin.rpc("adjust_cash_balance", {
+  const { data, error } = await (supabaseAdmin.rpc as any)("adjust_cash_balance", {
     p_user_id: userId,
     p_delta: delta,
   });
