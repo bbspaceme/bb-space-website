@@ -10,11 +10,7 @@ interface TagProps {
 /**
  * Tag/Badge component for labeling sections and features
  */
-export const Tag: React.FC<TagProps> = ({
-  children,
-  variant = "accent",
-  className = "",
-}) => {
+export const Tag: React.FC<TagProps> = ({ children, variant = "accent", className = "" }) => {
   const baseStyle: React.CSSProperties = {
     display: "inline-block",
     padding: "6px 12px",

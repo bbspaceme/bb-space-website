@@ -171,13 +171,12 @@ export const Hero: React.FC<HeroProps> = ({
               transition: "all 0.3s ease",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform =
-                "translateY(-2px)";
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 20px 40px rgba(34,197,94,0.3)`;
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                `0 20px 40px rgba(34,197,94,0.3)`;
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform =
-                "translateY(0)";
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
               (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
             }}
           >
@@ -198,16 +197,12 @@ export const Hero: React.FC<HeroProps> = ({
               transition: "all 0.3s ease",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.borderColor =
-                tokens.color.accent;
-              (e.currentTarget as HTMLButtonElement).style.color =
-                tokens.color.accent;
+              (e.currentTarget as HTMLButtonElement).style.borderColor = tokens.color.accent;
+              (e.currentTarget as HTMLButtonElement).style.color = tokens.color.accent;
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.borderColor =
-                tokens.color.border;
-              (e.currentTarget as HTMLButtonElement).style.color =
-                tokens.color.text;
+              (e.currentTarget as HTMLButtonElement).style.borderColor = tokens.color.border;
+              (e.currentTarget as HTMLButtonElement).style.color = tokens.color.text;
             }}
           >
             Pelajari Framework

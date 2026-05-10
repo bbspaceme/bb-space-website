@@ -115,9 +115,7 @@ const ADVISOR_GROUPS: NavGroup[] = [
 const ADMIN_GROUPS: NavGroup[] = [
   {
     label: "Overview",
-    items: [
-      { to: "/community", label: "Dashboard", icon: Users },
-    ],
+    items: [{ to: "/community", label: "Dashboard", icon: Users }],
   },
   {
     label: "Administration",

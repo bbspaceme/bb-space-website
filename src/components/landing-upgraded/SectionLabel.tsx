@@ -10,11 +10,7 @@ interface SectionLabelProps {
 /**
  * Section label with number for visual hierarchy
  */
-export const SectionLabel: React.FC<SectionLabelProps> = ({
-  number,
-  text,
-  className = "",
-}) => {
+export const SectionLabel: React.FC<SectionLabelProps> = ({ number, text, className = "" }) => {
   return (
     <div
       style={{

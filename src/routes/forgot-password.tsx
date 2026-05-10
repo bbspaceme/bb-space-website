@@ -33,9 +33,9 @@ function ForgotPasswordPage() {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectUrl: `${window.location.origin}/reset-password`,
       });
-      
+
       if (error) throw error;
-      
+
       setSubmitted(true);
       toast.success("Link reset password telah dikirim ke email kamu");
     } catch (err) {
@@ -89,11 +89,7 @@ function ForgotPasswordPage() {
                   />
                 </div>
 
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full text-[13px]"
-                >
+                <Button type="submit" disabled={submitting} className="w-full text-[13px]">
                   {submitting ? "Mengirim..." : "Kirim Link Reset"}
                 </Button>
               </form>
@@ -107,9 +103,7 @@ function ForgotPasswordPage() {
                   <p className="text-[12px] text-muted-foreground">
                     Kami telah mengirimkan link reset password ke:
                   </p>
-                  <p className="text-[12px] font-medium text-foreground break-all">
-                    {email}
-                  </p>
+                  <p className="text-[12px] font-medium text-foreground break-all">{email}</p>
                   <p className="text-[11px] text-muted-foreground pt-2">
                     Link berlaku selama 24 jam. Jika tidak menerima email, cek folder spam.
                   </p>

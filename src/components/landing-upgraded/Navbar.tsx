@@ -50,13 +50,9 @@ export const Navbar: React.FC<NavbarProps> = ({ links, onScroll }) => {
         alignItems: "center",
         justifyContent: "space-between",
         padding: "16px 32px",
-        background: scrolled
-          ? `rgba(${7}, ${8}, ${10}, 0.95)`
-          : "transparent",
+        background: scrolled ? `rgba(${7}, ${8}, ${10}, 0.95)` : "transparent",
         backdropFilter: scrolled ? "blur(10px)" : "none",
-        borderBottom: scrolled
-          ? `1px solid ${tokens.color.border}`
-          : "transparent",
+        borderBottom: scrolled ? `1px solid ${tokens.color.border}` : "transparent",
         transition: "all 0.3s ease",
       }}
       role="navigation"
@@ -135,12 +131,10 @@ export const Navbar: React.FC<NavbarProps> = ({ links, onScroll }) => {
               padding: "8px 0",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.color =
-                tokens.color.accent;
+              (e.currentTarget as HTMLButtonElement).style.color = tokens.color.accent;
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.color =
-                tokens.color.text;
+              (e.currentTarget as HTMLButtonElement).style.color = tokens.color.text;
             }}
           >
             {link.label}
@@ -202,13 +196,11 @@ export const Navbar: React.FC<NavbarProps> = ({ links, onScroll }) => {
           }}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLButtonElement).style.opacity = "0.9";
-            (e.currentTarget as HTMLButtonElement).style.transform =
-              "translateY(-2px)";
+            (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
           }}
           onMouseLeave={(e) => {
             (e.currentTarget as HTMLButtonElement).style.opacity = "1";
-            (e.currentTarget as HTMLButtonElement).style.transform =
-              "translateY(0)";
+            (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
           }}
         >
           Mulai Sekarang

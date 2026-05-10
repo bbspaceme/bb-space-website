@@ -95,9 +95,7 @@ function ResetPasswordPage() {
             <h1 className="text-[13px] font-semibold uppercase tracking-[0.14em]">
               Reset Password Baru
             </h1>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-              Masukkan password baru kamu.
-            </p>
+            <p className="mt-1 text-[12px] text-muted-foreground">Masukkan password baru kamu.</p>
           </div>
 
           <div className="px-5 py-5">
@@ -109,9 +107,7 @@ function ResetPasswordPage() {
                     <p className="text-[13px] font-medium text-red-600">
                       Link tidak valid atau telah kadaluarsa
                     </p>
-                    <p className="text-[11px] text-red-500/80 mt-1">
-                      {error}
-                    </p>
+                    <p className="text-[11px] text-red-500/80 mt-1">{error}</p>
                   </div>
                 </div>
                 <Button
@@ -140,9 +136,7 @@ function ResetPasswordPage() {
                     required
                     className="text-[13px]"
                   />
-                  <p className="text-[10px] text-muted-foreground">
-                    Minimal 8 karakter
-                  </p>
+                  <p className="text-[10px] text-muted-foreground">Minimal 8 karakter</p>
                 </div>
 
                 <div className="space-y-1.5">
@@ -170,11 +164,7 @@ function ResetPasswordPage() {
                   </div>
                 )}
 
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full text-[13px]"
-                >
+                <Button type="submit" disabled={submitting} className="w-full text-[13px]">
                   {submitting ? "Menyimpan..." : "Simpan Password Baru"}
                 </Button>
               </form>

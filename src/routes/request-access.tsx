@@ -12,9 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Textarea,
-} from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, CheckCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 
@@ -86,8 +84,8 @@ function RequestAccessPage() {
               Daftar Akses KBAI
             </h1>
             <p className="mt-1 text-[12px] text-muted-foreground">
-              Bergabunglah dengan komunitas investor berbasis data kami.
-              Admin akan merekomendasikan status dalam 24-48 jam.
+              Bergabunglah dengan komunitas investor berbasis data kami. Admin akan merekomendasikan
+              status dalam 24-48 jam.
             </p>
           </div>
 
@@ -107,9 +105,7 @@ function RequestAccessPage() {
                     type="text"
                     placeholder="Budi Santoso"
                     value={formData.fullName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, fullName: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     required
                     disabled={submitting}
                     className="text-[13px]"
@@ -129,9 +125,7 @@ function RequestAccessPage() {
                     type="email"
                     placeholder="budi@example.com"
                     value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
                     disabled={submitting}
                     className="text-[13px]"
@@ -161,15 +155,9 @@ function RequestAccessPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="beginner">Pemula (0-1 tahun)</SelectItem>
-                      <SelectItem value="intermediate">
-                        Menengah (1-3 tahun)
-                      </SelectItem>
-                      <SelectItem value="advanced">
-                        Mahir (3-5 tahun)
-                      </SelectItem>
-                      <SelectItem value="expert">
-                        Expert (5+ tahun)
-                      </SelectItem>
+                      <SelectItem value="intermediate">Menengah (1-3 tahun)</SelectItem>
+                      <SelectItem value="advanced">Mahir (3-5 tahun)</SelectItem>
+                      <SelectItem value="expert">Expert (5+ tahun)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -184,9 +172,7 @@ function RequestAccessPage() {
                   </Label>
                   <Select
                     value={formData.sourceReferral}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, sourceReferral: value })
-                    }
+                    onValueChange={(value) => setFormData({ ...formData, sourceReferral: value })}
                     disabled={submitting}
                   >
                     <SelectTrigger className="text-[13px]">
@@ -194,9 +180,7 @@ function RequestAccessPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="landing">Website Landing Page</SelectItem>
-                      <SelectItem value="referral">
-                        Referral dari Member
-                      </SelectItem>
+                      <SelectItem value="referral">Referral dari Member</SelectItem>
                       <SelectItem value="social">Media Sosial</SelectItem>
                       <SelectItem value="search">Search Engine</SelectItem>
                       <SelectItem value="other">Lainnya</SelectItem>
@@ -227,11 +211,7 @@ function RequestAccessPage() {
                   />
                 </div>
 
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full text-[13px]"
-                >
+                <Button type="submit" disabled={submitting} className="w-full text-[13px]">
                   {submitting ? "Mengirim..." : "Kirim Permintaan Akses"}
                 </Button>
 
@@ -252,13 +232,10 @@ function RequestAccessPage() {
                   <CheckCircle className="h-12 w-12 text-green-600" />
                 </div>
                 <div className="text-center space-y-3">
-                  <h2 className="text-[14px] font-semibold">
-                    Permintaan Terkirim!
-                  </h2>
+                  <h2 className="text-[14px] font-semibold">Permintaan Terkirim!</h2>
                   <p className="text-[12px] text-muted-foreground">
-                    Terima kasih telah mendaftar untuk KBAI. Admin kami akan
-                    meninjau permintaan akses kamu dalam{" "}
-                    <span className="font-medium">24-48 jam</span>.
+                    Terima kasih telah mendaftar untuk KBAI. Admin kami akan meninjau permintaan
+                    akses kamu dalam <span className="font-medium">24-48 jam</span>.
                   </p>
                   <div className="rounded-sm bg-blue-500/10 border border-blue-500/20 p-3 text-left">
                     <p className="text-[11px] text-blue-600 font-medium">

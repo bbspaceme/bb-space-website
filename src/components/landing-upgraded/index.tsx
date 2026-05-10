@@ -210,10 +210,7 @@ export const ImprovedLandingPage: React.FC<ImprovedLandingPageProps> = ({
         aria-label="5-layer framework"
       >
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <SectionLabel
-            number="02"
-            text="5-Layer Framework"
-          />
+          <SectionLabel number="02" text="5-Layer Framework" />
           <p
             style={{
               fontSize: "16px",
@@ -364,8 +361,8 @@ export const ImprovedLandingPage: React.FC<ImprovedLandingPageProps> = ({
               marginBottom: "32px",
             }}
           >
-            Bergabunglah dengan ribuan investor dan advisor yang telah mengubah cara
-            mereka mengelola portfolio dan membuat keputusan investasi.
+            Bergabunglah dengan ribuan investor dan advisor yang telah mengubah cara mereka
+            mengelola portfolio dan membuat keputusan investasi.
           </p>
           <button
             onClick={() => navigate({ to: "/request-access" })}

@@ -55,6 +55,7 @@ export const Footer: React.FC<FooterProps> = ({
       const target = document.querySelector(href);
       target?.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       navigate({ to: href as any });
     }
   };
@@ -121,12 +122,10 @@ export const Footer: React.FC<FooterProps> = ({
                         padding: "4px 0",
                       }}
                       onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.color =
-                          tokens.color.accent;
+                        (e.currentTarget as HTMLButtonElement).style.color = tokens.color.accent;
                       }}
                       onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.color =
-                          tokens.color.textMuted;
+                        (e.currentTarget as HTMLButtonElement).style.color = tokens.color.textMuted;
                       }}
                     >
                       {link.label}
@@ -191,7 +190,8 @@ export const Footer: React.FC<FooterProps> = ({
               fontFamily: '"Instrument Sans", sans-serif',
             }}
           >
-            © 2026 KBAI. Semua hak dilindungi. Data dan insight tunduk pada compliance dan regulasi lokal.
+            © 2026 KBAI. Semua hak dilindungi. Data dan insight tunduk pada compliance dan regulasi
+            lokal.
           </p>
 
           {/* Social Links */}
@@ -219,12 +219,10 @@ export const Footer: React.FC<FooterProps> = ({
                   fontFamily: '"Instrument Sans", sans-serif',
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.color =
-                    tokens.color.accent;
+                  (e.currentTarget as HTMLAnchorElement).style.color = tokens.color.accent;
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.color =
-                    tokens.color.textMuted;
+                  (e.currentTarget as HTMLAnchorElement).style.color = tokens.color.textMuted;
                 }}
               >
                 {link.label}
