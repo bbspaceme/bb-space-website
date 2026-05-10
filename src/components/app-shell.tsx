@@ -48,6 +48,7 @@ import { OnboardingTour } from "@/components/onboarding-tour";
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
 type NavGroup = { label: string; items: NavItem[] };
 
+// Member: investor pribadi — fokus pada portfolio diri sendiri & riset
 const MEMBER_GROUPS: NavGroup[] = [
   {
     label: "Workspace",
@@ -74,13 +75,14 @@ const MEMBER_GROUPS: NavGroup[] = [
   },
 ];
 
+// Advisor: kelola klien — TIDAK ada portfolio pribadi, fokus advisory & broadcast
 const ADVISOR_GROUPS: NavGroup[] = [
   {
     label: "Market",
     items: [
       { to: "/community", label: "Dashboard", icon: Users },
-      { to: "/portfolio", label: "Portfolio", icon: Briefcase },
       { to: "/market-insight", label: "Market Insight", icon: Newspaper },
+      { to: "/watchlist", label: "Watchlist", icon: Star },
     ],
   },
   {
@@ -88,13 +90,12 @@ const ADVISOR_GROUPS: NavGroup[] = [
     items: [
       { to: "/analisis", label: "Analisis", icon: LineChart },
       { to: "/ekonomi", label: "Ekonomi", icon: Globe },
-      { to: "/watchlist", label: "Watchlist", icon: Star },
       { to: "/admin/insight", label: "Insight", icon: LineChart },
       { to: "/admin/insight-ai", label: "Insight AI", icon: Sparkles },
     ],
   },
   {
-    label: "Operations",
+    label: "Advisory Operations",
     items: [
       { to: "/admin/holdings", label: "Holdings", icon: PieChart },
       { to: "/admin/user-portfolios", label: "User Portfolios", icon: BarChart3 },
@@ -110,21 +111,12 @@ const ADVISOR_GROUPS: NavGroup[] = [
   },
 ];
 
+// Admin: pengelolaan sistem — fokus user, data, audit & security
 const ADMIN_GROUPS: NavGroup[] = [
   {
-    label: "Workspace",
+    label: "Overview",
     items: [
       { to: "/community", label: "Dashboard", icon: Users },
-      { to: "/portfolio", label: "Portfolio", icon: Briefcase },
-      { to: "/watchlist", label: "Watchlist", icon: Star },
-      { to: "/market-insight", label: "Market Insight", icon: Newspaper },
-    ],
-  },
-  {
-    label: "Research",
-    items: [
-      { to: "/analisis", label: "Analisis", icon: LineChart },
-      { to: "/ekonomi", label: "Ekonomi", icon: Globe },
     ],
   },
   {
@@ -134,18 +126,13 @@ const ADMIN_GROUPS: NavGroup[] = [
       { to: "/admin/settings", label: "System Settings", icon: Settings },
       { to: "/admin/prices", label: "Market Data", icon: Activity },
       { to: "/admin/transactions", label: "Transactions", icon: Receipt },
-      { to: "/admin/audit", label: "Audit Log", icon: ScrollText },
-      { to: "/admin/security", label: "Security", icon: ShieldCheck },
     ],
   },
   {
-    label: "Advisory",
+    label: "Compliance",
     items: [
-      { to: "/admin/holdings", label: "Holdings", icon: PieChart },
-      { to: "/admin/user-portfolios", label: "User Portfolios", icon: BarChart3 },
-      { to: "/admin/insight", label: "Insight", icon: LineChart },
-      { to: "/admin/insight-ai", label: "Insight AI", icon: Sparkles },
-      { to: "/admin/broadcast", label: "Broadcast", icon: Megaphone },
+      { to: "/admin/audit", label: "Audit Log", icon: ScrollText },
+      { to: "/admin/security", label: "Security", icon: ShieldCheck },
     ],
   },
   {
