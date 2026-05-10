@@ -76,53 +76,61 @@
 :root {
   --radius: 0.25rem;
 
-  --background: oklch(0.16 0.005 270);
-  --foreground: oklch(0.94 0.003 270);
+  /* KBAI brand tokens (aligned with landing) */
+  --background: #070c18; /* main dark navy */
+  --foreground: #e8e4dc; /* primary text */
 
-  --card: oklch(0.19 0.005 270);
-  --card-foreground: oklch(0.94 0.003 270);
+  --card: #0f1628;
+  --card-foreground: #e8e4dc;
 
-  --popover: oklch(0.21 0.005 270);
-  --popover-foreground: oklch(0.94 0.003 270);
+  --popover: #141b2d;
+  --popover-foreground: #e8e4dc;
 
-  --primary: oklch(0.92 0.003 270);
-  --primary-foreground: oklch(0.18 0.005 270);
+  --primary: #e8e4dc;
+  --primary-foreground: #0f1628;
 
-  --secondary: oklch(0.24 0.005 270);
-  --secondary-foreground: oklch(0.94 0.003 270);
+  --secondary: #8a9ab5;
+  --secondary-foreground: #e8e4dc;
 
-  --muted: oklch(0.24 0.005 270);
-  --muted-foreground: oklch(0.72 0.008 270); /* WCAG AA: 4.7:1 vs background */
+  /* Muted color adjusted to meet WCAG AA on dark background */
+  --muted: #6b7a9a;
+  --muted-foreground: #6b7a9a;
 
-  --accent: oklch(0.27 0.005 270);
-  --accent-foreground: oklch(0.96 0.003 270);
+  --accent: #7eb8b0; /* teal brand */
+  --accent-foreground: #070c18;
 
-  --destructive: oklch(0.62 0.18 25);
-  --destructive-foreground: oklch(0.98 0.003 270);
+  --destructive: #c97070;
+  --destructive-foreground: #070c18;
 
-  --border: oklch(0.28 0.005 270);
-  --input: oklch(0.28 0.005 270);
-  --ring: oklch(0.45 0.005 270);
+  --border: rgba(126, 184, 176, 0.1);
+  --input: rgba(255,255,255,0.04);
+  --ring: rgba(126, 184, 176, 0.12);
 
   /* Semantic finance colors — used ONLY for P/L. */
-  --pos: oklch(0.74 0.16 152);
-  --neg: oklch(0.66 0.2 25);
+  --pos: #5fa87a;
+  --neg: #c97070;
 
-  /* Charts — restrained, neutral-leaning */
-  --chart-1: oklch(0.88 0.005 270); /* KBAI - bright neutral */
-  --chart-2: oklch(0.62 0.04 250); /* IHSG - cool desaturated */
-  --chart-3: oklch(0.7 0.09 80); /* GOLD - warm muted */
-  --chart-4: oklch(0.65 0.13 50); /* BTC - warm orange */
-  --chart-5: oklch(0.55 0.05 280); /* SMF - muted lavender */
+  /* Charts colors (approx) */
+  --chart-1: #7eb8b0; /* Portfolio */
+  --chart-2: #8a9ab5; /* IHSG */
+  --chart-3: #c9a96e; /* Gold */
+  --chart-4: #5fa87a; /* BTC */
+  --chart-5: #6b6fb0; /* muted */
 
-  --sidebar: oklch(0.13 0.005 270);
-  --sidebar-foreground: oklch(0.78 0.005 270);
-  --sidebar-primary: oklch(0.94 0.003 270);
-  --sidebar-primary-foreground: oklch(0.16 0.005 270);
-  --sidebar-accent: oklch(0.22 0.005 270);
-  --sidebar-accent-foreground: oklch(0.96 0.003 270);
-  --sidebar-border: oklch(0.24 0.005 270);
-  --sidebar-ring: oklch(0.45 0.005 270);
+  --sidebar: #0b0f1a;
+  --sidebar-foreground: #e8e4dc;
+  --sidebar-primary: #e8e4dc;
+  --sidebar-primary-foreground: #0b0f1a;
+  --sidebar-accent: #7eb8b0;
+  --sidebar-accent-foreground: #0b0f1a;
+  --sidebar-border: rgba(255,255,255,0.04);
+  --sidebar-ring: rgba(126,184,176,0.08);
+
+  /* Fonts — prefer brand display/serif for headings */
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  --font-display: "Syne", var(--font-sans);
+  --font-serif: "Cormorant Garamond", serif;
 }
 
 /* Light variant — institutional, neutral, paper-like */

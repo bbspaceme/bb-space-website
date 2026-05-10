@@ -18,7 +18,24 @@
   </ul>
   <div class="nav-right">
     <a href="#" class="nav-login">Login</a>
-    <a href="#" class="nav-cta">Mulai Sekarang</a>
+    <a href="/request-access" class="nav-cta">Mulai Sekarang</a>
+  </div>
+  <!-- Hamburger menu for mobile -->
+  <button class="nav-hamburger" id="nav-menu-toggle" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+  <!-- Mobile menu drawer -->
+  <div class="nav-mobile-menu" id="nav-mobile-menu">
+    <a href="#performance">Performance</a>
+    <a href="#framework">Framework</a>
+    <a href="#advisor">Intelligence</a>
+    <a href="#community">Community</a>
+    <a href="#system">System</a>
+    <div class="nav-mobile-divider"></div>
+    <a href="#" class="nav-mobile-login">Login</a>
+    <a href="/request-access" class="nav-mobile-cta">Mulai Sekarang</a>
   </div>
 </nav>
 
@@ -45,25 +62,25 @@
     <span class="scroll-text">Scroll</span>
   </div>
 
-  <div class="hero-ticker">
+  <div class="hero-ticker" aria-label="Live market ticker (illustrative data for demonstration)">
     <div class="ticker-item">
       <span class="ticker-label">BTC/USD</span>
-      <span class="ticker-value">94,210</span>
+      <span class="ticker-value" aria-live="polite" aria-atomic="true">94,210</span>
       <span class="ticker-change up">+2.14%</span>
     </div>
     <div class="ticker-item">
       <span class="ticker-label">IHSG</span>
-      <span class="ticker-value">7,218</span>
+      <span class="ticker-value" aria-live="polite" aria-atomic="true">7,218</span>
       <span class="ticker-change down">−0.38%</span>
     </div>
     <div class="ticker-item">
       <span class="ticker-label">GOLD</span>
-      <span class="ticker-value">3,342</span>
+      <span class="ticker-value" aria-live="polite" aria-atomic="true">3,342</span>
       <span class="ticker-change up">+0.82%</span>
     </div>
     <div class="ticker-item">
       <span class="ticker-label">BI Rate</span>
-      <span class="ticker-value">5.75%</span>
+      <span class="ticker-value" aria-live="polite" aria-atomic="true">5.75%</span>
       <span class="ticker-change" style="color: var(--text-muted)">Stagnan</span>
     </div>
   </div>
@@ -71,6 +88,9 @@
 
 <!-- ══ STATS STRIP ══ -->
 <div class="stats-strip reveal">
+  <div class="stat-disclaimer" style="grid-column: 1 / -1; text-align: center; padding: 0 0 8px 0; border-bottom: 1px solid rgba(126, 184, 176, 0.1); margin-bottom: 12px;">
+    <span class="stat-disclaimer-text" style="font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); opacity: 0.7;">⚠ Data Historis · Lihat Data Aktual Setelah Login</span>
+  </div>
   <div class="stat-cell">
     <span class="stat-cell-label">Total AUM Komunitas</span>
     <span class="stat-cell-value up">Rp 48.2M</span>
@@ -131,7 +151,14 @@
         </div>
       </div>
       <div class="chart-svg-wrap">
-        <svg viewBox="0 0 900 200" preserveAspectRatio="none" id="chart-svg">
+        <svg 
+          viewBox="0 0 900 200" 
+          preserveAspectRatio="none" 
+          id="chart-svg"
+          role="img"
+          aria-label="Normalized performance chart YTD 2025. Portfolio KBAI: +112%, Bitcoin: +88%, Gold: +50%, IHSG: -22%. Full interactive chart available in portfolio dashboard after login."
+        >
+          <title>Performa Aset Ternormalisasi YTD 2025</title>
           <line
             x1="0"
             y1="100"
@@ -960,6 +987,22 @@
       </div>
 
       <div class="leaderboard reveal d1">
+        <div style="
+          width: 100%;
+          padding: 8px 12px;
+          background: rgba(201, 169, 110, 0.08);
+          border: 1px solid rgba(201, 169, 110, 0.15);
+          border-radius: 4px;
+          margin-bottom: 16px;
+          font-family: var(--font-mono);
+          font-size: 9px;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: var(--text-muted);
+          text-align: center;
+        ">
+          ⚠ Data Historis · Ranking Aktual Tersedia Setelah Login
+        </div>
         <div class="lb-head">
           <span class="lb-hcol">#</span>
           <span class="lb-hcol">Portfolio</span>
