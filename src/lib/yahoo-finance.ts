@@ -11,6 +11,59 @@ const YAHOO_HEADERS = {
 };
 
 /**
+ * Fetch with retry logic and timeout
+ * Addresses BE-04: Yahoo Finance reliability
+ * - 3 retry attempts with exponential backoff (1s, 2s, 4s)
+ * - 15-second timeout per attempt
+ * - 429 (rate limit) handled with backoff
+ */
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  maxRetries: number = 3,
+): Promise<Response> {
+  let lastError: Error = new Error("Unknown error");
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15_000);
+
+      try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        // Handle rate limiting with backoff
+        if (res.status === 429) {
+          const backoffMs = Math.pow(2, attempt) * 1000;
+          await new Promise((resolve) => setTimeout(resolve, backoffMs));
+          continue; // Retry
+        }
+
+        return res;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+
+      // Only retry on transient errors, not on abort
+      if (err instanceof Error && err.name === "AbortError") {
+        lastError = new Error("Yahoo Finance request timeout");
+      }
+
+      if (attempt < maxRetries - 1) {
+        // Exponential backoff: 1s, 2s, 4s
+        const backoffMs = Math.pow(2, attempt) * 1000;
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
+/**
  * Fetch real-time quotes for multiple symbols (15min delay)
  * @param symbols Array of Yahoo Finance symbols (e.g., ["BBCA.JK", "BBRI.JK"])
  * @returns Map of symbol -> regularMarketPrice
@@ -20,7 +73,7 @@ export async function fetchYahooQuotes(symbols: string[]): Promise<Record<string
   const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
     symbols.join(","),
   )}`;
-  const res = await fetch(url, { headers: YAHOO_HEADERS });
+  const res = await fetchWithRetry(url, { headers: YAHOO_HEADERS });
   if (!res.ok) throw new Error(`Yahoo quote error: ${res.status}`);
   const json = (await res.json()) as {
     quoteResponse?: { result?: Array<{ symbol: string; regularMarketPrice?: number }> };
@@ -47,7 +100,7 @@ export async function fetchYahooChart(
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
     symbol,
   )}?period1=${fromUnix}&period2=${toUnix}&interval=1d`;
-  const res = await fetch(url, { headers: YAHOO_HEADERS });
+  const res = await fetchWithRetry(url, { headers: YAHOO_HEADERS });
   if (!res.ok) return [];
   const json = (await res.json()) as {
     chart?: {
@@ -88,7 +141,7 @@ export async function fetchYahooQuoteDetail(symbol: string): Promise<{
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
     symbol,
   )}?range=5d&interval=1d`;
-  const res = await fetch(url, { headers: YAHOO_HEADERS });
+  const res = await fetchWithRetry(url, { headers: YAHOO_HEADERS });
   if (!res.ok) return null;
   const j = (await res.json()) as {
     chart?: {

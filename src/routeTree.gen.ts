@@ -26,6 +26,7 @@ import { Route as AppAdminRouteImport } from './routes/_app.admin'
 import { Route as AppActivityRouteImport } from './routes/_app.activity'
 import { Route as AppEkonomiIndexRouteImport } from './routes/_app.ekonomi.index'
 import { Route as ApiPublicEvaluatePriceAlertsRouteImport } from './routes/api/public/evaluate-price-alerts'
+import { Route as ApiCronDailyRefreshRouteImport } from './routes/api/cron/daily-refresh'
 import { Route as AppEkonomiMacroRouteImport } from './routes/_app.ekonomi.macro'
 import { Route as AppEkonomiKomoditasRouteImport } from './routes/_app.ekonomi.komoditas'
 import { Route as AppEkonomiGlobalRouteImport } from './routes/_app.ekonomi.global'
@@ -134,6 +135,11 @@ const ApiPublicEvaluatePriceAlertsRoute =
     path: '/api/public/evaluate-price-alerts',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiCronDailyRefreshRoute = ApiCronDailyRefreshRouteImport.update({
+  id: '/api/cron/daily-refresh',
+  path: '/api/cron/daily-refresh',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppEkonomiMacroRoute = AppEkonomiMacroRouteImport.update({
   id: '/macro',
   path: '/macro',
@@ -282,6 +288,7 @@ export interface FileRoutesByFullPath {
   '/ekonomi/global': typeof AppEkonomiGlobalRoute
   '/ekonomi/komoditas': typeof AppEkonomiKomoditasRoute
   '/ekonomi/macro': typeof AppEkonomiMacroRoute
+  '/api/cron/daily-refresh': typeof ApiCronDailyRefreshRoute
   '/api/public/evaluate-price-alerts': typeof ApiPublicEvaluatePriceAlertsRoute
   '/ekonomi/': typeof AppEkonomiIndexRoute
 }
@@ -321,6 +328,7 @@ export interface FileRoutesByTo {
   '/ekonomi/global': typeof AppEkonomiGlobalRoute
   '/ekonomi/komoditas': typeof AppEkonomiKomoditasRoute
   '/ekonomi/macro': typeof AppEkonomiMacroRoute
+  '/api/cron/daily-refresh': typeof ApiCronDailyRefreshRoute
   '/api/public/evaluate-price-alerts': typeof ApiPublicEvaluatePriceAlertsRoute
   '/ekonomi': typeof AppEkonomiIndexRoute
 }
@@ -363,6 +371,7 @@ export interface FileRoutesById {
   '/_app/ekonomi/global': typeof AppEkonomiGlobalRoute
   '/_app/ekonomi/komoditas': typeof AppEkonomiKomoditasRoute
   '/_app/ekonomi/macro': typeof AppEkonomiMacroRoute
+  '/api/cron/daily-refresh': typeof ApiCronDailyRefreshRoute
   '/api/public/evaluate-price-alerts': typeof ApiPublicEvaluatePriceAlertsRoute
   '/_app/ekonomi/': typeof AppEkonomiIndexRoute
 }
@@ -405,6 +414,7 @@ export interface FileRouteTypes {
     | '/ekonomi/global'
     | '/ekonomi/komoditas'
     | '/ekonomi/macro'
+    | '/api/cron/daily-refresh'
     | '/api/public/evaluate-price-alerts'
     | '/ekonomi/'
   fileRoutesByTo: FileRoutesByTo
@@ -444,6 +454,7 @@ export interface FileRouteTypes {
     | '/ekonomi/global'
     | '/ekonomi/komoditas'
     | '/ekonomi/macro'
+    | '/api/cron/daily-refresh'
     | '/api/public/evaluate-price-alerts'
     | '/ekonomi'
   id:
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/_app/ekonomi/global'
     | '/_app/ekonomi/komoditas'
     | '/_app/ekonomi/macro'
+    | '/api/cron/daily-refresh'
     | '/api/public/evaluate-price-alerts'
     | '/_app/ekonomi/'
   fileRoutesById: FileRoutesById
@@ -496,6 +508,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RequestAccessRoute: typeof RequestAccessRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiCronDailyRefreshRoute: typeof ApiCronDailyRefreshRoute
   ApiPublicEvaluatePriceAlertsRoute: typeof ApiPublicEvaluatePriceAlertsRoute
 }
 
@@ -618,6 +631,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/evaluate-price-alerts'
       fullPath: '/api/public/evaluate-price-alerts'
       preLoaderRoute: typeof ApiPublicEvaluatePriceAlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/daily-refresh': {
+      id: '/api/cron/daily-refresh'
+      path: '/api/cron/daily-refresh'
+      fullPath: '/api/cron/daily-refresh'
+      preLoaderRoute: typeof ApiCronDailyRefreshRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/ekonomi/macro': {
@@ -886,6 +906,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RequestAccessRoute: RequestAccessRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiCronDailyRefreshRoute: ApiCronDailyRefreshRoute,
   ApiPublicEvaluatePriceAlertsRoute: ApiPublicEvaluatePriceAlertsRoute,
 }
 export const routeTree = rootRouteImport

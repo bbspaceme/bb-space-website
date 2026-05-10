@@ -37,7 +37,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notification-bell";
@@ -170,6 +170,7 @@ const ROUTE_TITLES: Record<string, { title: string; subtitle: string }> = {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [now, setNow] = useState<Date | null>(null);
   const navGroups = auth.isAdmin ? ADMIN_GROUPS : auth.isAdvisor ? ADVISOR_GROUPS : MEMBER_GROUPS;
@@ -207,8 +208,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         },
       }).catch(() => null);
     }
+    // Clear TanStack Query cache to prevent session hijacking
+    queryClient.clear();
     await auth.signOut();
-    navigate({ to: "/login" });
+    // Hard redirect to prevent back-button cache
+    window.location.href = "/login";
   };
 
   const meta =

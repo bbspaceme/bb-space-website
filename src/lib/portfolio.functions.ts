@@ -47,7 +47,7 @@ export function computeHoldingsFromTxns(txns: TxnInput[]) {
 }
 
 async function atomicAdjustCash(userId: string, delta: number): Promise<number> {
-  const { data, error } = await (supabaseAdmin.rpc as any)("adjust_cash_balance", {
+  const { data, error } = await supabaseAdmin.rpc<number>("adjust_cash_balance", {
     p_user_id: userId,
     p_delta: delta,
   });
@@ -281,20 +281,21 @@ export const submitTransaction = createServerFn({ method: "POST" })
 
     const newBalance = await atomicAdjustCash(userId, delta);
 
-    // Recompute holdings inline (reuse logic)
-    const { data: txns } = await supabaseAdmin
-      .from("transactions")
-      .select("ticker, side, lot, price, transacted_at, created_at")
-      .eq("user_id", userId)
-      .order("transacted_at", { ascending: true })
-      .order("created_at", { ascending: true });
-
-    const rows = computeHoldingsFromTxns(txns ?? []).map((r) => ({
-      ...r,
-      user_id: userId,
-    }));
-    await supabaseAdmin.from("holdings").delete().eq("user_id", userId);
-    if (rows.length > 0) await supabaseAdmin.from("holdings").insert(rows);
+    // IMP-02: Incremental holdings update via RPC instead of full recompute
+    if (data.side === "BUY") {
+      await supabaseAdmin.rpc("upsert_holding_buy", {
+        p_user_id: userId,
+        p_ticker: data.ticker,
+        p_lot: data.lot,
+        p_price: data.price,
+      });
+    } else {
+      await supabaseAdmin.rpc("upsert_holding_sell", {
+        p_user_id: userId,
+        p_ticker: data.ticker,
+        p_lot: data.lot,
+      });
+    }
 
     await insertAuditLog({
       action: `tx.${data.side.toLowerCase()}`,

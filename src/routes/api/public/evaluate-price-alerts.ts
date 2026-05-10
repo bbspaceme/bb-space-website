@@ -5,14 +5,14 @@ export const Route = createFileRoute("/api/public/evaluate-price-alerts")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // SEC-02: require shared secret to prevent abuse of cron endpoint
+        // IMP-12: Validate CRON_SECRET to prevent public abuse of endpoint
         const expected = process.env.CRON_SECRET;
         if (!expected) {
           return new Response("Server misconfigured: CRON_SECRET not set", { status: 500 });
         }
         const provided = request.headers.get("x-cron-secret");
         if (!provided || provided !== expected) {
-          return new Response("Forbidden", { status: 403 });
+          return new Response("Unauthorized", { status: 401 });
         }
 
         const sb = supabaseAdmin;

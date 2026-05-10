@@ -9,6 +9,23 @@ function getRequestUrl(req: IncomingMessage) {
 }
 
 function setResponseHeaders(res: ServerResponse, response: Response) {
+  // Add security headers
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; " +
+      "connect-src 'self' *.supabase.co wss://*.supabase.co https://query1.finance.yahoo.com https://api.coingecko.com; " +
+      "script-src 'self' 'unsafe-inline'; " +
+      "style-src 'self' 'unsafe-inline' fonts.googleapis.com; " +
+      "font-src 'self' fonts.gstatic.com; " +
+      "img-src 'self' data: https:; " +
+      "frame-ancestors 'none';",
+  );
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+
   response.headers.forEach((value, key) => {
     if (key.toLowerCase() === "set-cookie") {
       const existing = res.getHeader("Set-Cookie");
@@ -17,7 +34,7 @@ function setResponseHeaders(res: ServerResponse, response: Response) {
       } else {
         res.setHeader("Set-Cookie", ([] as string[]).concat(existing as string[]).concat(value));
       }
-    } else {
+    } else if (!res.hasHeader(key)) {
       res.setHeader(key, value);
     }
   });
