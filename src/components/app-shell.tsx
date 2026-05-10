@@ -216,7 +216,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (auth.user) {
       writeAuditLog({
         data: {
-          user_id: auth.user.id,
           username: auth.username ?? undefined,
           action: "auth.logout",
           user_agent: navigator.userAgent,
