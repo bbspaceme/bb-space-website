@@ -1,14 +1,11 @@
 /**
- * Yahoo Finance API utilities
- * Centralized location for all Yahoo Finance data fetching
- * Consolidates logic previously duplicated across portfolio.functions.ts, market-data.functions.ts, ekonomi.functions.ts
+ * Market Data API utilities
+ * Now uses provider abstraction with Sectors API as primary and Yahoo as fallback
  */
 
-const YAHOO_HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-  Accept: "application/json",
-};
+import { createMarketDataProvider } from "./market-data-provider";
+
+const provider = createMarketDataProvider();
 
 /**
  * Fetch real-time quotes for multiple symbols (15min delay)
@@ -16,20 +13,7 @@ const YAHOO_HEADERS = {
  * @returns Map of symbol -> regularMarketPrice
  */
 export async function fetchYahooQuotes(symbols: string[]): Promise<Record<string, number>> {
-  if (symbols.length === 0) return {};
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
-    symbols.join(","),
-  )}`;
-  const res = await fetch(url, { headers: YAHOO_HEADERS });
-  if (!res.ok) throw new Error(`Yahoo quote error: ${res.status}`);
-  const json = (await res.json()) as {
-    quoteResponse?: { result?: Array<{ symbol: string; regularMarketPrice?: number }> };
-  };
-  const out: Record<string, number> = {};
-  for (const q of json.quoteResponse?.result ?? []) {
-    if (typeof q.regularMarketPrice === "number") out[q.symbol] = q.regularMarketPrice;
-  }
-  return out;
+  return provider.fetchQuotes(symbols);
 }
 
 /**
@@ -44,33 +28,7 @@ export async function fetchYahooChart(
   fromUnix: number,
   toUnix: number,
 ): Promise<Array<{ date: string; close: number }>> {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
-    symbol,
-  )}?period1=${fromUnix}&period2=${toUnix}&interval=1d`;
-  const res = await fetch(url, { headers: YAHOO_HEADERS });
-  if (!res.ok) return [];
-  const json = (await res.json()) as {
-    chart?: {
-      result?: Array<{
-        timestamp?: number[];
-        indicators?: { quote?: Array<{ close?: (number | null)[] }> };
-      }>;
-    };
-  };
-  const r = json.chart?.result?.[0];
-  const ts = r?.timestamp ?? [];
-  const cl = r?.indicators?.quote?.[0]?.close ?? [];
-  const out: Array<{ date: string; close: number }> = [];
-  for (let i = 0; i < ts.length; i++) {
-    const c = cl[i];
-    if (typeof c === "number" && Number.isFinite(c)) {
-      out.push({
-        date: new Date(ts[i] * 1000).toISOString().slice(0, 10),
-        close: c,
-      });
-    }
-  }
-  return out;
+  return provider.fetchChart(symbol, fromUnix, toUnix);
 }
 
 /**

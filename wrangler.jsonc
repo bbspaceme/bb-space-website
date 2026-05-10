@@ -1,7 +1,82 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
+  "name": "bb-space-website",
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
+
+  // Environment-specific configurations
+  "env": {
+    "staging": {
+      "name": "bb-space-website-staging",
+      "routes": [
+        {
+          "pattern": "staging.yourdomain.com",
+          "zone_name": "yourdomain.com"
+        }
+      ],
+      "vars": {
+        "ENVIRONMENT": "staging",
+        "SENTRY_ENVIRONMENT": "staging"
+      },
+      "kv_namespaces": [
+        {
+          "binding": "KV",
+          "id": "your-staging-kv-namespace-id",
+          "preview_id": "your-staging-kv-preview-id"
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "bb-space-staging",
+          "database_id": "your-staging-d1-database-id",
+          "preview_database_id": "your-staging-d1-preview-id"
+        }
+      ]
+    },
+    "production": {
+      "name": "bb-space-website-prod",
+      "routes": [
+        {
+          "pattern": "yourdomain.com",
+          "zone_name": "yourdomain.com"
+        }
+      ],
+      "vars": {
+        "ENVIRONMENT": "production",
+        "SENTRY_ENVIRONMENT": "production"
+      },
+      "kv_namespaces": [
+        {
+          "binding": "KV",
+          "id": "your-prod-kv-namespace-id"
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "bb-space-prod",
+          "database_id": "your-prod-d1-database-id"
+        }
+      ]
+    }
+  },
+
+  // Default configuration (development)
+  "vars": {
+    "ENVIRONMENT": "development",
+    "SENTRY_ENVIRONMENT": "development"
+  },
+
+  // Build configuration
+  "build": {
+    "command": "npm run build"
+  },
+
+  // Assets
+  "assets": {
+    "directory": "dist/client",
+    "binding": "ASSETS"
+  }
 }

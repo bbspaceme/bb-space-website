@@ -16,6 +16,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
       - run: npm run check
       - uses: cloudflare/wrangler-action@v4
         with:

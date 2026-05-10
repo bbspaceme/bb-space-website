@@ -5,9 +5,10 @@ import { recordSession, writeAuditLog } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Activity, Send, HelpCircle } from "lucide-react";
+import { Activity, Send } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -30,6 +31,23 @@ function LoginPage() {
       navigate({ to: "/community" });
     }
   }, [auth.isAuthenticated, auth.isLoading, navigate]);
+
+  const handleResetPassword = async () => {
+    if (!username.trim()) {
+      toast.error("Masukkan username/email terlebih dahulu");
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(username.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Link reset password telah dikirim ke email kamu");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Gagal mengirim link reset";
+      toast.error(msg);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -65,6 +83,11 @@ function LoginPage() {
       navigate({ to: "/community" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Login gagal";
+      if (msg === "MFA_REQUIRED") {
+        toast.error("Admin/Advisor harus mengaktifkan 2FA. Redirecting ke setup...");
+        navigate({ to: "/_app/settings" });
+        return;
+      }
       toast.error(msg);
     } finally {
       setSubmitting(false);
@@ -118,26 +141,22 @@ function LoginPage() {
               >
                 Password
               </Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  className="h-9 rounded-sm border-border bg-background text-[13px]"
-                />
-                <button
-                  type="button"
-                  onClick={() => navigate({ to: "/forgot-password" })}
-                  className="flex-shrink-0 p-1.5 text-muted-foreground hover:text-foreground transition-colors"
-                  title="Lupa password?"
-                  aria-label="Lupa password?"
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </button>
-              </div>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                className="h-9 rounded-sm border-border bg-background text-[13px]"
+              />
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Lupa Password?
+              </button>
             </div>
             <Button
               type="submit"
@@ -147,24 +166,16 @@ function LoginPage() {
               {submitting ? "Authenticating…" : "Sign in"}
             </Button>
           </form>
-          <div className="border-t border-border px-5 py-3 space-y-2">
-            <button
-              onClick={() => navigate({ to: "/forgot-password" })}
-              className="w-full text-center text-[11px] uppercase tracking-[0.12em] text-accent hover:text-accent/80 transition-colors"
+          <div className="border-t border-border px-5 py-3 text-center">
+            <a
+              href="https://t.me/eLsavador1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
             >
-              Lupa Password?
-            </button>
-            <div className="border-t border-border pt-2">
-              <a
-                href="https://t.me/eLsavador1"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center w-full gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <Send className="h-3 w-3" />
-                Hubungi Admin
-              </a>
-            </div>
+              <Send className="h-3 w-3" />
+              Hubungi Admin · Telegram @eLsavador1
+            </a>
           </div>
         </div>
 

@@ -3,9 +3,10 @@ import { z } from "zod";
 import { callLovableAi } from "@/lib/ai-client";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { advisorAuthMiddleware } from "@/lib/admin-middleware";
+import { rateLimitMiddleware } from "@/lib/rate-limiter";
 
 export const generateAiInsight = createServerFn({ method: "POST" })
-  .middleware(advisorAuthMiddleware)
+  .middleware([advisorAuthMiddleware, rateLimitMiddleware((context) => `ai-insight:${context.userId}`)])
   .inputValidator(z.object({}))
   .handler(async ({ context }) => {
     // User is already authenticated and authorized by advisorAuthMiddleware
@@ -54,24 +55,28 @@ export const generateAiInsight = createServerFn({ method: "POST" })
       userAgg.set(h.user_id, cur);
     }
 
-    const usersSummary = Array.from(userAgg.values()).map((u) => ({
-      username: u.username,
-      positions: u.positions.length,
-      total_value: Math.round(u.total_value),
-      cash: Math.round(u.cash),
-      equity: Math.round(u.total_value + u.cash),
-      pl: Math.round(u.total_value - u.total_cost),
-      pl_pct:
-        u.total_cost > 0 ? +(((u.total_value - u.total_cost) / u.total_cost) * 100).toFixed(2) : 0,
-      top_positions: u.positions
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 5)
-        .map((p) => ({
-          ticker: p.ticker,
-          lot: p.lot,
-          value: Math.round(p.value),
-        })),
-    }));
+    // Anonymize user data before sending to AI
+    const anonymizedUsers = Array.from(userAgg.values()).map((u, i) => {
+      const categorizeValue = (value: number) => {
+        if (value < 50_000_000) return "< 50M";
+        if (value < 500_000_000) return "50M-500M";
+        return "> 500M";
+      };
+
+      return {
+        user_id: `USER_${i + 1}`,
+        positions_count: u.positions.length,
+        total_value_tier: categorizeValue(u.total_value),
+        cash_ratio: u.cash / (u.total_value + u.cash),
+        pl_pct: u.pl_pct,
+        top_sectors: u.positions
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 3)
+          .map((p) => p.ticker), // Only tickers, no values
+      };
+    });
+
+    const usersSummary = anonymizedUsers;
 
     const communityAgg = new Map<string, number>();
     for (const u of userAgg.values()) {

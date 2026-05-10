@@ -66,8 +66,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+
+    // Check if user is privileged (admin/advisor) and needs MFA
+    if (data.user) {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id);
+
+      const isPrivileged = roles?.some((r) => String(r.role) === "admin" || String(r.role) === "advisor");
+
+      if (isPrivileged) {
+        const { data: twofa } = await supabase
+          .from("user_2fa")
+          .select("enabled")
+          .eq("user_id", data.user.id)
+          .maybeSingle();
+
+        if (!twofa?.enabled) {
+          // Force logout and throw error to redirect to MFA setup
+          await supabase.auth.signOut();
+          throw new Error("MFA_REQUIRED");
+        }
+      }
+    }
   };
 
   const signOut = async () => {
