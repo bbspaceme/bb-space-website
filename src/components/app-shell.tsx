@@ -59,8 +59,18 @@ const MEMBER_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Research",
+    items: [
+      { to: "/analisis", label: "Analisis", icon: LineChart },
+      { to: "/ekonomi", label: "Ekonomi", icon: Globe },
+    ],
+  },
+  {
     label: "Personal",
-    items: [{ to: "/activity", label: "Activity", icon: ScrollText }],
+    items: [
+      { to: "/activity", label: "Activity", icon: ScrollText },
+      { to: "/settings", label: "Settings", icon: Settings },
+    ],
   },
 ];
 
@@ -69,6 +79,7 @@ const ADVISOR_GROUPS: NavGroup[] = [
     label: "Market",
     items: [
       { to: "/community", label: "Dashboard", icon: Users },
+      { to: "/portfolio", label: "Portfolio", icon: Briefcase },
       { to: "/market-insight", label: "Market Insight", icon: Newspaper },
     ],
   },
@@ -90,9 +101,32 @@ const ADVISOR_GROUPS: NavGroup[] = [
       { to: "/admin/broadcast", label: "Broadcast", icon: Megaphone },
     ],
   },
+  {
+    label: "Personal",
+    items: [
+      { to: "/activity", label: "Activity", icon: ScrollText },
+      { to: "/settings", label: "Settings", icon: Settings },
+    ],
+  },
 ];
 
 const ADMIN_GROUPS: NavGroup[] = [
+  {
+    label: "Workspace",
+    items: [
+      { to: "/community", label: "Dashboard", icon: Users },
+      { to: "/portfolio", label: "Portfolio", icon: Briefcase },
+      { to: "/watchlist", label: "Watchlist", icon: Star },
+      { to: "/market-insight", label: "Market Insight", icon: Newspaper },
+    ],
+  },
+  {
+    label: "Research",
+    items: [
+      { to: "/analisis", label: "Analisis", icon: LineChart },
+      { to: "/ekonomi", label: "Ekonomi", icon: Globe },
+    ],
+  },
   {
     label: "Administration",
     items: [
@@ -112,6 +146,13 @@ const ADMIN_GROUPS: NavGroup[] = [
       { to: "/admin/insight", label: "Insight", icon: LineChart },
       { to: "/admin/insight-ai", label: "Insight AI", icon: Sparkles },
       { to: "/admin/broadcast", label: "Broadcast", icon: Megaphone },
+    ],
+  },
+  {
+    label: "Personal",
+    items: [
+      { to: "/activity", label: "Activity", icon: ScrollText },
+      { to: "/settings", label: "Settings", icon: Settings },
     ],
   },
 ];
@@ -175,7 +216,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (auth.user) {
       writeAuditLog({
         data: {
-          user_id: auth.user.id,
           username: auth.username ?? undefined,
           action: "auth.logout",
           user_agent: navigator.userAgent,
