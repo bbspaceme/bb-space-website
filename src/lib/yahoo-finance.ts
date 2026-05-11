@@ -1,11 +1,12 @@
 /**
- * Market Data API utilities
- * Now uses provider abstraction with Sectors API as primary and Yahoo as fallback
+ * Market Data API utilities (Yahoo Finance direct)
  */
 
-import { createMarketDataProvider } from "./market-data-provider";
-
-const provider = createMarketDataProvider();
+const YAHOO_HEADERS: Record<string, string> = {
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+  Accept: "application/json,text/plain,*/*",
+};
 
 /**
  * Fetch with retry logic and timeout
@@ -66,7 +67,6 @@ async function fetchWithRetry(
  * @returns Map of symbol -> regularMarketPrice
  */
 export async function fetchYahooQuotes(symbols: string[]): Promise<Record<string, number>> {
-<<<<<<< HEAD
   if (symbols.length === 0) return {};
   const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
     symbols.join(","),
@@ -81,9 +81,6 @@ export async function fetchYahooQuotes(symbols: string[]): Promise<Record<string
     if (typeof q.regularMarketPrice === "number") out[q.symbol] = q.regularMarketPrice;
   }
   return out;
-=======
-  return provider.fetchQuotes(symbols);
->>>>>>> 4504ffcdf858f3f850d6210db5a5291b0584d44a
 }
 
 /**
@@ -98,7 +95,6 @@ export async function fetchYahooChart(
   fromUnix: number,
   toUnix: number,
 ): Promise<Array<{ date: string; close: number }>> {
-<<<<<<< HEAD
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
     symbol,
   )}?period1=${fromUnix}&period2=${toUnix}&interval=1d`;
@@ -126,9 +122,6 @@ export async function fetchYahooChart(
     }
   }
   return out;
-=======
-  return provider.fetchChart(symbol, fromUnix, toUnix);
->>>>>>> 4504ffcdf858f3f850d6210db5a5291b0584d44a
 }
 
 /**
