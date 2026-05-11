@@ -8,11 +8,12 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 export default defineConfig(({ mode }) => {
   // Load environment variables based on mode
   const env = loadEnv(mode, process.cwd(), "");
+  const target = process.env.DEPLOY_TARGET === "cloudflare" ? "cloudflare" : "node";
 
   return {
     plugins: [
       TanStackRouterVite({ autoCodeSplitting: true }),
-      tanstackStart({ target: "node" }),
+      tanstackStart({ target }),
       react(),
       tailwindcss(),
       tsconfigPaths(),
@@ -30,12 +31,33 @@ export default defineConfig(({ mode }) => {
       minify: mode === "production",
       rollupOptions: {
         output: {
-          manualChunks: {
-            // Vendor chunks for better caching
-            vendor: ["react", "react-dom"],
-            router: ["@tanstack/react-router", "@tanstack/react-query"],
-            ui: ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu"],
-            supabase: ["@supabase/supabase-js"],
+          manualChunks(id) {
+            if (id.includes("node_modules")) {
+              if (id.includes("@tanstack/react-router") || id.includes("@tanstack/react-query")) {
+                return "router";
+              }
+              if (id.includes("@radix-ui/react-dialog") || id.includes("@radix-ui/react-dropdown-menu") || id.includes("lucide-react")) {
+                return "ui";
+              }
+              if (id.includes("@supabase/supabase-js")) {
+                return "supabase";
+              }
+              if (id.includes("recharts")) {
+                return "charts";
+              }
+              if (id.includes("jspdf") || id.includes("jspdf-autotable")) {
+                return "pdf";
+              }
+              if (id.includes("xlsx")) {
+                return "excel";
+              }
+              if (id.includes("otpauth") || id.includes("qrcode")) {
+                return "crypto";
+              }
+              if (id.includes("react") || id.includes("react-dom")) {
+                return "vendor";
+              }
+            }
           },
         },
       },

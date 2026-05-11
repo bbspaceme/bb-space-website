@@ -2,13 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   quality:
-    name: Lint, Type Check, and Tests
+    name: Quality and build
     runs-on: ubuntu-latest
 
     steps:
@@ -17,22 +17,21 @@ jobs:
         with:
           node-version: 22
           cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run linter
+      - run: npm ci
+      - name: Check merge conflicts
+        run: |
+          if grep -R "<<<<<<< HEAD\|=======\|>>>>>>> " --include='*.ts' --include='*.tsx' --include='*.json' --include='*.jsonc' .; then
+            echo "❌ Merge conflicts detected!"
+            exit 1
+          fi
+      - name: Lint
         run: npm run lint:ci
-
       - name: Type check
         run: npx tsc --noEmit
-
-      - name: Run unit tests
+      - name: Unit tests
         run: npm run test:run
-
       - name: Generate coverage report
         run: npm run test:coverage
-
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -40,6 +39,9 @@ jobs:
           fail_ci_if_error: false
           verbose: true
         continue-on-error: true
-
       - name: Build
         run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}

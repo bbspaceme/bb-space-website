@@ -1,20 +1,24 @@
 import { createMiddleware } from "@tanstack/react-start";
+import { checkRateLimitKV } from "./rate-limiter-kv";
 
-// Simple in-memory rate limiter (for development)
-// In production, use Redis-based rate limiting
+interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  resetTime: number;
+}
+
+// Simple in-memory fallback for local development.
 const rateLimits = new Map<string, { count: number; resetTime: number }>();
 
 const WINDOW_MS = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 10; // 10 requests per minute
 
-export function checkRateLimit(identifier: string): { allowed: boolean; remaining: number; resetTime: number } {
+async function checkRateLimitInMemory(identifier: string): Promise<RateLimitResult> {
   const now = Date.now();
-  const key = identifier;
-  const existing = rateLimits.get(key);
+  const existing = rateLimits.get(identifier);
 
   if (!existing || now > existing.resetTime) {
-    // Reset or new entry
-    rateLimits.set(key, { count: 1, resetTime: now + WINDOW_MS });
+    rateLimits.set(identifier, { count: 1, resetTime: now + WINDOW_MS });
     return { allowed: true, remaining: MAX_REQUESTS - 1, resetTime: now + WINDOW_MS };
   }
 
@@ -26,11 +30,26 @@ export function checkRateLimit(identifier: string): { allowed: boolean; remainin
   return { allowed: true, remaining: MAX_REQUESTS - existing.count, resetTime: existing.resetTime };
 }
 
+async function checkRateLimit(identifier: string): Promise<RateLimitResult> {
+  const useKv = process.env.RATE_LIMIT_KV_ENABLED === "true";
+  const kvBinding = typeof globalThis !== "undefined" && "KV" in globalThis ? (globalThis as any).KV : undefined;
+
+  if (useKv && kvBinding) {
+    try {
+      return await checkRateLimitKV(kvBinding, identifier, WINDOW_MS, MAX_REQUESTS);
+    } catch (error) {
+      console.warn("KV rate limiter failed, falling back to in-memory limiter", error);
+    }
+  }
+
+  return checkRateLimitInMemory(identifier);
+}
+
 // Middleware for rate limiting
 export function rateLimitMiddleware(identifierFn?: (context: any) => string) {
   return createMiddleware({ type: "function" }).server(async ({ next, context }) => {
     const identifier = identifierFn ? identifierFn(context) : (context as any).userId || "anonymous";
-    const { allowed, remaining, resetTime } = checkRateLimit(identifier);
+    const { allowed, remaining, resetTime } = await checkRateLimit(identifier);
 
     if (!allowed) {
       const resetIn = Math.ceil((resetTime - Date.now()) / 1000);
@@ -51,7 +70,6 @@ export function rateLimitMiddleware(identifierFn?: (context: any) => string) {
       },
     });
 
-    // Add rate limit headers to response
     if (response instanceof Response) {
       response.headers.set("X-RateLimit-Remaining", remaining.toString());
       response.headers.set("X-RateLimit-Reset", resetTime.toString());
