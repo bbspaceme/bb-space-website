@@ -19,6 +19,7 @@ import { ShieldCheck, Bell, Trash2, Plus, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { start2faSetup, verify2faSetup, disable2fa, get2faStatus } from "@/lib/twofa.functions";
 import { listPriceAlerts, createPriceAlert, deletePriceAlert } from "@/lib/notifications.functions";
+import { softDeleteUser, exportUserData } from "@/lib/data-privacy.functions";
 import { toast } from "sonner";
 import QRCode from "qrcode";
 
@@ -47,6 +48,8 @@ function SettingsPage() {
         <TwoFactorCard />
         <PriceAlertsCard />
       </div>
+
+      <DataPrivacyCard />
     </div>
   );
 }
@@ -330,6 +333,111 @@ function PriceAlertsCard() {
             </ul>
           )}
         </DataState>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DataPrivacyCard() {
+  const exportData = useServerFn(exportUserData);
+  const softDelete = useServerFn(softDeleteUser);
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const exportMut = useMutation({
+    mutationFn: () => exportData(),
+    onSuccess: (data) => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bb-space-data-export-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Data berhasil diekspor");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: () => softDelete(),
+    onSuccess: () => {
+      toast.success("Akun berhasil dinonaktifkan. Anda akan logout dalam 5 detik.");
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 5000);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-h2">
+          <ShieldCheck className="h-4 w-4" /> Data Privacy & GDPR
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-3">
+          <div className="rounded-sm border border-border bg-card/40 p-4">
+            <h4 className="text-body font-semibold">Export Data</h4>
+            <p className="mt-1 text-caption text-muted-foreground">
+              Unduh semua data pribadi Anda dalam format JSON untuk backup atau audit.
+            </p>
+            <Button
+              onClick={() => exportMut.mutate()}
+              disabled={exportMut.isPending}
+              className="mt-3"
+              variant="outline"
+            >
+              {exportMut.isPending ? "Mengekspor..." : "Export Data"}
+            </Button>
+          </div>
+
+          <div className="rounded-sm border border-neg/40 bg-neg/10 p-4">
+            <h4 className="text-body font-semibold text-neg">Hapus Akun</h4>
+            <p className="mt-1 text-caption text-muted-foreground">
+              Nonaktifkan akun Anda secara permanen. Data akan dihapus setelah 30 hari sesuai GDPR.
+              Tindakan ini tidak dapat dibatalkan.
+            </p>
+            {!showDeleteConfirm ? (
+              <Button
+                onClick={() => setShowDeleteConfirm(true)}
+                variant="destructive"
+                className="mt-3"
+              >
+                Hapus Akun
+              </Button>
+            ) : (
+              <div className="mt-3 space-y-3">
+                <p className="text-caption text-neg font-medium">
+                  Apakah Anda yakin? Tindakan ini tidak dapat dibatalkan.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => deleteMut.mutate()}
+                    disabled={deleteMut.isPending}
+                    variant="destructive"
+                    size="sm"
+                  >
+                    {deleteMut.isPending ? "Menghapus..." : "Ya, Hapus Akun"}
+                  </Button>
+                  <Button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Batal
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

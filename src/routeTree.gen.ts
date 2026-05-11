@@ -10,9 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as RequestAccessRouteImport } from './routes/request-access'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppWatchlistRouteImport } from './routes/_app.watchlist'
@@ -25,6 +23,7 @@ import { Route as AppAnalisisRouteImport } from './routes/_app.analisis'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
 import { Route as AppActivityRouteImport } from './routes/_app.activity'
 import { Route as AppEkonomiIndexRouteImport } from './routes/_app.ekonomi.index'
+import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicEvaluatePriceAlertsRouteImport } from './routes/api/public/evaluate-price-alerts'
 import { Route as ApiCronDailyRefreshRouteImport } from './routes/api/cron/daily-refresh'
 import { Route as AppEkonomiMacroRouteImport } from './routes/_app.ekonomi.macro'
@@ -55,19 +54,9 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RequestAccessRoute = RequestAccessRouteImport.update({
-  id: '/request-access',
-  path: '/request-access',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -128,6 +117,11 @@ const AppEkonomiIndexRoute = AppEkonomiIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppEkonomiRoute,
+} as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicEvaluatePriceAlertsRoute =
   ApiPublicEvaluatePriceAlertsRouteImport.update({
@@ -253,9 +247,7 @@ const AppAdminAuditRoute = AppAdminAuditRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/request-access': typeof RequestAccessRoute
   '/reset-password': typeof ResetPasswordRoute
   '/activity': typeof AppActivityRoute
   '/admin': typeof AppAdminRouteWithChildren
@@ -290,13 +282,12 @@ export interface FileRoutesByFullPath {
   '/ekonomi/macro': typeof AppEkonomiMacroRoute
   '/api/cron/daily-refresh': typeof ApiCronDailyRefreshRoute
   '/api/public/evaluate-price-alerts': typeof ApiPublicEvaluatePriceAlertsRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/ekonomi/': typeof AppEkonomiIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/request-access': typeof RequestAccessRoute
   '/reset-password': typeof ResetPasswordRoute
   '/activity': typeof AppActivityRoute
   '/admin': typeof AppAdminRouteWithChildren
@@ -330,15 +321,14 @@ export interface FileRoutesByTo {
   '/ekonomi/macro': typeof AppEkonomiMacroRoute
   '/api/cron/daily-refresh': typeof ApiCronDailyRefreshRoute
   '/api/public/evaluate-price-alerts': typeof ApiPublicEvaluatePriceAlertsRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/ekonomi': typeof AppEkonomiIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
-  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/request-access': typeof RequestAccessRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_app/activity': typeof AppActivityRoute
   '/_app/admin': typeof AppAdminRouteWithChildren
@@ -373,15 +363,14 @@ export interface FileRoutesById {
   '/_app/ekonomi/macro': typeof AppEkonomiMacroRoute
   '/api/cron/daily-refresh': typeof ApiCronDailyRefreshRoute
   '/api/public/evaluate-price-alerts': typeof ApiPublicEvaluatePriceAlertsRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/_app/ekonomi/': typeof AppEkonomiIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/forgot-password'
     | '/login'
-    | '/request-access'
     | '/reset-password'
     | '/activity'
     | '/admin'
@@ -416,13 +405,12 @@ export interface FileRouteTypes {
     | '/ekonomi/macro'
     | '/api/cron/daily-refresh'
     | '/api/public/evaluate-price-alerts'
+    | '/api/public/health'
     | '/ekonomi/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/forgot-password'
     | '/login'
-    | '/request-access'
     | '/reset-password'
     | '/activity'
     | '/admin'
@@ -456,14 +444,13 @@ export interface FileRouteTypes {
     | '/ekonomi/macro'
     | '/api/cron/daily-refresh'
     | '/api/public/evaluate-price-alerts'
+    | '/api/public/health'
     | '/ekonomi'
   id:
     | '__root__'
     | '/'
     | '/_app'
-    | '/forgot-password'
     | '/login'
-    | '/request-access'
     | '/reset-password'
     | '/_app/activity'
     | '/_app/admin'
@@ -498,18 +485,18 @@ export interface FileRouteTypes {
     | '/_app/ekonomi/macro'
     | '/api/cron/daily-refresh'
     | '/api/public/evaluate-price-alerts'
+    | '/api/public/health'
     | '/_app/ekonomi/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
-  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
-  RequestAccessRoute: typeof RequestAccessRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiCronDailyRefreshRoute: typeof ApiCronDailyRefreshRoute
   ApiPublicEvaluatePriceAlertsRoute: typeof ApiPublicEvaluatePriceAlertsRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -521,25 +508,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/request-access': {
-      id: '/request-access'
-      path: '/request-access'
-      fullPath: '/request-access'
-      preLoaderRoute: typeof RequestAccessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -625,6 +598,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ekonomi/'
       preLoaderRoute: typeof AppEkonomiIndexRouteImport
       parentRoute: typeof AppEkonomiRoute
+    }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/evaluate-price-alerts': {
       id: '/api/public/evaluate-price-alerts'
@@ -902,12 +882,11 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
-  ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
-  RequestAccessRoute: RequestAccessRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiCronDailyRefreshRoute: ApiCronDailyRefreshRoute,
   ApiPublicEvaluatePriceAlertsRoute: ApiPublicEvaluatePriceAlertsRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

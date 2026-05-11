@@ -7,6 +7,7 @@ import { getAdminDatabaseClient } from "@/lib/backend-client.server";
 import { fetchYahooQuotes } from "@/lib/yahoo-finance";
 import { toYahoo, fromYahoo } from "@/lib/idx-tickers";
 import { insertAuditLog } from "@/lib/audit.functions";
+import { rateLimitMiddleware } from "@/lib/rate-limiter";
 
 export type TxnInput = {
   ticker: string;
@@ -56,7 +57,7 @@ async function atomicAdjustCash(userId: string, delta: number): Promise<number> 
 }
 
 export const refreshEodPrices = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
+  .middleware([adminAuthMiddleware, rateLimitMiddleware(() => "refresh-eod-prices")])
   .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
   .handler(async () => {
     // ARCH-01: System-level operation always uses admin client

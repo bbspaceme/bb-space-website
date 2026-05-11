@@ -7,6 +7,7 @@ import type { Database } from "./types";
 
 function createSupabaseAdminClient() {
   const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_DB_POOL_URL = process.env.SUPABASE_DB_POOL_URL;
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -19,7 +20,10 @@ function createSupabaseAdminClient() {
     throw new Error(message);
   }
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  // Use pooler URL for better connection pooling in serverless environments
+  const dbUrl = SUPABASE_DB_POOL_URL || SUPABASE_URL;
+
+  return createClient<Database>(dbUrl, SUPABASE_SERVICE_ROLE_KEY, {
     auth: {
       storage: undefined,
       persistSession: false,
