@@ -1,17 +1,43 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { timingSafeEqual } from "crypto";
+
+/**
+ * Constant-time string comparison to prevent timing attacks
+ * Timing attacks can leak secret bytes by measuring response time
+ */
+function timingSafeCompare(provided: string, expected: string): boolean {
+  if (!provided || !expected) return false;
+
+  // Both must be same length for timing-safe comparison
+  if (provided.length !== expected.length) return false;
+
+  try {
+    const providedBuf = Buffer.from(provided);
+    const expectedBuf = Buffer.from(expected);
+    return timingSafeEqual(providedBuf, expectedBuf);
+  } catch (error) {
+    // If buffer creation fails, return false
+    return false;
+  }
+}
 
 export const Route = createFileRoute("/api/public/evaluate-price-alerts")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // IMP-12: Validate CRON_SECRET to prevent public abuse of endpoint
+        // Validate CRON_SECRET with timing-safe comparison
         const expected = process.env.CRON_SECRET;
         if (!expected) {
           return new Response("Server misconfigured: CRON_SECRET not set", { status: 500 });
         }
+
         const provided = request.headers.get("x-cron-secret");
-        if (!provided || provided !== expected) {
+
+        // Use constant-time comparison to prevent timing attacks
+        if (!timingSafeCompare(provided || "", expected)) {
+          // Return same status code and generic message as successful auth
+          // to prevent attacker from detecting secrets via response time
           return new Response("Unauthorized", { status: 401 });
         }
 

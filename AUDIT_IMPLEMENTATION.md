@@ -1,4 +1,5 @@
 # KBAI Terminal — Audit Implementation Report
+
 **Date**: May 10, 2026 | **Status**: Phase 1 (Critical & High Priority) ✅
 
 ---
@@ -14,6 +15,7 @@ Implementasi audit findings telah diselesaikan untuk semua critical dan high-pri
 ### Database & Architecture (DA)
 
 #### DA-01: Performance Index Migration ✅ `DONE`
+
 - **File**: `supabase/migrations/20260510_add_performance_indexes.sql`
 - **Impact**: Query eod_prices, transactions, audit_logs menjadi 10x lebih cepat
 - **Indexes Added**:
@@ -28,7 +30,8 @@ Implementasi audit findings telah diselesaikan untuk semua critical dan high-pri
   - `idx_price_alerts_user_active` — active price alert filtering
   - `idx_user_sessions_user_active` — session management
 
-**Deploy**: 
+**Deploy**:
+
 ```bash
 supabase db push  # atau manual SQL di Supabase dashboard
 ```
@@ -36,7 +39,8 @@ supabase db push  # atau manual SQL di Supabase dashboard
 ---
 
 #### IMP-02: Incremental Holdings Update (O(n) → O(1)) ✅ `DONE`
-- **Files**: 
+
+- **Files**:
   - `supabase/migrations/20260510_incremental_holdings.sql` (2 RPC functions)
   - `src/lib/portfolio.functions.ts` (submitTransaction refactored)
 - **Before**: Full recompute dari semua transaksi user (~O(n))
@@ -60,6 +64,7 @@ supabase db push  # atau manual SQL di Supabase dashboard
 ### Backend & API (BE)
 
 #### BE-04: Yahoo Finance Retry & Timeout Logic ✅ `DONE`
+
 - **File**: `src/lib/yahoo-finance.ts` (added `fetchWithRetry()`)
 - **Changes**:
   - All Yahoo API calls wrapped with retry logic
@@ -77,29 +82,33 @@ supabase db push  # atau manual SQL di Supabase dashboard
 ### Security (SEC)
 
 #### SEC-02: Security Headers (CSP, X-Frame, XSS) ✅ `DONE`
+
 - **File**: `api/entry.ts`
 - **Headers Added**:
+
   ```
-  Content-Security-Policy: 
-    default-src 'self'; 
+  Content-Security-Policy:
+    default-src 'self';
     connect-src 'self' *.supabase.co wss://*.supabase.co query1.finance.yahoo.com api.coingecko.com;
     script-src 'self' 'unsafe-inline';
     style-src 'self' 'unsafe-inline' fonts.googleapis.com;
     font-src 'self' fonts.gstatic.com;
     img-src 'self' data: https:;
     frame-ancestors 'none';
-  
+
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=()
   ```
+
 - **Impact**: XSS attacks lebih sulit, clickjacking blocked, misconfig errors terdeteksi
 
 ---
 
 #### IMP-12: CRON_SECRET Validation ✅ `DONE`
+
 - **Files**:
   - `src/routes/api/public/evaluate-price-alerts.ts` — updated check
   - `src/routes/api/cron/daily-refresh.ts` — new cron endpoint
@@ -108,11 +117,12 @@ supabase db push  # atau manual SQL di Supabase dashboard
   - Prevent unauthorized abuse (brute force 429 errors)
   - Rate limiting built-in via Cloudflare Workers
 - **Testing**:
+
   ```bash
   # Without secret:
   curl -X POST https://kbai.com/api/public/evaluate-price-alerts
   # → 401 Unauthorized
-  
+
   # With secret:
   curl -X POST https://kbai.com/api/public/evaluate-price-alerts \
     -H "X-Cron-Secret: <secret>"
@@ -124,6 +134,7 @@ supabase db push  # atau manual SQL di Supabase dashboard
 ### Automation & Infrastructure (INF)
 
 #### IMP-01: Scheduled Price Refresh (Cloudflare Cron) ✅ `DONE`
+
 - **Files**:
   - `wrangler.jsonc` — cron trigger configuration
   - `src/routes/api/cron/daily-refresh.ts` — cron handler
@@ -132,9 +143,9 @@ supabase db push  # atau manual SQL di Supabase dashboard
   {
     "triggers": {
       "crons": [
-        "30 9 * * 1-5"  // 09:30 UTC = 16:30 WIB (after market close)
-      ]
-    }
+        "30 9 * * 1-5", // 09:30 UTC = 16:30 WIB (after market close)
+      ],
+    },
   }
   ```
 - **How it works**:
@@ -152,6 +163,7 @@ supabase db push  # atau manual SQL di Supabase dashboard
 ### Frontend & UX (FE)
 
 #### FE-01: Auth Loading Skeleton ✅ `DONE`
+
 - **File**: `src/routes/_app.tsx` (RootLayout component)
 - **Before**: Blank screen atau generic "Memuat..." text
 - **After**: Professional loading skeleton dengan:
@@ -176,8 +188,9 @@ supabase db push  # atau manual SQL di Supabase dashboard
 ---
 
 #### IMP-11: Secure Logout Flow ✅ `DONE`
+
 - **File**: `src/components/app-shell.tsx` (handleLogout function)
-- **Before**: 
+- **Before**:
   ```js
   await auth.signOut();
   navigate({ to: "/login" });
@@ -185,9 +198,9 @@ supabase db push  # atau manual SQL di Supabase dashboard
   Issue: Cached query data masih ada, back-button bisa tampil old data
 - **After**:
   ```js
-  queryClient.clear();  // Clear TanStack Query cache
+  queryClient.clear(); // Clear TanStack Query cache
   await auth.signOut();
-  window.location.href = "/login";  // Hard redirect
+  window.location.href = "/login"; // Hard redirect
   ```
 - **Benefits**:
   - Prevents session hijacking via cached data
@@ -197,8 +210,9 @@ supabase db push  # atau manual SQL di Supabase dashboard
 ---
 
 #### IMP-05: Fix Community Equity Series Data Model ✅ `DONE`
+
 - **File**: `src/lib/community.functions.ts`
-- **Before**: 
+- **Before**:
   - Function bernama getCommunityEquitySeries tapi return kbai_index fields
   - Return: `{date, value, pct_change, member_count}`
 - **After**:
@@ -213,9 +227,9 @@ supabase db push  # atau manual SQL di Supabase dashboard
   // Group portfolio_snapshots by date, sum across all users
   return Array.from(byDate.entries()).map(([date, v]) => ({
     date,
-    Equity: v.value,    // total market value
-    Holdings: v.cost,   // total cost basis
-    "P/L": v.pl,        // unrealized P/L
+    Equity: v.value, // total market value
+    Holdings: v.cost, // total cost basis
+    "P/L": v.pl, // unrealized P/L
   }));
   ```
 
@@ -224,6 +238,7 @@ supabase db push  # atau manual SQL di Supabase dashboard
 ### Documentation (DOC)
 
 #### CD-01: Deployment Setup Guide ✅ `DONE`
+
 - **File**: `DEPLOYMENT_SETUP.md`
 - **Contents**:
   - Environment variables checklist
@@ -237,18 +252,19 @@ supabase db push  # atau manual SQL di Supabase dashboard
 
 ## 📊 Performance Impact Summary
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Transaction submit (500 txns) | ~2-5s | ~300ms | **7-16x faster** |
-| EOD prices query (500 tickers) | ~5s (full scan) | ~200ms (indexed) | **25x faster** |
-| Auth loading UX | Blank/flash | Professional skeleton | UX **↑100%** |
-| Logout security | Data cached | Cache cleared | Security **↑** |
+| Metric                         | Before          | After                 | Improvement      |
+| ------------------------------ | --------------- | --------------------- | ---------------- |
+| Transaction submit (500 txns)  | ~2-5s           | ~300ms                | **7-16x faster** |
+| EOD prices query (500 tickers) | ~5s (full scan) | ~200ms (indexed)      | **25x faster**   |
+| Auth loading UX                | Blank/flash     | Professional skeleton | UX **↑100%**     |
+| Logout security                | Data cached     | Cache cleared         | Security **↑**   |
 
 ---
 
 ## 🔄 Architecture Changes
 
 ### Database
+
 ```
 OLD: Full holdings recompute per transaction
 holdings.user_id, holdings.ticker
@@ -264,6 +280,7 @@ holdings.user_id, holdings.ticker
 ```
 
 ### API
+
 ```
 OLD: Price endpoints had no retry
 fetch(yahoo_url) → fail once, error immediately
@@ -291,26 +308,27 @@ fetch(yahoo_url)
 
 ## 📋 Audit Findings Addressed
 
-| Finding | Category | Status | File(s) |
-|---------|----------|--------|---------|
-| DB-01: Holdings O(n) | Database | ✅ | 20260510_incremental_holdings.sql |
-| DB-02: No cron | Database | ✅ | wrangler.jsonc, daily-refresh.ts |
-| DB-03: Missing indexes | Database | ✅ | 20260510_add_performance_indexes.sql |
-| BE-01: Yahoo no retry | Backend | ✅ | yahoo-finance.ts |
-| BE-04: Public endpoint abuse | Backend | ✅ | evaluate-price-alerts.ts |
-| FE-01: Auth flash | Frontend | ✅ | _app.tsx |
-| FE-02: Logout cache | Frontend | ✅ | app-shell.tsx |
-| SEC-02: No CSP | Security | ✅ | api/entry.ts |
-| IMP-01: Price cron | Infrastructure | ✅ | wrangler.jsonc, daily-refresh.ts |
-| IMP-02: Holdings perf | Infrastructure | ✅ | portfolio.functions.ts |
-| IMP-05: Community data | Data | ✅ | community.functions.ts |
-| IMP-12: Cron auth | Security | ✅ | evaluate-price-alerts.ts |
+| Finding                      | Category       | Status | File(s)                              |
+| ---------------------------- | -------------- | ------ | ------------------------------------ |
+| DB-01: Holdings O(n)         | Database       | ✅     | 20260510_incremental_holdings.sql    |
+| DB-02: No cron               | Database       | ✅     | wrangler.jsonc, daily-refresh.ts     |
+| DB-03: Missing indexes       | Database       | ✅     | 20260510_add_performance_indexes.sql |
+| BE-01: Yahoo no retry        | Backend        | ✅     | yahoo-finance.ts                     |
+| BE-04: Public endpoint abuse | Backend        | ✅     | evaluate-price-alerts.ts             |
+| FE-01: Auth flash            | Frontend       | ✅     | \_app.tsx                            |
+| FE-02: Logout cache          | Frontend       | ✅     | app-shell.tsx                        |
+| SEC-02: No CSP               | Security       | ✅     | api/entry.ts                         |
+| IMP-01: Price cron           | Infrastructure | ✅     | wrangler.jsonc, daily-refresh.ts     |
+| IMP-02: Holdings perf        | Infrastructure | ✅     | portfolio.functions.ts               |
+| IMP-05: Community data       | Data           | ✅     | community.functions.ts               |
+| IMP-12: Cron auth            | Security       | ✅     | evaluate-price-alerts.ts             |
 
 ---
 
 ## 🔮 Phase 2 (Medium Priority - Next Sprint)
 
 Untuk implementasi selanjutnya:
+
 - [ ] IMP-03: Form validation unification (RHF + Zod)
 - [ ] IMP-04: Mobile UX refinement (label truncation, inputMode)
 - [ ] IMP-07: Vitest unit tests untuk business logic

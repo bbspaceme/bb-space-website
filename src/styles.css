@@ -103,7 +103,7 @@
   --destructive-foreground: #070c18;
 
   --border: rgba(126, 184, 176, 0.1);
-  --input: rgba(255,255,255,0.04);
+  --input: rgba(255, 255, 255, 0.04);
   --ring: rgba(126, 184, 176, 0.12);
 
   /* Semantic finance colors — used ONLY for P/L. */
@@ -123,11 +123,12 @@
   --sidebar-primary-foreground: #0b0f1a;
   --sidebar-accent: #7eb8b0;
   --sidebar-accent-foreground: #0b0f1a;
-  --sidebar-border: rgba(255,255,255,0.04);
-  --sidebar-ring: rgba(126,184,176,0.08);
+  --sidebar-border: rgba(255, 255, 255, 0.04);
+  --sidebar-ring: rgba(126, 184, 176, 0.08);
 
   /* Fonts — prefer brand display/serif for headings */
-  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans:
+    "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "DM Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
   --font-display: "Syne", var(--font-sans);
   --font-serif: "Cormorant Garamond", serif;

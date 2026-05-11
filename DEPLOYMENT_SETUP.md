@@ -20,6 +20,7 @@ wrangler secret put LOVABLE_API_KEY
 ## Deploy Checklist
 
 ### 1. Database Migrations
+
 ```bash
 # Apply indexing migration
 supabase db push  # atau manual SQL di Supabase dashboard
@@ -29,12 +30,14 @@ supabase db push  # atau manual SQL di Supabase dashboard
 ```
 
 ### 2. Wrangler Configuration
+
 ```bash
 # Verify wrangler.jsonc has triggers configured:
 cat wrangler.jsonc | grep -A 3 'triggers'
 ```
 
 ### 3. Test Cron Endpoint
+
 ```bash
 # Manual test (sebelum deploy):
 curl -X POST http://localhost:8787/api/cron/daily-refresh \
@@ -44,12 +47,14 @@ curl -X POST http://localhost:8787/api/cron/daily-refresh \
 ```
 
 ### 4. Verify Security Headers
+
 ```bash
 # Check CSP dan security headers di production:
 curl -I https://kbai-terminal.com/ | grep -E 'Content-Security|X-Frame|X-Content'
 ```
 
 ### 5. Test Incremental Holdings
+
 ```bash
 # Login, buat transaksi BUY, verify tidak ada full recompute delay
 # Monitor Supabase query logs:
@@ -62,24 +67,27 @@ curl -I https://kbai-terminal.com/ | grep -E 'Content-Security|X-Frame|X-Content
 Semua perubahan di-log di audit_logs:
 
 ```sql
-SELECT action, entity, metadata, created_at 
-FROM audit_logs 
-WHERE action IN ('tx.buy', 'tx.sell', 'auth.login', 'auth.logout') 
-ORDER BY created_at DESC 
+SELECT action, entity, metadata, created_at
+FROM audit_logs
+WHERE action IN ('tx.buy', 'tx.sell', 'auth.login', 'auth.logout')
+ORDER BY created_at DESC
 LIMIT 50;
 ```
 
 ## Monitoring
 
 ### Cron Job Status
+
 - Cloudflare Dashboard > Triggers > Cron Jobs — lihat execution history
 - Failed runs akan terlihat di error logs
 
 ### Query Performance
+
 - Supabase > SQL Editor > Query Performance
 - Verify indexes being used: `EXPLAIN ANALYZE ...`
 
 ### Security
+
 - Check für any CSP violations di browser DevTools > Console
 - Verify rate limiting di price-alerts endpoint
 

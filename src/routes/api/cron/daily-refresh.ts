@@ -1,20 +1,40 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { timingSafeEqual } from "crypto";
+
+/**
+ * Constant-time string comparison to prevent timing attacks
+ */
+function timingSafeCompare(provided: string, expected: string): boolean {
+  if (!provided || !expected) return false;
+
+  if (provided.length !== expected.length) return false;
+
+  try {
+    const providedBuf = Buffer.from(provided);
+    const expectedBuf = Buffer.from(expected);
+    return timingSafeEqual(providedBuf, expectedBuf);
+  } catch (error) {
+    return false;
+  }
+}
 
 export const Route = createFileRoute("/api/cron/daily-refresh")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Validate CRON_SECRET from Cloudflare Cron trigger
+        // Validate CRON_SECRET with timing-safe comparison
         const expected = process.env.CRON_SECRET;
         if (!expected) {
           return new Response("Server misconfigured: CRON_SECRET not set", { status: 500 });
         }
+
         const provided =
           request.headers.get("x-cron-secret") ||
           request.headers.get("cf-cron-secret") ||
           new URL(request.url).searchParams.get("secret");
 
-        if (!provided || provided !== expected) {
+        // Use constant-time comparison
+        if (!timingSafeCompare(provided || "", expected)) {
           return new Response("Forbidden", { status: 403 });
         }
 

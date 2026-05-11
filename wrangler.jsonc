@@ -4,9 +4,54 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
+  "kv_namespaces": [
+    {
+      "binding": "RATE_LIMIT_KV",
+      "id": "RATE_LIMIT_NAMESPACE_ID",
+      "preview_id": "RATE_LIMIT_PREVIEW_ID",
+    },
+  ],
   "triggers": {
-    "crons": [
-      "30 9 * * 1-5"
-    ]
-  }
+    "crons": ["30 9 * * 1-5"],
+  },
+  "env": {
+    "staging": {
+      "name": "tanstack-start-app-staging",
+      "vars": {
+        "ENVIRONMENT": "staging",
+      },
+      "kv_namespaces": [
+        {
+          "binding": "RATE_LIMIT_KV",
+          "id": "RATE_LIMIT_NAMESPACE_STAGING_ID",
+          "preview_id": "RATE_LIMIT_PREVIEW_ID",
+        },
+      ],
+      "routes": [
+        {
+          "pattern": "staging.YOUR_DOMAIN.com/*",
+          "zone_name": "YOUR_DOMAIN.com",
+        },
+      ],
+    },
+    "production": {
+      "name": "tanstack-start-app-production",
+      "vars": {
+        "ENVIRONMENT": "production",
+      },
+      "kv_namespaces": [
+        {
+          "binding": "RATE_LIMIT_KV",
+          "id": "RATE_LIMIT_NAMESPACE_PROD_ID",
+          "preview_id": "RATE_LIMIT_PREVIEW_ID",
+        },
+      ],
+      "routes": [
+        {
+          "pattern": "YOUR_DOMAIN.com/*",
+          "zone_name": "YOUR_DOMAIN.com",
+        },
+      ],
+    },
+  },
 }

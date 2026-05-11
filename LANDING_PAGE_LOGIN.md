@@ -1,6 +1,7 @@
 # Landing Page to Login Connection
 
 ## Overview
+
 Landing page (`/`) sudah mengintegrasikan koneksi ke halaman login (`/login`) melalui:
 
 1. **Navbar Login Button** — Di desktop, tombol "Login" di kanan navbar
@@ -10,6 +11,7 @@ Landing page (`/`) sudah mengintegrasikan koneksi ke halaman login (`/login`) me
 ## Components Architecture
 
 ### Landing Components (`src/components/landing-upgraded/`)
+
 ```
 index.tsx (main page)
 ├── Navbar.tsx (fixed nav dengan Login button)
@@ -19,6 +21,7 @@ index.tsx (main page)
 ```
 
 ### Login Route (`src/routes/login.tsx`)
+
 - Standalone login page dengan form validasi
 - Post-login redirect ke `/community` (dashboard)
 - Audit logging & session recording
@@ -52,26 +55,32 @@ index.tsx (main page)
 ## Account Types & Role-Based Navigation
 
 ### 1. Admin Account
+
 **Email**: `admin@kbai.local`
 **Password**: `Admin#2026!`
 **Menu Levels**:
+
 - Administration (Users, Settings, Market Data, Transactions)
 - Compliance (Audit Logs, Security)
 - Personal (Activity, Settings)
 
 ### 2. Advisor Account
+
 **Email**: `kaizen@gmail.com`
 **Password**: `kaizen123`
 **Menu Levels**:
+
 - Market (Dashboard, Market Insight, Watchlist)
 - Research (Analisis, Ekonomi, Insight modules)
 - Advisory Operations (Holdings, User Portfolios, Broadcast)
 - Personal (Activity, Settings)
 
 ### 3. Member/User Account
+
 **Email**: `alwi@gmail.com`
 **Password**: `alwi123`
 **Menu Levels**:
+
 - Workspace (Dashboard, Portfolio, Watchlist, Market Insight)
 - Research (Analisis, Ekonomi)
 - Personal (Activity, Settings)
@@ -83,6 +92,7 @@ index.tsx (main page)
 Located in `src/components/app-shell.tsx`:
 
 #### MEMBER_GROUPS (Regular Investor)
+
 ```
 Workspace/
 ├── Dashboard (Community)
@@ -100,6 +110,7 @@ Personal/
 ```
 
 #### ADVISOR_GROUPS (Financial Advisor)
+
 ```
 Market/
 ├── Dashboard (Community)
@@ -123,6 +134,7 @@ Personal/
 ```
 
 #### ADMIN_GROUPS (System Administrator)
+
 ```
 Overview/
 └── Dashboard
@@ -145,29 +157,31 @@ Personal/
 ## Technical Implementation
 
 ### Auth Context (`src/auth.tsx`)
+
 ```ts
 interface AuthState {
-  isAuthenticated: boolean    // Logged in?
-  isLoading: boolean          // Fetching role?
-  user: User | null           // Supabase user
-  session: Session | null     // Auth session
-  username: string | null     // From profiles table
-  isAdmin: boolean            // From user_roles
-  isAdvisor: boolean          // From user_roles
-  signIn: (email, password) => Promise<void>
-  signOut: () => Promise<void>
-  refreshRole: () => Promise<void>
+  isAuthenticated: boolean; // Logged in?
+  isLoading: boolean; // Fetching role?
+  user: User | null; // Supabase user
+  session: Session | null; // Auth session
+  username: string | null; // From profiles table
+  isAdmin: boolean; // From user_roles
+  isAdvisor: boolean; // From user_roles
+  signIn: (email, password) => Promise<void>;
+  signOut: () => Promise<void>;
+  refreshRole: () => Promise<void>;
 }
 ```
 
 ### Route Protection (`src/routes/_app.tsx`)
+
 ```ts
 export const Route = createFileRoute("/_app")({
   beforeLoad: async () => {
     // Check if user is authenticated via Supabase
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) {
-      throw redirect({ to: "/login" });  // Redirect to login
+      throw redirect({ to: "/login" }); // Redirect to login
     }
   },
   component: AppLayout,
@@ -175,6 +189,7 @@ export const Route = createFileRoute("/_app")({
 ```
 
 ### Auth Loading State
+
 ```tsx
 if (auth.isLoading) {
   return (
@@ -197,14 +212,11 @@ if (auth.isLoading) {
 The sidebar dynamically renders nav groups based on user role:
 
 ```tsx
-const navGroups = auth.isAdmin 
-  ? ADMIN_GROUPS 
-  : auth.isAdvisor 
-    ? ADVISOR_GROUPS 
-    : MEMBER_GROUPS;
+const navGroups = auth.isAdmin ? ADMIN_GROUPS : auth.isAdvisor ? ADVISOR_GROUPS : MEMBER_GROUPS;
 ```
 
 Route detection updates header title:
+
 ```ts
 const ROUTE_TITLES: Record<string, { title: string; subtitle: string }> = {
   "/community": { title: "Community Dashboard", subtitle: "KBAI · IHSG · GOLD" },
@@ -232,8 +244,8 @@ await writeAuditLog({ data: { username, action: "auth.login", user_agent } });
 
 // On logout (app-shell.tsx):
 await writeAuditLog({ data: { username, action: "auth.logout", user_agent } });
-queryClient.clear();  // Clear cache
-window.location.href = "/login";  // Hard redirect
+queryClient.clear(); // Clear cache
+window.location.href = "/login"; // Hard redirect
 ```
 
 Query: `SELECT * FROM audit_logs WHERE action LIKE 'auth.%' ORDER BY created_at DESC;`
