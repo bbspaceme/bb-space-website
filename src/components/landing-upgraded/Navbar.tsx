@@ -105,16 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({ links, onScroll }) => {
       </div>
 
       {/* Desktop Navigation */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "40px",
-          "@media (max-width: 768px)": {
-            display: "none",
-          },
-        }}
-      >
+      <div className="hidden md:flex items-center gap-10">
         {links.map((link) => (
           <button
             key={link.href}
@@ -143,16 +134,7 @@ export const Navbar: React.FC<NavbarProps> = ({ links, onScroll }) => {
       </div>
 
       {/* Desktop Actions */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          "@media (max-width: 768px)": {
-            display: "none",
-          },
-        }}
-      >
+      <div className="hidden md:flex items-center gap-3">
         <button
           onClick={() => handleNavClick("#login")}
           style={{
@@ -210,18 +192,12 @@ export const Navbar: React.FC<NavbarProps> = ({ links, onScroll }) => {
       {/* Mobile Hamburger */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
+        className="flex md:hidden flex-col gap-1.5 p-2"
         style={{
-          display: "none",
-          "@media (max-width: 768px)": {
-            display: "flex",
-          },
           background: "none",
           border: "none",
           color: tokens.color.text,
           cursor: "pointer",
-          padding: "8px",
-          flexDirection: "column",
-          gap: "6px",
         }}
         aria-label="Toggle navigation menu"
         aria-expanded={mobileOpen}

@@ -1,3 +1,5 @@
+import React, { Component, ErrorInfo, ReactNode } from "react";
+
 interface WindowWithMonitoring extends Window {
   Sentry?: {
     captureException: (

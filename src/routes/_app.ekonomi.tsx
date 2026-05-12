@@ -2,16 +2,30 @@ import { createFileRoute, Outlet, Link, redirect } from "@tanstack/react-router"
 import { supabase } from "@/integrations/supabase/client";
 import { TrendingUp, Globe, Coins, BarChart3, Sparkles, CalendarDays } from "lucide-react";
 
+function getRolesFromUser(user: { app_metadata?: { roles?: string[] } } | null) {
+  const roles = user?.app_metadata?.roles;
+  return Array.isArray(roles) ? roles.map(String) : [];
+}
+
 export const Route = createFileRoute("/_app/ekonomi")({
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) return;
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user.id);
-    const allowed = !!roles?.some((r) => ["advisor", "admin"].includes(String(r.role)));
-    if (!allowed) throw redirect({ to: "/community" });
+    const { data: userData, error } = await supabase.auth.getUser();
+    if (error || !userData.user) return;
+
+    // First check JWT claims (fast path)
+    const jwtRoles = getRolesFromUser(userData.user);
+    let isAllowed = ["advisor", "admin"].some((r) => jwtRoles.includes(r));
+
+    // Fallback to DB query if JWT claims don't have role info
+    if (!isAllowed) {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userData.user.id);
+      isAllowed = !!roles?.some((r) => ["advisor", "admin"].includes(String(r.role)));
+    }
+
+    if (!isAllowed) throw redirect({ to: "/community" });
   },
   component: EkonomiLayout,
 });

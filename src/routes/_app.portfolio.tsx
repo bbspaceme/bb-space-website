@@ -30,16 +30,31 @@ import { PortfolioMetrics } from "@/features/portfolio/components/PortfolioMetri
 import { PortfolioChart } from "@/features/portfolio/components/PortfolioChart";
 import { TransactionHistory } from "@/features/portfolio/components/TransactionHistory";
 
+function getRolesFromUser(user: { app_metadata?: { roles?: string[] } } | null) {
+  const roles = user?.app_metadata?.roles;
+  return Array.isArray(roles) ? roles.map(String) : [];
+}
+
 export const Route = createFileRoute("/_app/portfolio")({
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) return;
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user.id);
-    const isAdmin = !!roles?.some((r) => String(r.role) === "admin");
-    const isAdvisor = !!roles?.some((r) => String(r.role) === "advisor");
+    const { data: userData, error } = await supabase.auth.getUser();
+    if (error || !userData.user) return;
+
+    // First check JWT claims (fast path)
+    const jwtRoles = getRolesFromUser(userData.user);
+    let isAdmin = jwtRoles.includes("admin");
+    let isAdvisor = jwtRoles.includes("advisor");
+
+    // Fallback to DB query if JWT claims don't have role info
+    if (!isAdmin && !isAdvisor) {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userData.user.id);
+      isAdmin = !!roles?.some((r) => String(r.role) === "admin");
+      isAdvisor = !!roles?.some((r) => String(r.role) === "advisor");
+    }
+
     // Admins and advisors don't have portfolios — send to dashboard
     if (isAdmin || isAdvisor) {
       throw redirect({ to: "/community" });
