@@ -237,7 +237,7 @@ export async function requireAdminAuth(context: any) {
 **Critical Gaps**:
 
 1. **Deployment Fragility**:
-   - Vercel deployment broken (root cause TBD)
+   - Vercel deployment remains fragile; active investigation of environment and routing configuration is required
    - Manual environment variable management
    - CSP headers may be too restrictive
    - No deployment rollback strategy documented
@@ -662,7 +662,7 @@ Current team appears to be: 1-2 full-stack developers?
 
 ### 🔴 Blocker #1: Session Hydration Race Condition (User Impact: HIGH)
 
-**Status**: Known issue, partially addressed but not resolved
+**Status**: Known issue, fix committed in route guard logic
 
 **Symptom**: Users intermittently kicked to `/login` on page reload or route navigation
 
@@ -691,8 +691,7 @@ if (error || !data.user) {
 8. 200ms later, localStorage hydration completes
 9. Auth context sees token, but redirect already fired
 
-**Attempted Fix (Incomplete)**:
-Using `getUser()` instead of `getSession()` doesn't solve the race—just reduces frequency
+**Current Mitigation**: The route guard now includes retry logic during auth hydration to avoid false redirects.
 
 **Solution**: Implement retry logic with exponential backoff
 

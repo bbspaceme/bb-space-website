@@ -2,16 +2,29 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useAuth } from "@/auth";
 import { supabase } from "@/integrations/supabase/client";
 
+function getRolesFromUser(user: { app_metadata?: { roles?: string[] } } | null) {
+  const roles = user?.app_metadata?.roles;
+  return Array.isArray(roles) ? roles.map(String) : [];
+}
+
 export const Route = createFileRoute("/_app/admin")({
   beforeLoad: async ({ location }) => {
     const { data: userData, error } = await supabase.auth.getUser();
     if (error || !userData.user) throw redirect({ to: "/login" });
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userData.user.id);
-    const isAdmin = !!roles?.some((r) => String(r.role) === "admin");
-    const isAdvisor = !!roles?.some((r) => String(r.role) === "advisor");
+
+    const jwtRoles = getRolesFromUser(userData.user);
+    let isAdmin = jwtRoles.includes("admin");
+    let isAdvisor = jwtRoles.includes("advisor");
+
+    if (!isAdmin && !isAdvisor) {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userData.user.id);
+      isAdmin = !!roles?.some((r) => String(r.role) === "admin");
+      isAdvisor = !!roles?.some((r) => String(r.role) === "advisor");
+    }
+
     if (!isAdmin && !isAdvisor) {
       throw redirect({ to: "/community" });
     }

@@ -5,12 +5,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { Activity } from "lucide-react";
 
 export const Route = createFileRoute("/_app")({
-  // Use getUser() not getSession(): getSession() returns null on hard refresh
-  // before the browser client has restored the session from localStorage,
-  // which causes a phantom redirect to /login on every reload.
+  // Use getUser() with retry logic instead of getSession(). This avoids
+  // phantom redirects during hard refresh before Supabase hydrates localStorage.
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+    let user = null;
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (!user && attempts < maxAttempts) {
+      const { data, error } = await supabase.auth.getUser();
+      if (data?.user && !error) {
+        user = data.user;
+        break;
+      }
+      attempts += 1;
+      if (attempts < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 100 * 2 ** (attempts - 1)));
+      }
+    }
+
+    if (!user) {
       throw redirect({ to: "/login" });
     }
   },

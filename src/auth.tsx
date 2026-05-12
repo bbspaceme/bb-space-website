@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshRole = async () => {
-    if (user) await fetchRoleAndProfile(user.id);
+    if (user) await fetchRoleAndProfile(user);
   };
 
   return (
