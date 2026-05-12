@@ -28,12 +28,12 @@ export const Navbar: React.FC<NavbarProps> = ({ links, onScroll }) => {
   }, [onScroll]);
 
   const handleNavClick = (href: string) => {
-    if (href.startsWith("#")) {
+    if (href === "#login") {
+      navigate({ to: "/login" });
+    } else if (href.startsWith("#")) {
       // Smooth scroll to section
       const target = document.querySelector(href);
       target?.scrollIntoView({ behavior: "smooth", block: "start" });
-    } else if (href === "#login") {
-      navigate({ to: "/login" });
     }
     setMobileOpen(false);
   };

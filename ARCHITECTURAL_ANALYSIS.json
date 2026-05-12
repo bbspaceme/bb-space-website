@@ -1,0 +1,694 @@
+{
+  "analysis_date": "2026-05-11",
+  "project": "bb-space-website - KBAI Terminal",
+  "overview": "Comprehensive architectural exploration covering system design, business logic, data flows, error handling, authentication, missing systems, known issues, and code quality",
+  
+  "1_system_architecture": {
+    "description": "Complete component/route hierarchy, data flow patterns, and integration points",
+    "findings": {
+      "frontend_framework": {
+        "stack": "React Start (TanStack Router + React Query)",
+        "key_files": [
+          "src/router.tsx - Router configuration with DefaultErrorComponent",
+          "src/routes/__root.tsx - Root layout with AuthProvider wrapper",
+          "src/auth.tsx - AuthContext for session & role management",
+          "src/routes/_app.tsx - Protected app layout with auth redirect"
+        ],
+        "architecture": {
+          "component_hierarchy": "RootLayout → AppShell → RoutePages",
+          "routing": "File-based routing with TanStack Router",
+          "state_management": "React Query (server state) + React Context (auth session)",
+          "css": "Tailwind CSS with custom shadcn/ui components"
+        }
+      },
+      "backend_runtime": {
+        "primary": "Cloudflare Workers (DEPLOY_TARGET=cloudflare)",
+        "fallback": "Node.js server",
+        "entry_points": [
+          "api/entry.ts - HTTP handler for Vercel/Node deployment",
+          "src/server.ts - Server entry point with error recovery"
+        ]
+      },
+      "database": {
+        "provider": "Supabase (PostgreSQL)",
+        "connection": "Pooled via Supabase client",
+        "auth": "Row-Level Security (RLS) policies per table",
+        "key_tables": [
+          "profiles - user metadata (username, display_name)",
+          "user_roles - role assignments (admin, advisor, user)",
+          "transactions - buy/sell orders",
+          "holdings - computed positions",
+          "portfolio_snapshots - daily user portfolio state",
+          "eod_prices - end-of-day market prices",
+          "audit_logs - compliance trail",
+          "user_sessions - device tracking",
+          "user_2fa - 2FA configuration",
+          "price_alerts - price monitoring rules",
+          "notifications - user notifications",
+          "system_settings - configuration KV store"
+        ]
+      },
+      "external_integrations": {
+        "market_data": {
+          "primary": "Yahoo Finance API (query1.finance.yahoo.com)",
+          "fallback": "Sectors Finance API (placeholder, not implemented)",
+          "pattern": "MarketDataProvider chain with fallback support"
+        },
+        "ai_services": {
+          "provider": "Lovable AI Gateway (ai.gateway.lovable.dev)",
+          "auth": "Bearer token in Authorization header",
+          "models": ["google/gemini-2.5-flash"],
+          "usage_tracking": "Per-user quota enforcement with cost calculation"
+        },
+        "analytics": {
+          "error_tracking": "Sentry (dsn from VITE_SENTRY_DSN)",
+          "product_analytics": "PostHog (posthog.init on client)"
+        }
+      },
+      "api_flow": {
+        "client_request": "Browser sends Bearer token in Authorization header",
+        "middleware_chain": [
+          "attachSupabaseAuth - Attaches token to headers",
+          "requireSupabaseAuth - Validates token via supabase.auth.getClaims()",
+          "requireAdminAuth (optional) - Checks user_roles for admin",
+          "rateLimitMiddleware (optional) - Enforces 10 req/min per user"
+        ],
+        "server_execution": "createServerFn handler runs with supabaseAdmin client",
+        "response_flow": "JSON response with X-RateLimit headers"
+      },
+      "data_flow_diagrams": {
+        "authentication": "Client login → Supabase Auth → Session stored → Bearer token extraction → Server validation",
+        "transaction": "User submits transaction → validateHoldings/Cash → RPC upsert_holding_buy/sell → Audit log → Portfolio snapshot recompute",
+        "market_data": "Cron trigger (CRON_SECRET) → Yahoo Finance fetch → Upsert eod_prices → Recompute snapshots → Update KBAI index",
+        "ai_operation": "User triggers AI → Quota check → Lovable API call → Token counting → Cost calculation → Usage log"
+      }
+    },
+    "severity": "HIGH - Well-structured, but missing monitoring layers"
+  },
+
+  "2_business_logic_patterns": {
+    "description": "Recurring patterns in data processing, validation, and mutation",
+    "findings": {
+      "portfolio_management": {
+        "pattern": "Transaction-driven holdings computation",
+        "flow": [
+          "User submits BUY/SELL transaction",
+          "Validate holding exists (for SELL)",
+          "Validate cash balance sufficient",
+          "Adjust cash balance via adjust_cash_balance RPC",
+          "Insert transaction record",
+          "Upsert holding or increment",
+          "Log audit trail"
+        ],
+        "key_functions": [
+          "submitTransaction (src/lib/portfolio.functions.ts:218)",
+          "computeHoldingsFromTxns - In-memory ledger calculation",
+          "atomicAdjustCash - RPC for atomicity"
+        ],
+        "validation_rules": {
+          "BUY": "Cash balance >= amount",
+          "SELL": "Holdings >= quantity",
+          "price_precision": "To 4 decimal places",
+          "lot_unit": "1 lot = 100 shares (IDX standard)"
+        }
+      },
+      "admin_operations": {
+        "user_management": {
+          "flow": "Admin triggers → Supabase auth.admin.* → Role inserted → Audit logged",
+          "functions": [
+            "adminCreateUser - Creates user with email confirmation",
+            "adminGrantRole - Assigns admin/advisor/user role",
+            "adminDeleteUser - Only if not last admin"
+          ],
+          "protection": "DUP-04 pattern - admin role verified by middleware, not client input"
+        },
+        "session_tracking": {
+          "functions": [
+            "recordSession - Track login device/agent",
+            "adminListSessions - Show active user sessions",
+            "adminRevokeSession - Mark session inactive (not force logout)"
+          ],
+          "limitation": "Cannot remotely force browser logout—session marked revoked but user must refresh"
+        },
+        "settings_management": {
+          "pattern": "Upsert into system_settings table (key-value)",
+          "functions": ["adminListSettings", "adminUpdateSetting"]
+        }
+      },
+      "ai_operations": {
+        "pattern": "Quota-limited AI calls with cost tracking",
+        "flow": [
+          "Check user AI quota",
+          "Estimate tokens from input",
+          "Call Lovable AI with timeout (40s default)",
+          "Count output tokens",
+          "Calculate cost (USD)",
+          "Log usage for billing",
+          "Enforce daily/monthly limits"
+        ],
+        "models_used": ["google/gemini-2.5-flash", "openAI (reference only)", "Claude (reference only)"],
+        "operations": [
+          "runStockScreener - Risk-based screener",
+          "runDcfValuation - DCF model",
+          "runEarningsBrief - Earnings analysis",
+          "runPortfolioConstruction - Asset allocation IPS",
+          "runTechnicalAnalysis - TA patterns",
+          "runDividendStrategy - Dividend optimization"
+        ],
+        "disclaimer_requirement": "All AI outputs wrapped with financial disclaimer"
+      },
+      "market_data_refresh": {
+        "schedule": "Daily via Cron (CRON_SECRET authenticated)",
+        "steps": [
+          "Get distinct tickers from active holdings",
+          "Fetch quotes from Yahoo Finance",
+          "Upsert eod_prices table",
+          "Recompute portfolio_snapshots per user",
+          "Recompute KBAI index (community average return)",
+          "Audit log the refresh"
+        ],
+        "key_function": "refreshEodPrices (src/lib/portfolio.functions.ts:51)",
+        "performance_optimization": "Incremental RPC calls (upsert_holding_buy/sell) instead of full recompute"
+      },
+      "error_handling_in_mutations": {
+        "pattern": "Try/catch with audit logging fallback",
+        "example": "If audit log insert fails, error logged to console but main operation not blocked"
+      }
+    },
+    "severity": "MEDIUM - Patterns clear but need distributed tracing"
+  },
+
+  "3_query_patterns": {
+    "description": "Database query construction, N+1 patterns, indexing, efficiency",
+    "findings": {
+      "indexes_added": {
+        "migration": "20260510_add_performance_indexes.sql",
+        "indexes": [
+          "idx_eod_prices_date_ticker ON eod_prices(date DESC, ticker)",
+          "idx_transactions_user_date ON transactions(user_id, transacted_at DESC)",
+          "idx_audit_logs_created ON audit_logs(created_at DESC)",
+          "idx_holdings_user ON holdings(user_id)",
+          "idx_portfolio_snapshots_user_date ON portfolio_snapshots(user_id, date DESC)",
+          "idx_kbai_index_date ON kbai_index(date DESC)",
+          "idx_notifications_user ON notifications(user_id, created_at DESC)",
+          "idx_benchmark_prices_date ON benchmark_prices(date DESC, symbol)",
+          "idx_price_alerts_user_active ON price_alerts(user_id, is_active)",
+          "idx_user_sessions_user_active ON user_sessions(user_id, is_active)"
+        ],
+        "estimated_impact": "10x+ faster on indexed columns"
+      },
+      "n_plus_one_risks": {
+        "high_risk": [
+          {
+            "location": "src/lib/admin-middleware.ts - requireAdminAuth",
+            "query": "SELECT * FROM user_roles WHERE user_id = ?",
+            "issue": "Runs on EVERY admin API call—could be cached in token claims",
+            "frequency": "Every admin operation (list users, update settings, etc)"
+          },
+          {
+            "location": "src/routes/_app.tsx - beforeLoad",
+            "query": "supabase.auth.getUser() + supabase.from('user_roles').select()",
+            "issue": "Two DB queries on page load + auth check",
+            "frequency": "Every route change"
+          }
+        ],
+        "medium_risk": [
+          {
+            "location": "src/lib/portfolio.functions.ts - recomputeSnapshotsAndKbai",
+            "query": "SELECT * FROM holdings, then N loop to fetch prices",
+            "mitigation": "Index on holdings(user_id) added",
+            "issue": "Could still be slow if huge portfolio count"
+          }
+        ]
+      },
+      "missing_indexes": {
+        "user_2fa": "No index on user_id—2FA lookup on every admin login check",
+        "cash_balances": "No indexes present—cash validation queries unindexed",
+        "watchlist": "No compound index on (user_id, ticker)",
+        "system_settings": "No index on key—setting lookups sequential scan"
+      },
+      "soft_delete_performance": {
+        "migration": "20260511000000_implement_soft_delete.sql",
+        "pattern": "All queries now include .is('deleted_at', null) filters",
+        "performance_impact": "Filter clause on every query—consider index on (deleted_at, user_id)"
+      },
+      "connection_pooling": {
+        "status": "✅ Implemented",
+        "config": "Supabase connection pooling built-in",
+        "documentation": "docs/DATABASE_CONNECTION_POOLING.md"
+      },
+      "query_complexity": {
+        "highest": "getCommunityEquitySeries - Aggregates portfolio_snapshots across all users per date",
+        "pattern": "Map-reduce in memory after DB fetch"
+      }
+    },
+    "severity": "HIGH - Multiple N+1 risks and missing indexes on hot paths"
+  },
+
+  "4_error_handling_strategy": {
+    "description": "Error catching, logging, reporting throughout the system",
+    "findings": {
+      "global_error_capture": {
+        "file": "src/lib/error-capture.ts",
+        "mechanism": "EventListener on 'error' and 'unhandledrejection'",
+        "limitation": "Only captures last error in 5 second window—race condition possible",
+        "usage": "consumeLastCapturedError() called in src/server.ts"
+      },
+      "error_boundary": {
+        "file": "src/components/error-boundary.tsx",
+        "hierarchy": "Class component wrapping _app.tsx and _app.portfolio.tsx",
+        "captures": "React render errors + componentDidCatch",
+        "reporting": "Sentry.captureException() + PostHog.capture('error_boundary_triggered')"
+      },
+      "http_error_handling": {
+        "router_default": "DefaultErrorComponent in src/router.tsx",
+        "shows": "Error message from thrown error, with 'Try again' and 'Go home' buttons",
+        "limitation": "Generic—doesn't distinguish between auth errors, validation errors, server errors"
+      },
+      "server_error_recovery": {
+        "file": "src/server.ts",
+        "function": "normalizeCatastrophicSsrResponse()",
+        "pattern": "Catches SSR h3 errors and returns branded HTML error page",
+        "limitation": "h3 swallows throws—only sees generic 500 with {unhandled: true}"
+      },
+      "middleware_error_handling": {
+        "pattern": "Throw Response(message, {status})",
+        "requiredSupabaseAuth": "Throws 401 on missing token",
+        "requireAdminAuth": "Throws 403 on missing admin role",
+        "rateLimitMiddleware": "Throws 429 with Retry-After header"
+      },
+      "server_function_error_handling": {
+        "pattern": "Handler wraps in try/catch",
+        "audit_log_pattern": "Errors logged but don't block—non-blocking failure",
+        "missing": "No errorContext propagation for distributed tracing"
+      },
+      "financial_disclaimer": {
+        "file": "src/lib/ai-disclaimer.ts",
+        "pattern": "withFinancialDisclaimer wrapper on AI responses",
+        "requirement": "Must be shown on all AI-generated financial content",
+        "compliance": "Protects from liability but users may ignore"
+      },
+      "sentry_configuration": {
+        "file": "src/lib/monitoring.ts",
+        "setup": "dsn from VITE_SENTRY_DSN",
+        "sample_rate": "10% (tracesSampleRate: 0.1)",
+        "integrations": ["browserTracingIntegration", "replayIntegration"]
+      }
+    },
+    "severity": "MEDIUM - Basic error capture present, but missing structured logging and correlation IDs"
+  },
+
+  "5_authentication_and_authorization": {
+    "description": "Complete auth flow, session management, 2FA, role-based access, RLS policies",
+    "findings": {
+      "auth_flow": {
+        "login_process": [
+          "User enters email/password on /login page",
+          "signIn() calls supabase.auth.signInWithPassword()",
+          "Check if user is admin/advisor (from user_roles table)",
+          "If privileged, verify 2FA enabled—if not, throw 'MFA_REQUIRED'",
+          "Record session + audit log (non-blocking)",
+          "Redirect to /community"
+        ],
+        "logout": "supabase.auth.signOut() and context cleared"
+      },
+      "session_management": {
+        "storage": "Supabase JS client handles session in localStorage",
+        "persistence": "Browser local storage across refreshes",
+        "timing_issue": "Hard refresh may cause phantom redirect to /login before session restored",
+        "root_cause": "getSession() returns null immediately, should use getUser() instead",
+        "file_with_issue": "src/routes/_app.tsx:1-14",
+        "workaround": "Current code uses getUser() but timing race condition may still exist"
+      },
+      "two_factor_authentication": {
+        "file": "src/lib/twofa.functions.ts",
+        "requirement": "Mandatory for admin/advisor accounts",
+        "setup_flow": [
+          "start2faSetup() generates TOTP secret",
+          "QR code presented to user",
+          "verify2faSetup() validates code",
+          "Recovery codes generated and stored hashed"
+        ],
+        "recovery_codes": {
+          "count": "10 codes generated",
+          "storage": "Hashed with PBKDF2 (100k iterations, SHA-256)",
+          "format": "stored as 'saltHex$hashHex'"
+        },
+        "verification": "TOTP library (otpauth) validates time-based 6-digit codes",
+        "disable": "disable2fa() removes TOTP secret (requires current code)"
+      },
+      "role_based_access_control": {
+        "roles": ["admin", "advisor", "user"],
+        "storage": "user_roles table (user_id, role)",
+        "enforcement": "Middleware checks roles before handler execution",
+        "admin_middleware": [
+          "attachSupabaseAuth + requireSupabaseAuth + requireAdminAuth",
+          "Check user_roles.role == 'admin'",
+          "Throw 403 Forbidden if not admin"
+        ],
+        "advisor_middleware": [
+          "attachSupabaseAuth + requireSupabaseAuth + requireAdvisorAuth",
+          "Check user_roles.role IN ('admin', 'advisor')",
+          "Throw 403 Forbidden if not either"
+        ]
+      },
+      "token_handling": {
+        "type": "Supabase JWT",
+        "extraction": "Bearer token from Authorization header",
+        "validation": "supabase.auth.getClaims(token)",
+        "claims_used": "sub (user_id), email",
+        "missing": "No role claim in JWT—separate DB query needed per request"
+      },
+      "rls_policies": {
+        "status": "✅ Defined in migrations",
+        "pattern": "SELECT/UPDATE/DELETE restricted to owner or admin",
+        "example_tables": [
+          "holdings - user can only see their own",
+          "transactions - user can only see their own",
+          "notifications - user can only see their own"
+        ],
+        "admin_bypass": "supabaseAdmin client bypasses RLS"
+      },
+      "bootstrap_admin": {
+        "function": "bootstrapAdmin() in src/lib/portfolio.functions.ts",
+        "purpose": "Promote first user to admin on first signup",
+        "protection": "Only runs if no admin exists",
+        "use_case": "Initial system setup"
+      }
+    },
+    "severity": "MEDIUM - Auth implemented but has timing race condition issues, role caching could improve performance"
+  },
+
+  "6_critical_missing_systems": {
+    "description": "Major enterprise features completely absent",
+    "findings": {
+      "monitoring_and_observability": {
+        "status": "MINIMAL",
+        "present": [
+          "Sentry errors (10% sample rate)",
+          "PostHog product analytics (manual capture)",
+          "Basic /api/public/health endpoint"
+        ],
+        "missing": [
+          "Structured request/response logging",
+          "Distributed tracing (correlation IDs)",
+          "Performance monitoring dashboard",
+          "Custom metrics (transaction volume, market data latency)",
+          "Real-time alerting on error spikes",
+          "SLA tracking",
+          "Uptime monitoring beyond basic health check"
+        ],
+        "severity": "CRITICAL"
+      },
+      "disaster_recovery": {
+        "status": "ABSENT",
+        "missing": [
+          "Backup automation",
+          "RTO/RPO targets",
+          "Failover strategy",
+          "Database replication",
+          "Cross-region redundancy",
+          "Disaster recovery runbooks"
+        ],
+        "risk": "Data loss possible without backups"
+      },
+      "audit_and_compliance": {
+        "present": [
+          "Basic audit_logs table",
+          "DUP-03 consolidated audit implementation",
+          "Action, entity, entity_id, metadata tracking"
+        ],
+        "missing": [
+          "Compliance report generation",
+          "Data retention policies",
+          "PII masking in logs",
+          "Signed audit trail (tamper-proof)",
+          "Automated compliance checks",
+          "SOC 2 readiness",
+          "GDPR compliance matrix"
+        ]
+      },
+      "performance_monitoring": {
+        "missing": [
+          "Query execution time tracking",
+          "API endpoint latency metrics",
+          "Database connection pool metrics",
+          "Cache hit rates",
+          "Error rate tracking",
+          "Alerting thresholds"
+        ]
+      },
+      "capacity_planning": {
+        "missing": [
+          "Growth projections",
+          "Cost forecasting",
+          "Scaling targets",
+          "Database size trends"
+        ]
+      },
+      "data_governance": {
+        "missing": [
+          "Data classification",
+          "Access control matrix",
+          "Data lineage tracking",
+          "Sensitive field encryption (besides 2FA codes)"
+        ]
+      },
+      "feature_flags": {
+        "status": "ABSENT",
+        "impact": "Cannot safely roll out new features to subset of users"
+      },
+      "load_testing": {
+        "status": "NOT DOCUMENTED",
+        "missing": [
+          "Benchmarks for throughput",
+          "Spike handling capacity",
+          "Concurrent user limits"
+        ]
+      }
+    },
+    "severity": "CRITICAL - Multiple enterprise-grade systems missing"
+  },
+
+  "7_known_bugs_and_issues": {
+    "description": "Reported login navigation and Vercel deployment issues, systemic implications",
+    "findings": {
+      "login_navigation_phantom_redirect": {
+        "severity": "HIGH",
+        "symptoms": [
+          "User reports being redirected to /login on every page reload",
+          "Authenticated users getting bounced to login"
+        ],
+        "root_cause": "Race condition in src/routes/_app.tsx beforeLoad",
+        "code_location": "src/routes/_app.tsx lines 10-15",
+        "issue_detail": "getSession() returns null immediately on hard refresh before browser's localStorage auth state is restored",
+        "attempted_fix": "Using getUser() instead of getSession() (more reliable server-side lookup)",
+        "remaining_problem": "Still a timing race—socket mismatch between client session and server validation",
+        "workaround": "requireSupabaseAuth middleware validates token—but timing gap causes intermittent redirect"
+      },
+      "vercel_deployment_errors": {
+        "severity": "HIGH",
+        "symptoms": [
+          "Build or runtime errors on Vercel",
+          "Documented in VERCEL_DEPLOYMENT.md but lack detail"
+        ],
+        "probable_causes": [
+          "Missing environment variables (SUPABASE_* not set)",
+          "Build output mismatch (dist/ structure differs between local and Vercel)",
+          "API route configuration in vercel.json may not match actual handler",
+          "CSP headers may block external API calls"
+        ],
+        "vercel_json_config": {
+          "rewrites": [
+            {source: "/api/(.*)", destination: "/api/$1"},
+            {source: "/((?!assets/).*)", destination: "/api/entry"}
+          ],
+          "limitation": "Catch-all rewrite may hide trailing errors"
+        },
+        "csp_header": "Restricts connect-src to specific supabase.co and localhost—may block requests",
+        "investigation_needed": [
+          "Check Vercel Function logs for actual error",
+          "Verify all env vars set: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY, CRON_SECRET",
+          "Test build locally with `npm run build` then `npm run preview`",
+          "Check CSP violations in browser DevTools"
+        ]
+      },
+      "systemic_issues_these_reveal": {
+        "issue_1": "Session hydration race condition—auth state not reliably restored on page load",
+        "issue_2": "Environment variable configuration fragile—easy to miss required vars",
+        "issue_3": "Limited deployment testing—no staging environment documented",
+        "issue_4": "Error handling doesn't distinguish between auth failures and other errors",
+        "consequence": "Users experience unpredictable redirects and broken deployments"
+      }
+    },
+    "severity": "CRITICAL - Directly impacts user experience and deployment reliability"
+  },
+
+  "8_code_quality_metrics": {
+    "description": "Test coverage, linting strictness, type safety, tech debt, dependencies",
+    "findings": {
+      "testing": {
+        "frameworks": ["Vitest", "Playwright"],
+        "coverage": "MINIMAL (1 dummy test in src/__tests__/setup.test.ts)",
+        "e2e_tests": [
+          "e2e/basic.spec.ts—only 2 smoke tests (homepage title, login page loads)",
+          "No transaction tests",
+          "No RBAC tests",
+          "No error scenario tests"
+        ],
+        "test_setup": {
+          "config": "vitest.config.ts - jsdom environment, global test utilities",
+          "playwright_config": "playwright.config.ts + playwright.staging.config.ts"
+        },
+        "missing": [
+          "Unit tests for business logic (portfolio calculations, AI quota)",
+          "Integration tests for auth flow",
+          "Integration tests for transaction pipeline",
+          "Load tests",
+          "Security tests"
+        ],
+        "coverage_target": "Next sprint target: 40% coverage"
+      },
+      "type_safety": {
+        "tsconfig": {
+          "target": "ES2022",
+          "strict": true,
+          "jsx": "react-jsx",
+          "noFallthroughCasesInSwitch": true
+        },
+        "strictness_level": "MEDIUM",
+        "relaxations": [
+          "noUnusedLocals: false—unused variables allowed",
+          "noUnusedParameters: false—unused params allowed"
+        ],
+        "database_types": [
+          "src/integrations/supabase/types.ts—auto-generated from Supabase schema",
+          "✅ Type-safe DB queries"
+        ],
+        "any_usage": [
+          "sys/lib/admin.functions.ts—(context as {userId: string}).userId",
+          "src/lib/error-capture.ts—(window as any).Sentry",
+          "Indicates defensive coding but type gaps remain"
+        ],
+        "zod_validation": "All API inputs validated with Zod schemas—good coverage"
+      },
+      "linting": {
+        "tool": "ESLint (eslint.config.js)",
+        "strictness": "MODERATE",
+        "ci_enforcement": "npm run lint:ci (--max-warnings 0) in GitHub Actions",
+        "missing": "No specific financial calculation validation rules"
+      },
+      "code_organization": {
+        "structure": {
+          "src/lib/": "Business logic functions (portfolio, market-data, admin, etc)",
+          "src/routes/": "Route handlers and components",
+          "src/components/": "Reusable UI components (error-boundary, ErrorPage, etc)",
+          "src/integrations/": "Third-party integrations (Supabase, AI)",
+          "supabase/migrations/": "Schema and RLS policies"
+        },
+        "duplication_markers": [
+          "DUP-03—Consolidated audit logging mechanism",
+          "DUP-04—Admin middleware pattern repeated"
+        ],
+        "debt": "Some consolidation opportunities"
+      },
+      "dependency_management": {
+        "node_version": ">=20",
+        "critical_dependencies": [
+          "@tanstack/react-start@1.167.14",
+          "@tanstack/react-router@1.168.0",
+          "@tanstack/react-query@5.99.0",
+          "@supabase/supabase-js@2.105.3",
+          "@radix-ui/* - Full component library",
+          "@sentry/react@10.52.0"
+        ],
+        "audit": "No known vulnerabilities documented",
+        "outdated": "Not checked—package.json has 80+ dependencies",
+        "bundle_size": "Rollup optimizations in vite.config.ts include manual chunks"
+      },
+      "technical_debt": {
+        "high": [
+          "Session hydration race condition (/login redirect)",
+          "N+1 query on admin role check (every API call)",
+          "No distributed tracing/correlation IDs"
+        ],
+        "medium": [
+          "Limited test coverage",
+          "Ad-hoc error handling without central strategy",
+          "Feature flags not implemented",
+          "Soft delete not fully integrated (added recently)"
+        ],
+        "low": [
+          "Some type gaps (any casts)",
+          "Minor code duplication in middleware"
+        ]
+      },
+      "build_and_deploy": {
+        "build_command": "vite build",
+        "output_directory": "dist/",
+        "optimization": {
+          "sourcemaps": "Only for dev/staging",
+          "minify": "Production only",
+          "code_splitting": "Manual chunks for router, ui, supabase, charts, pdf, excel, crypto"
+        },
+        "deployment_targets": [
+          "Vercel (default)",
+          "Cloudflare Workers (via wrangler)",
+          "Node.js (via api/entry.ts)"
+        ]
+      }
+    },
+    "severity": "HIGH - Low test coverage and scattered tech debt, but type safety reasonable"
+  },
+
+  "summary_and_recommendations": {
+    "system_maturity": "BETA-GRADE (6.5/10)",
+    "readiness_for_production": "CONDITIONAL - Needs fixes for session auth and monitoring",
+    "top_5_critical_fixes": [
+      {
+        "priority": 1,
+        "issue": "Login phantom redirect race condition",
+        "fix": "Implement retry logic or better session hydration detection",
+        "effort": "2-3 hours"
+      },
+      {
+        "priority": 2,
+        "issue": "Missing observability (distributed tracing, structured logs)",
+        "fix": "Add correlation IDs, request logging middleware, APM dashboard",
+        "effort": "2-3 days"
+      },
+      {
+        "priority": 3,
+        "issue": "N+1 role query on every admin API call",
+        "fix": "Cache roles in JWT claims or Redis",
+        "effort": "4-6 hours"
+      },
+      {
+        "priority": 4,
+        "issue": "Disaster recovery and backups absent",
+        "fix": "Implement Supabase automated backups, RTO/RPO targets",
+        "effort": "1 day"
+      },
+      {
+        "priority": 5,
+        "issue": "Test coverage <5% (only smoke tests)",
+        "fix": "Add unit + integration tests for core business logic",
+        "effort": "3-5 days"
+      }
+    ],
+    "architectural_strengths": [
+      "Clean separation of concerns (frontend/backend)",
+      "Type-safe database queries with Zod validation",
+      "Good use of middleware for cross-cutting concerns",
+      "Audit logging fully integrated",
+      "2FA implementation for privileged users"
+    ],
+    "architectural_weaknesses": [
+      "No observability/APM",
+      "Session state race conditions",
+      "Performance risks from N+1 patterns",
+      "Limited test coverage",
+      "No disaster recovery plan"
+    ]
+  }
+}
