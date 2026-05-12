@@ -12,19 +12,17 @@ import { attachSupabaseAuth } from "@/lib/with-auth";
 // Server-side: validate admin role from authenticated user
 const requireAdminAuth = createMiddleware({ type: "function" }).server(
   async ({ context, next }) => {
-    // requireSupabaseAuth already ran and provides userId
+    // requireSupabaseAuth already ran and provides userId and claims
     const userId = ((context ?? {}) as { userId?: string }).userId;
     if (!userId) {
       throw new Response("Unauthorized: No user ID", { status: 401 });
     }
 
-    // Check if user has admin role
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
+    // Get roles from JWT claims (efficient, no DB query)
+    const claims = ((context ?? {}) as { claims?: { app_metadata?: { roles?: string[] } } }).claims;
+    const jwtRoles = claims?.app_metadata?.roles;
 
-    if (!roles?.some((r) => String(r.role) === "admin")) {
+    if (!jwtRoles || !jwtRoles.includes("admin")) {
       throw new Response("Forbidden: admin role required", { status: 403 });
     }
 
@@ -54,14 +52,11 @@ const requireAdvisorAuth = createMiddleware({ type: "function" }).server(
       throw new Response("Unauthorized: No user ID", { status: 401 });
     }
 
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
+    const claims = ((context ?? {}) as { claims?: { app_metadata?: { roles?: string[] } } }).claims;
+    const jwtRoles = claims?.app_metadata?.roles;
 
-    const hasAdminOrAdvisor = roles?.some(
-      (r) => String(r.role) === "admin" || String(r.role) === "advisor",
-    );
+    const hasAdminOrAdvisor =
+      jwtRoles && (jwtRoles.includes("admin") || jwtRoles.includes("advisor"));
 
     if (!hasAdminOrAdvisor) {
       throw new Response("Forbidden: admin or advisor role required", { status: 403 });

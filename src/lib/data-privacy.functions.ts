@@ -108,7 +108,8 @@ export const exportUserData = createServerFn({ method: "GET" })
         auditLogs: auditLogs || [],
         dataRetention: {
           note: "This export contains your active data. Soft-deleted data is not included.",
-          gdprRights: "You have the right to access, rectify, erase, or restrict processing of your data.",
+          gdprRights:
+            "You have the right to access, rectify, erase, or restrict processing of your data.",
         },
       };
 

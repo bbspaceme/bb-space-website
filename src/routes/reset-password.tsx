@@ -78,7 +78,9 @@ function ResetPasswordPage() {
 
         <div className="rounded-sm border border-border bg-card">
           <div className="border-b border-border px-5 py-3.5">
-            <h1 className="text-[13px] font-semibold uppercase tracking-[0.14em]">Reset Password</h1>
+            <h1 className="text-[13px] font-semibold uppercase tracking-[0.14em]">
+              Reset Password
+            </h1>
             <p className="mt-1 text-[12px] text-muted-foreground">
               Masukkan password baru untuk akun kamu.
             </p>

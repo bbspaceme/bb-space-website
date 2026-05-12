@@ -6,7 +6,10 @@ import { advisorAuthMiddleware } from "@/lib/admin-middleware";
 import { rateLimitMiddleware } from "@/lib/rate-limiter";
 
 export const generateAiInsight = createServerFn({ method: "POST" })
-  .middleware([advisorAuthMiddleware, rateLimitMiddleware((context) => `ai-insight:${context.userId}`)])
+  .middleware([
+    advisorAuthMiddleware,
+    rateLimitMiddleware((context) => `ai-insight:${context.userId}`),
+  ])
   .inputValidator(z.object({}))
   .handler(async ({ context }) => {
     // User is already authenticated and authorized by advisorAuthMiddleware

@@ -16,42 +16,42 @@ All code is production-ready and can be copied directly into your codebase.
 
 ```typescript
 // BEFORE (lines 10-15):
-export const Route = createFileRoute('/_app')({
+export const Route = createFileRoute("/_app")({
   beforeLoad: async ({ context }) => {
-    const user = await context.queryClient.getQueryData(['user']);
+    const user = await context.queryClient.getQueryData(["user"]);
     if (!user) {
-      throw redirect({ to: '/login' });
+      throw redirect({ to: "/login" });
     }
   },
   // ...
 });
 
 // AFTER - Replace with:
-export const Route = createFileRoute('/_app')({
+export const Route = createFileRoute("/_app")({
   beforeLoad: async ({ context }) => {
     // Retry getUser with exponential backoff to allow localStorage hydration
     let user = null;
     let lastError: Error | null = null;
-    
+
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         // Wait before retry with exponential backoff
         if (attempt > 0) {
           const delay = Math.pow(2, attempt) * 100; // 100ms, 200ms, 400ms
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
-        
-        user = await context.queryClient.getQueryData(['user']);
-        
+
+        user = await context.queryClient.getQueryData(["user"]);
+
         if (user) {
           break; // Success
         }
-        
+
         // If still no user after retry, check localStorage directly
         if (attempt === 2) {
-          const stored = localStorage.getItem('supabase.auth');
+          const stored = localStorage.getItem("supabase.auth");
           if (!stored) {
-            throw new Error('No stored auth');
+            throw new Error("No stored auth");
           }
         }
       } catch (error) {
@@ -60,9 +60,9 @@ export const Route = createFileRoute('/_app')({
         continue;
       }
     }
-    
+
     if (!user) {
-      throw redirect({ to: '/login' });
+      throw redirect({ to: "/login" });
     }
   },
   // ...
@@ -70,6 +70,7 @@ export const Route = createFileRoute('/_app')({
 ```
 
 **Verification:**
+
 ```bash
 # Hard refresh page (Cmd+Shift+R) 10 times
 # Expected: No redirect, stays on app
@@ -91,13 +92,13 @@ export const Route = createFileRoute('/_app')({
 CREATE INDEX IF NOT EXISTS idx_user_2fa_user_id ON user_2fa(user_id);
 COMMENT ON INDEX idx_user_2fa_user_id IS 'Speed up 2FA queries for login, settings';
 
--- 2. Speed up cash balance lookups  
+-- 2. Speed up cash balance lookups
 CREATE INDEX IF NOT EXISTS idx_cash_balances_user_id ON cash_balances(user_id);
 COMMENT ON INDEX idx_cash_balances_user_id IS 'Speed up cash balance queries';
 
 -- 3. Speed up watchlist queries (composite for common filters)
-CREATE INDEX IF NOT EXISTS idx_watchlist_user_ticker 
-ON watchlist(user_id, ticker) 
+CREATE INDEX IF NOT EXISTS idx_watchlist_user_ticker
+ON watchlist(user_id, ticker)
 WHERE deleted_at IS NULL;
 COMMENT ON INDEX idx_watchlist_user_ticker IS 'Speed up watchlist lookups by user and ticker';
 
@@ -106,12 +107,13 @@ CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(key);
 COMMENT ON INDEX idx_system_settings_key IS 'Speed up system configuration lookups';
 
 -- Verify indexes created
-SELECT indexname, indexdef FROM pg_indexes 
-WHERE indexname LIKE 'idx_%' 
+SELECT indexname, indexdef FROM pg_indexes
+WHERE indexname LIKE 'idx_%'
 ORDER BY indexname;
 ```
 
 **Verification:**
+
 ```bash
 # Query performance should improve immediately
 # Check in Dashboard → SQL Editor → Indexes tab
@@ -134,7 +136,7 @@ ORDER BY indexname;
 2. Enable "Automated Backups": Click toggle ON
    - Frequency: Daily (recommended for production)
    - Retention: 14 days (covers 2 weeks)
-   
+
 3. Save configuration
 
 4. Create Manual Backup immediately:
@@ -171,7 +173,7 @@ ORDER BY indexname;
 
 4. **Verify Data Integrity**
    - Connect to database
-   - SELECT COUNT(*) FROM transactions;
+   - SELECT COUNT(\*) FROM transactions;
    - Compare with known count (check Slack log)
    - If counts match: ✅ Restore successful
 
@@ -190,6 +192,7 @@ ORDER BY indexname;
 ```
 
 **Verification:**
+
 ```bash
 # Check backups created
 curl -X GET 'https://api.supabase.co/v1/projects/[PROJECT_ID]/backups' \
@@ -211,15 +214,15 @@ curl -X GET 'https://api.supabase.co/v1/projects/[PROJECT_ID]/backups' \
 
 ```typescript
 // NEW FILE: src/lib/correlation-id.ts
-import { randomUUID } from 'crypto';
-import { createMiddleware } from '@tanstack/start'; // adjust based on your framework
+import { randomUUID } from "crypto";
+import { createMiddleware } from "@tanstack/start"; // adjust based on your framework
 
 declare global {
   var _correlationId: string | undefined;
 }
 
 export function getCorrelationId(): string {
-  return globalThis._correlationId || 'no-correlation-id';
+  return globalThis._correlationId || "no-correlation-id";
 }
 
 export function setCorrelationId(id: string): void {
@@ -229,26 +232,22 @@ export function setCorrelationId(id: string): void {
 export const correlationIdMiddleware = createMiddleware({
   onRequest: (ctx) => {
     // Generate or extract correlation ID
-    const correlationId = 
-      ctx.req.headers.get('x-correlation-id') || 
-      randomUUID();
-    
+    const correlationId = ctx.req.headers.get("x-correlation-id") || randomUUID();
+
     setCorrelationId(correlationId);
-    
+
     // Add to response headers for client-side tracking
-    ctx.res.headers.set('x-correlation-id', correlationId);
+    ctx.res.headers.set("x-correlation-id", correlationId);
   },
 });
 
-export function withCorrelationId<T extends (...args: any[]) => Promise<any>>(
-  fn: T
-): T {
+export function withCorrelationId<T extends (...args: any[]) => Promise<any>>(fn: T): T {
   return (async (...args: any[]) => {
     const correlationId = getCorrelationId();
     try {
       return await fn(...args);
     } catch (error) {
-      console.error('[ERROR]', {
+      console.error("[ERROR]", {
         correlationId,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
@@ -263,7 +262,7 @@ export function withCorrelationId<T extends (...args: any[]) => Promise<any>>(
 
 ```typescript
 // In src/server.ts - add to middleware stack:
-import { correlationIdMiddleware } from './lib/correlation-id';
+import { correlationIdMiddleware } from "./lib/correlation-id";
 
 // Add correlationIdMiddleware to your middleware array
 const middlewares = [
@@ -282,7 +281,7 @@ export const createServerFn('POST /api/portfolio/transaction')
   .input<TransactionInput>()
   .handler(withCorrelationId(async (input) => {
     const correlationId = getCorrelationId();
-    
+
     try {
       // Your logic here
       console.log(`[TXN] Creating transaction`, {
@@ -290,7 +289,7 @@ export const createServerFn('POST /api/portfolio/transaction')
         userId: input.userId,
         amount: input.amount,
       });
-      
+
       return await db.transaction.create({ ...input });
     } catch (error) {
       console.error(`[TXN ERROR]`, {
@@ -303,6 +302,7 @@ export const createServerFn('POST /api/portfolio/transaction')
 ```
 
 **Verification:**
+
 ```bash
 # Test request with correlation ID
 curl -X POST http://localhost:5173/api/portfolio/transaction \
@@ -335,60 +335,71 @@ export interface LogContext {
 
 export const logger = {
   debug: (message: string, context?: LogContext) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(JSON.stringify({
-        level: 'DEBUG',
-        ts: new Date().toISOString(),
-        msg: message,
-        ...context,
-      }));
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        JSON.stringify({
+          level: "DEBUG",
+          ts: new Date().toISOString(),
+          msg: message,
+          ...context,
+        }),
+      );
     }
   },
 
   info: (message: string, context?: LogContext) => {
-    console.log(JSON.stringify({
-      level: 'INFO',
-      ts: new Date().toISOString(),
-      msg: message,
-      ...context,
-    }));
+    console.log(
+      JSON.stringify({
+        level: "INFO",
+        ts: new Date().toISOString(),
+        msg: message,
+        ...context,
+      }),
+    );
   },
 
   warn: (message: string, context?: LogContext) => {
-    console.warn(JSON.stringify({
-      level: 'WARN',
-      ts: new Date().toISOString(),
-      msg: message,
-      ...context,
-    }));
+    console.warn(
+      JSON.stringify({
+        level: "WARN",
+        ts: new Date().toISOString(),
+        msg: message,
+        ...context,
+      }),
+    );
   },
 
   error: (message: string, error?: Error | unknown, context?: LogContext) => {
-    console.error(JSON.stringify({
-      level: 'ERROR',
-      ts: new Date().toISOString(),
-      msg: message,
-      error: error instanceof Error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-      } : String(error),
-      ...context,
-    }));
+    console.error(
+      JSON.stringify({
+        level: "ERROR",
+        ts: new Date().toISOString(),
+        msg: message,
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : String(error),
+        ...context,
+      }),
+    );
   },
 };
 
 // Usage:
-logger.info('User login successful', {
-  correlationId: 'abc-123',
-  userId: '456',
-  provider: 'email',
+logger.info("User login successful", {
+  correlationId: "abc-123",
+  userId: "456",
+  provider: "email",
 });
 
-logger.error('Transaction failed', error, {
-  correlationId: 'abc-123',
-  userId: '456',
-  txnId: '789',
+logger.error("Transaction failed", error, {
+  correlationId: "abc-123",
+  userId: "456",
+  txnId: "789",
 });
 ```
 
@@ -396,10 +407,10 @@ logger.error('Transaction failed', error, {
 
 ```typescript
 // BEFORE:
-console.error('Transaction failed:', error);
+console.error("Transaction failed:", error);
 
 // AFTER:
-logger.error('Transaction failed', error, {
+logger.error("Transaction failed", error, {
   correlationId: getCorrelationId(),
   userId: context.user?.id,
 });
@@ -414,6 +425,7 @@ logger.error('Transaction failed', error, {
 **Problem:** Only capturing 10% of errors (90% invisible)
 
 **Current Code:**
+
 ```typescript
 // BEFORE:
 Sentry.init({
@@ -424,26 +436,27 @@ Sentry.init({
 ```
 
 **Updated Code:**
+
 ```typescript
 // AFTER:
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === "production";
 
 Sentry.init({
   // ... other config
   tracesSampleRate: isProduction ? 0.5 : 1.0, // 50% in prod, 100% in dev
   sampleRate: isProduction ? 0.5 : 1.0, // 50% in prod, 100% in dev
-  
+
   // BONUS: Focus on errors
   ignoreErrors: [
     // Browser extensions
     /^top\.GLOBALS/,
     // Ignore ResizeObserver loop limit
-    'ResizeObserver loop limit exceeded',
+    "ResizeObserver loop limit exceeded",
   ],
-  
+
   // Capture auth errors 100%
   beforeSend(event) {
-    if (event?.tags?.type === 'auth') {
+    if (event?.tags?.type === "auth") {
       return event; // Always send auth errors
     }
     return event;
@@ -452,6 +465,7 @@ Sentry.init({
 ```
 
 **Verification:**
+
 ```bash
 # Check Sentry dashboard
 # New events should appear much more frequently
@@ -536,13 +550,13 @@ vercel build --no-cache
 
 **Common Issues & Fixes:**
 
-| Error | Fix |
-|-------|-----|
-| `Cannot find SUPABASE_URL` | Add to vercel.json `env` or dashboard |
-| `CSP blocks supabase.co` | Update Content-Security-Policy header |
+| Error                      | Fix                                     |
+| -------------------------- | --------------------------------------- |
+| `Cannot find SUPABASE_URL` | Add to vercel.json `env` or dashboard   |
+| `CSP blocks supabase.co`   | Update Content-Security-Policy header   |
 | `Timeout connecting to DB` | Increase Supabase connection pool to 30 |
-| `Module not found: crypto` | Check Node.js version in vercel.json |
-| `Port 5173 not available` | Clear Vercel cache and rebuild |
+| `Module not found: crypto` | Check Node.js version in vercel.json    |
+| `Port 5173 not available`  | Clear Vercel cache and rebuild          |
 
 ---
 
@@ -555,7 +569,7 @@ Monday:
 ☐ Session hydration fix (2-3 hours)
 ☐ Vercel investigation started (1-2 hours investigation)
 
-Tuesday:  
+Tuesday:
 ☐ Correlation ID middleware added (3-4 hours)
 
 Wednesday:

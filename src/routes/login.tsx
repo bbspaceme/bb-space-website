@@ -122,15 +122,15 @@ function LoginPage() {
                 htmlFor="username"
                 className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground"
               >
-                Username
+                Email
               </Label>
               <Input
                 id="username"
-                type="text"
+                type="email"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                autoComplete="username"
+                autoComplete="email"
                 className="h-9 rounded-sm border-border bg-background text-[13px]"
               />
             </div>

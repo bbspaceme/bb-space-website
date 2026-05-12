@@ -1,4 +1,11 @@
 import { createMiddleware } from "@tanstack/react-start";
+
+type GlobalWithKV = typeof globalThis & {
+  KV?: {
+    get: (key: string) => Promise<string | null>;
+    put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>;
+  };
+};
 import { checkRateLimitKV } from "./rate-limiter-kv";
 
 interface RateLimitResult {
@@ -32,7 +39,10 @@ async function checkRateLimitInMemory(identifier: string): Promise<RateLimitResu
 
 async function checkRateLimit(identifier: string): Promise<RateLimitResult> {
   const useKv = process.env.RATE_LIMIT_KV_ENABLED === "true";
-  const kvBinding = typeof globalThis !== "undefined" && "KV" in globalThis ? (globalThis as any).KV : undefined;
+  const kvBinding =
+    typeof globalThis !== "undefined" && "KV" in globalThis
+      ? (globalThis as GlobalWithKV).KV
+      : undefined;
 
   if (useKv && kvBinding) {
     try {
@@ -46,9 +56,11 @@ async function checkRateLimit(identifier: string): Promise<RateLimitResult> {
 }
 
 // Middleware for rate limiting
-export function rateLimitMiddleware(identifierFn?: (context: any) => string) {
+export function rateLimitMiddleware(identifierFn?: (context: { userId?: string }) => string) {
   return createMiddleware({ type: "function" }).server(async ({ next, context }) => {
-    const identifier = identifierFn ? identifierFn(context) : (context as any).userId || "anonymous";
+    const identifier = identifierFn
+      ? identifierFn(context as { userId?: string })
+      : (context as { userId?: string }).userId || "anonymous";
     const { allowed, remaining, resetTime } = await checkRateLimit(identifier);
 
     if (!allowed) {

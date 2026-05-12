@@ -63,9 +63,7 @@ export function PortfolioChart({ holdings, prices, onRefresh, isRefreshing }: Po
           disabled={isRefreshing}
           className="h-8 rounded-sm text-[11px] uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground"
         >
-          <RefreshCw
-            className={isRefreshing ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"}
-          />
+          <RefreshCw className={isRefreshing ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
           Refresh
         </Button>
       </header>

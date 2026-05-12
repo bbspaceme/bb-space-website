@@ -92,6 +92,7 @@ JWT_SECRET=your-staging-jwt-secret
 ### Automated Deployment (Recommended)
 
 1. **Push to staging branch**:
+
    ```bash
    git checkout -b staging
    git push origin staging
@@ -127,20 +128,24 @@ Configure your staging domain in Cloudflare:
 ## Monitoring & Observability
 
 ### Error Tracking
+
 - **Sentry**: Automatic error reporting with staging environment tagging
 - **Source Maps**: Uploaded during build for proper stack traces
 
 ### Analytics
+
 - **PostHog**: User behavior tracking with staging data isolation
 - **Custom Events**: Portfolio actions, feature usage, performance metrics
 
 ### Performance Monitoring
+
 - **Cloudflare Analytics**: Response times, error rates, bandwidth
 - **Real User Monitoring**: Core Web Vitals tracking
 
 ## Testing Strategy
 
 ### Automated Tests
+
 ```bash
 # Unit tests
 npm run test:run
@@ -153,6 +158,7 @@ npm run test:visual
 ```
 
 ### Manual Testing Checklist
+
 - [ ] User registration/login flow
 - [ ] Portfolio creation and transactions
 - [ ] Market data loading
@@ -164,6 +170,7 @@ npm run test:visual
 ## Rollback Strategy
 
 ### Quick Rollback
+
 ```bash
 # Rollback Cloudflare deployment
 wrangler deployments list --env staging
@@ -175,6 +182,7 @@ git push origin staging
 ```
 
 ### Database Rollback
+
 ```bash
 # If schema changes need rollback
 supabase db reset --linked
@@ -184,12 +192,14 @@ supabase db push
 ## Security Considerations
 
 ### Staging Environment Security
+
 - **Access Control**: Restrict staging access to team members only
 - **Data Isolation**: Use separate Supabase project from production
 - **API Keys**: Use staging-specific keys with limited permissions
 - **Rate Limiting**: More permissive limits for testing
 
 ### Secrets Management
+
 - **Environment Variables**: Never commit secrets to git
 - **Cloudflare Secrets**: Use `wrangler secret put` for sensitive values
 - **Rotation**: Regularly rotate API keys and tokens
@@ -199,6 +209,7 @@ supabase db push
 ### Common Issues
 
 1. **Build Failures**
+
    ```bash
    # Check environment variables
    wrangler secret list --env staging
@@ -208,6 +219,7 @@ supabase db push
    ```
 
 2. **Runtime Errors**
+
    ```bash
    # Check Cloudflare logs
    wrangler tail --env staging
@@ -217,6 +229,7 @@ supabase db push
    ```
 
 3. **Database Connection Issues**
+
    ```bash
    # Test Supabase connection
    supabase db health
@@ -241,12 +254,14 @@ curl https://staging.yourdomain.com/api/health/external
 ## Performance Optimization
 
 ### Staging Optimizations
+
 - **Source Maps**: Enabled for debugging
 - **Minification**: Disabled for readable code
 - **Caching**: Aggressive caching for static assets
 - **Compression**: Brotli compression enabled
 
 ### Monitoring Performance
+
 - **Core Web Vitals**: Track in staging before production
 - **Bundle Analysis**: Use `npm run build:analyze` to check bundle size
 - **Database Queries**: Monitor slow queries in Supabase dashboard
@@ -254,6 +269,7 @@ curl https://staging.yourdomain.com/api/health/external
 ## Next Steps
 
 After staging validation:
+
 1. **Production Deployment**: Follow similar steps for production
 2. **Load Testing**: Run performance tests against staging
 3. **Security Audit**: Final security review
@@ -262,6 +278,7 @@ After staging validation:
 ## Support
 
 For deployment issues:
+
 - Check GitHub Actions logs
 - Review Cloudflare Workers dashboard
 - Monitor Supabase project health

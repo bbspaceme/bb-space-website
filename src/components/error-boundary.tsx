@@ -1,4 +1,14 @@
-import { Component, ErrorInfo, ReactNode } from "react";
+interface WindowWithMonitoring extends Window {
+  Sentry?: {
+    captureException: (
+      error: Error,
+      options?: { contexts?: { react?: { componentStack?: string } } },
+    ) => void;
+  };
+  posthog?: {
+    capture: (event: string, properties?: Record<string, unknown>) => void;
+  };
+}
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
@@ -28,9 +38,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
     // In production, send to Sentry/PostHog
     if (typeof window !== "undefined") {
+      const w = window as WindowWithMonitoring;
       // Send to error monitoring
-      if ((window as any).Sentry) {
-        (window as any).Sentry.captureException(error, {
+      if (w.Sentry) {
+        w.Sentry.captureException(error, {
           contexts: {
             react: {
               componentStack: errorInfo.componentStack,
@@ -40,8 +51,8 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       // Send to product analytics
-      if ((window as any).posthog) {
-        (window as any).posthog.capture("error_boundary_triggered", {
+      if (w.posthog) {
+        w.posthog.capture("error_boundary_triggered", {
           error: error.message,
           componentStack: errorInfo.componentStack,
         });
@@ -63,7 +74,8 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="space-y-2">
             <h3 className="font-serif text-lg font-semibold">Something went wrong</h3>
             <p className="max-w-sm text-[13px] text-muted-foreground">
-              We encountered an unexpected error. Please try refreshing the page or contact support if the problem persists.
+              We encountered an unexpected error. Please try refreshing the page or contact support
+              if the problem persists.
             </p>
             {process.env.NODE_ENV === "development" && this.state.error && (
               <details className="mt-4 text-left">

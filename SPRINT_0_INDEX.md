@@ -7,17 +7,20 @@
 ## 📋 QUICK NAVIGATION
 
 ### Implementation Documents
+
 1. **[SPRINT_0_COMPLETE.md](./SPRINT_0_COMPLETE.md)** — Full technical implementation record (500+ lines)
 2. **[SPRINT_0_STATUS.md](./SPRINT_0_STATUS.md)** — Status report and deployment checklist
 3. **[docs/DATABASE_CONNECTION_POOLING.md](./docs/DATABASE_CONNECTION_POOLING.md)** — Database setup guide
 
 ### New Systems (Code)
+
 - `src/lib/rate-limiter-kv.ts` — Production rate limiter via Cloudflare KV
 - `src/lib/ai-quota.ts` — AI usage quota enforcement system
 - `src/lib/ai-disclaimer.ts` — Financial disclaimer wrapper utilities
 - `src/routes/api/public/health.ts` — Health check endpoint for uptime monitoring
 
 ### Configuration Updates
+
 - `package.json` — Test scripts and dev dependencies
 - `.github/workflows/ci.yml` — Full quality gate CI pipeline
 - `.github/workflows/deploy.yml` — Staged deployment with approval gates
@@ -28,17 +31,17 @@
 
 ## 🎯 WHAT WAS FIXED
 
-| # | Issue | Fix | Status |
-|----|-------|-----|--------|
-| 1 | No test gates in CI | Full Vitest + Playwright integration | ✅ |
-| 2 | In-memory rate limiter | Cloudflare KV-based global limiter | ✅ |
-| 3 | No connection pooling | Supabase connection pooler setup | ✅ |
-| 4 | Direct production deploys | Staged deployment with approval gate | ✅ |
-| 5 | Unlimited AI API usage | Per-user quota enforcement system | ✅ |
-| 6 | No observability | Health check endpoint + monitoring | ✅ |
-| 7 | CRON auth vulnerable | Constant-time secret comparison | ✅ |
-| 8 | AI financial liability | Comprehensive disclaimers on all outputs | ✅ |
-| 9 | No documentation | Complete setup guide + implementation docs | ✅ |
+| #   | Issue                     | Fix                                        | Status |
+| --- | ------------------------- | ------------------------------------------ | ------ |
+| 1   | No test gates in CI       | Full Vitest + Playwright integration       | ✅     |
+| 2   | In-memory rate limiter    | Cloudflare KV-based global limiter         | ✅     |
+| 3   | No connection pooling     | Supabase connection pooler setup           | ✅     |
+| 4   | Direct production deploys | Staged deployment with approval gate       | ✅     |
+| 5   | Unlimited AI API usage    | Per-user quota enforcement system          | ✅     |
+| 6   | No observability          | Health check endpoint + monitoring         | ✅     |
+| 7   | CRON auth vulnerable      | Constant-time secret comparison            | ✅     |
+| 8   | AI financial liability    | Comprehensive disclaimers on all outputs   | ✅     |
+| 9   | No documentation          | Complete setup guide + implementation docs | ✅     |
 
 ---
 
@@ -76,21 +79,22 @@
 
 ## 📊 IMPACT SUMMARY
 
-| Dimension | Before | After | Change |
-|-----------|--------|-------|--------|
-| Test Coverage | 0 CI gates | ✅ Full pipeline | New |
-| Rate Limiting | 1 instance | ✅ Global KV | Fixed|
-| Unvalidated Deploys | ✅ Possible | ❌ Blocked | Fixed |
-| Connection Exhaustion | High risk | ✅ Pooled | Fixed |
-| AI Cost Control | None | ✅ Quotas | New |
-| Financial Liability | Unmitigated | ✅ Disclaimers | New |
-| Downtime Detection | Manual | ✅ <1 min | New |
+| Dimension             | Before      | After            | Change |
+| --------------------- | ----------- | ---------------- | ------ |
+| Test Coverage         | 0 CI gates  | ✅ Full pipeline | New    |
+| Rate Limiting         | 1 instance  | ✅ Global KV     | Fixed  |
+| Unvalidated Deploys   | ✅ Possible | ❌ Blocked       | Fixed  |
+| Connection Exhaustion | High risk   | ✅ Pooled        | Fixed  |
+| AI Cost Control       | None        | ✅ Quotas        | New    |
+| Financial Liability   | Unmitigated | ✅ Disclaimers   | New    |
+| Downtime Detection    | Manual      | ✅ <1 min        | New    |
 
 ---
 
 ## 📁 ALL NEW/MODIFIED FILES
 
 ### Created (9 files)
+
 ```
 src/lib/rate-limiter-kv.ts
 src/lib/ai-quota.ts
@@ -105,6 +109,7 @@ playwright.config.ts
 ```
 
 ### Modified (9 files)
+
 ```
 package.json
 .github/workflows/ci.yml
@@ -147,11 +152,13 @@ src/routes/api/cron/daily-refresh.ts
 **Issues?** See [SPRINT_0_STATUS.md](./SPRINT_0_STATUS.md#support--troubleshooting)
 
 **Questions?** Refer to:
+
 - `docs/DATABASE_CONNECTION_POOLING.md` for DB setup
 - `SPRINT_0_COMPLETE.md` for technical details
 - Inline code comments for implementation details
 
 **CI/CD Issues?** Check:
+
 - `.github/workflows/ci.yml` — test pipeline config
 - `.github/workflows/deploy.yml` — deployment config
 - `wrangler.jsonc` — Cloudflare config

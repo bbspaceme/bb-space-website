@@ -20,7 +20,7 @@ class OpenAIProvider implements AIProvider {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -44,8 +44,8 @@ class AnthropicProvider implements AIProvider {
   constructor(private apiKey: string) {}
 
   async complete(messages: ChatMessage[], options?: AIOptions): Promise<string> {
-    const systemMessage = messages.find(m => m.role === "system");
-    const userMessages = messages.filter(m => m.role !== "system");
+    const systemMessage = messages.find((m) => m.role === "system");
+    const userMessages = messages.filter((m) => m.role !== "system");
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -76,21 +76,26 @@ class GeminiProvider implements AIProvider {
   constructor(private apiKey: string) {}
 
   async complete(messages: ChatMessage[], options?: AIOptions): Promise<string> {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${options?.model || "gemini-pro"}:generateContent?key=${this.apiKey}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${options?.model || "gemini-pro"}:generateContent?key=${this.apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: messages.map((m) => ({ text: m.content })),
+            },
+          ],
+          generationConfig: {
+            temperature: options?.temperature || 0.7,
+            maxOutputTokens: options?.maxTokens || 1000,
+          },
+        }),
       },
-      body: JSON.stringify({
-        contents: [{
-          parts: messages.map(m => ({ text: m.content }))
-        }],
-        generationConfig: {
-          temperature: options?.temperature || 0.7,
-          maxOutputTokens: options?.maxTokens || 1000,
-        }
-      }),
-    });
+    );
 
     if (!response.ok) {
       throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);

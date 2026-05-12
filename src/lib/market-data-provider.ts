@@ -1,6 +1,10 @@
 interface MarketDataProvider {
   fetchQuotes(symbols: string[]): Promise<Record<string, number>>;
-  fetchChart(symbol: string, fromUnix: number, toUnix: number): Promise<Array<{ date: string; close: number }>>;
+  fetchChart(
+    symbol: string,
+    fromUnix: number,
+    toUnix: number,
+  ): Promise<Array<{ date: string; close: number }>>;
 }
 
 class YahooFinanceProvider implements MarketDataProvider {

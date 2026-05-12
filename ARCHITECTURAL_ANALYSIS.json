@@ -2,7 +2,7 @@
   "analysis_date": "2026-05-11",
   "project": "bb-space-website - KBAI Terminal",
   "overview": "Comprehensive architectural exploration covering system design, business logic, data flows, error handling, authentication, missing systems, known issues, and code quality",
-  
+
   "1_system_architecture": {
     "description": "Complete component/route hierarchy, data flow patterns, and integration points",
     "findings": {
@@ -146,7 +146,11 @@
           "Log usage for billing",
           "Enforce daily/monthly limits"
         ],
-        "models_used": ["google/gemini-2.5-flash", "openAI (reference only)", "Claude (reference only)"],
+        "models_used": [
+          "google/gemini-2.5-flash",
+          "openAI (reference only)",
+          "Claude (reference only)"
+        ],
         "operations": [
           "runStockScreener - Risk-based screener",
           "runDcfValuation - DCF model",
@@ -500,8 +504,8 @@
         ],
         "vercel_json_config": {
           "rewrites": [
-            {source: "/api/(.*)", destination: "/api/$1"},
-            {source: "/((?!assets/).*)", destination: "/api/entry"}
+            { "source": "/api/(.*)", "destination": "/api/$1" },
+            { "source": "/((?!assets/).*)", "destination": "/api/entry" }
           ],
           "limitation": "Catch-all rewrite may hide trailing errors"
         },
@@ -618,10 +622,7 @@
           "Feature flags not implemented",
           "Soft delete not fully integrated (added recently)"
         ],
-        "low": [
-          "Some type gaps (any casts)",
-          "Minor code duplication in middleware"
-        ]
+        "low": ["Some type gaps (any casts)", "Minor code duplication in middleware"]
       },
       "build_and_deploy": {
         "build_command": "vite build",

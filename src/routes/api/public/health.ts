@@ -1,4 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+
+type GlobalWithKV = typeof globalThis & {
+  KV?: KVNamespace;
+};
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 function getUptimeMs() {
@@ -19,7 +23,7 @@ function getKvStatus() {
   }
 
   try {
-    const kv = (globalThis as any).KV as KVNamespace;
+    const kv = (globalThis as GlobalWithKV).KV;
     if (!kv) return "unavailable";
     return "available";
   } catch {
@@ -37,10 +41,7 @@ export const Route = createFileRoute("/api/public/health")({
         const environment = process.env.APP_ENV || process.env.NODE_ENV || "unknown";
 
         try {
-          const { error } = await supabaseAdmin
-            .from("profiles")
-            .select("id")
-            .limit(1);
+          const { error } = await supabaseAdmin.from("profiles").select("id").limit(1);
 
           const dbOk = !error;
 

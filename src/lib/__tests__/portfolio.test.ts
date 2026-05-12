@@ -3,14 +3,14 @@ import { computeHoldingsFromTxns } from "../portfolio.functions";
 
 describe("computeHoldingsFromTxns", () => {
   test("BUY increases holdings", () => {
-    const result = computeHoldingsFromTxns([
-      { ticker: "BBCA", side: "BUY", lot: 10, price: 9000 }
+    const result = computeHoldingsFromTxns([{ ticker: "BBCA", side: "BUY", lot: 10, price: 9000 }]);
+    expect(result).toEqual([
+      {
+        ticker: "BBCA",
+        total_lot: 10,
+        avg_price: 9000,
+      },
     ]);
-    expect(result).toEqual([{
-      ticker: "BBCA",
-      total_lot: 10,
-      avg_price: 9000
-    }]);
   });
 
   test("SELL reduces holdings correctly", () => {
@@ -18,11 +18,13 @@ describe("computeHoldingsFromTxns", () => {
       { ticker: "BBCA", side: "BUY", lot: 10, price: 9000 },
       { ticker: "BBCA", side: "SELL", lot: 5, price: 10000 },
     ]);
-    expect(result).toEqual([{
-      ticker: "BBCA",
-      total_lot: 5,
-      avg_price: 9000 // avg_price unchanged on SELL
-    }]);
+    expect(result).toEqual([
+      {
+        ticker: "BBCA",
+        total_lot: 5,
+        avg_price: 9000, // avg_price unchanged on SELL
+      },
+    ]);
   });
 
   test("SELL all removes from holdings", () => {
@@ -38,11 +40,13 @@ describe("computeHoldingsFromTxns", () => {
       { ticker: "BBCA", side: "BUY", lot: 10, price: 9000 },
       { ticker: "BBCA", side: "BUY", lot: 10, price: 10000 },
     ]);
-    expect(result).toEqual([{
-      ticker: "BBCA",
-      total_lot: 20,
-      avg_price: 9500 // (10*9000 + 10*10000) / 20
-    }]);
+    expect(result).toEqual([
+      {
+        ticker: "BBCA",
+        total_lot: 20,
+        avg_price: 9500, // (10*9000 + 10*10000) / 20
+      },
+    ]);
   });
 
   test("SELL more than available removes holding", () => {
@@ -61,8 +65,8 @@ describe("computeHoldingsFromTxns", () => {
       { ticker: "BBCA", side: "SELL", lot: 5, price: 9500 },
     ]);
     expect(result).toHaveLength(2);
-    const bbca = result.find(r => r.ticker === "BBCA");
-    const tlkm = result.find(r => r.ticker === "TLKM");
+    const bbca = result.find((r) => r.ticker === "BBCA");
+    const tlkm = result.find((r) => r.ticker === "TLKM");
     expect(bbca).toEqual({ ticker: "BBCA", total_lot: 5, avg_price: 9000 });
     expect(tlkm).toEqual({ ticker: "TLKM", total_lot: 5, avg_price: 3000 });
   });

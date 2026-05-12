@@ -1,4 +1,5 @@
 # BB Space Website (KBAI Terminal) - Architectural Analysis Summary
+
 **Date**: May 11, 2026 | **Status**: Comprehensive Exploration Complete
 
 ---
@@ -15,6 +16,7 @@ The **KBAI Terminal** is a full-stack investment analytics platform with ~6,500+
 ## 1️⃣ SYSTEM ARCHITECTURE
 
 ### Technology Stack
+
 - **Frontend**: React Start (TanStack Router + React Query) + Tailwind CSS
 - **Backend**: Cloudflare Workers (primary) + Node.js fallback
 - **Database**: Supabase (PostgreSQL) with custom RLS policies
@@ -24,6 +26,7 @@ The **KBAI Terminal** is a full-stack investment analytics platform with ~6,500+
 - **Market Data**: Yahoo Finance API
 
 ### Component Hierarchy
+
 ```
 RootLayout (auth provider, error boundary)
   ├── AppShell (sidebar navigation)
@@ -37,15 +40,18 @@ RootLayout (auth provider, error boundary)
 ```
 
 ### API Endpoint Pattern
+
 All endpoints use `createServerFn({ method: "GET|POST" })` with middleware chain:
+
 1. `attachSupabaseAuth` (client-side) → extracts Bearer token
 2. `requireSupabaseAuth` (server) → validates JWT claims
 3. `requireAdminAuth` (optional) → checks user_roles
 4. `rateLimitMiddleware` (optional) → enforces 10 req/min
 
 **Key Data Flow**:
+
 ```
-User Action → React Query mutation → Bearer token attached → Middleware validates → 
+User Action → React Query mutation → Bearer token attached → Middleware validates →
 Server function with supabaseAdmin client → Result returned → Cache invalidated
 ```
 
@@ -54,23 +60,28 @@ Server function with supabaseAdmin client → Result returned → Cache invalida
 ## 2️⃣ BUSINESS LOGIC PATTERNS
 
 ### Portfolio Management (Core)
+
 **Pattern**: Transaction-driven calculation
+
 - User submits BUY/SELL → validate cash/holdings → execute RPC → record audit
 - **Key function**: `submitTransaction()` in `src/lib/portfolio.functions.ts:218`
 - **Atomic operations**: Uses `adjust_cash_balance` RPC for consistency
 
 ### AI Operations (High-Value)
+
 - **Quota-limited**: Daily/monthly token limits per user
 - **Cost-tracked**: USD cost calculated and logged
 - **All-disclaimered**: Financial disclaimer wrapped on all outputs
 - **Models**: Only Gemini 2.5 Flash in production (Claude/GPT reference framework)
 
 ### Market Data Refresh (Automated)
+
 - **Trigger**: Daily CRON job (timing-safe secret validation)
 - **Process**: Fetch Yahoo quotes → upsert prices → recompute snapshots → update KBAI index
 - **Optimization**: Recently migrated to incremental RPC calls (not full recompute)
 
 ### Admin Operations (Access-Controlled)
+
 - **Session tracking**: Device labels, user agents, active/inactive status
 - **Audit logging**: Comprehensive action trail (DUP-03 pattern)
 - **Role management**: Can't demote last admin
@@ -81,11 +92,13 @@ Server function with supabaseAdmin client → Result returned → Cache invalida
 ## 3️⃣ DATABASE QUERY ANALYSIS
 
 ### ✅ Recent Improvements
+
 - **Indexes added** (20260510): 11 new indexes on hot tables
 - **Soft delete schema** (20260511): All queries now filter `deleted_at IS NULL`
 - **Connection pooling**: Enabled via Supabase
 
 ### ⚠️ N+1 Query Risks (HIGH SEVERITY)
+
 1. **Admin role check on every API call**
    - Location: `src/lib/admin-middleware.ts`
    - Query: `SELECT role FROM user_roles WHERE user_id = ?`
@@ -99,7 +112,8 @@ Server function with supabaseAdmin client → Result returned → Cache invalida
    - Mitigation: Could batch into single query
 
 ### 🔴 Missing Indexes
-- `user_2fa(user_id)` 
+
+- `user_2fa(user_id)`
 - `cash_balances(user_id)`
 - `watchlist(user_id, ticker)`
 - `system_settings(key)`
@@ -109,17 +123,20 @@ Server function with supabaseAdmin client → Result returned → Cache invalida
 ## 4️⃣ ERROR HANDLING ARCHITECTURE
 
 ### How Errors Flow
+
 ```
 Error thrown → EventListener capture → Error boundary → Sentry + PostHog
 ```
 
 **Layers**:
+
 1. **Global capture** (`src/lib/error-capture.ts`): EventListener on unhandled errors
 2. **React boundary** (`src/components/error-boundary.tsx`): Catches React render errors
 3. **HTTP handler** (`src/server.ts`): Recovers SSR catastrophic errors
 4. **Router default** (`src/router.tsx`): Shows error message to user
 
 **Limitations**:
+
 - ❌ No correlation IDs for tracing
 - ❌ No structured logging (just console.error)
 - ❌ 5-second capture window (race condition possible)
@@ -131,6 +148,7 @@ Error thrown → EventListener capture → Error boundary → Sentry + PostHog
 ## 5️⃣ AUTHENTICATION & AUTHORIZATION
 
 ### Auth Flow (Happy Path)
+
 ```
 Email/Password → Supabase Auth → JWT token stored in localStorage
 → Bearer token on each request → Server validates JWT claims
@@ -138,20 +156,24 @@ Email/Password → Supabase Auth → JWT token stored in localStorage
 ```
 
 ### ⚠️ Session Hydration Bug (CRITICAL)
+
 **Issue**: Phantom redirect to `/login` on hard refresh
-**Root Cause** (src/routes/_app.tsx:10-14): 
+**Root Cause** (src/routes/\_app.tsx:10-14):
+
 - `getSession()` returns null immediately before browser restores localStorage
 - Attempted fix: Using `getUser()` instead, but timing gap remains
-**Impact**: Users intermittently kicked to login
-**Fix Required**: Implement retry with exponential backoff or better hydration detection
+  **Impact**: Users intermittently kicked to login
+  **Fix Required**: Implement retry with exponential backoff or better hydration detection
 
 ### 2FA Implementation
+
 - **Requirement**: Mandatory for admin/advisor accounts
 - **Method**: TOTP (time-based one-time password)
 - **Recovery codes**: Hashed with PBKDF2 (100,000 iterations)
 - **Enforcement**: Checked at login—blocks privileged users without 2FA
 
 ### RBAC & RLS
+
 - **Roles**: admin, advisor, user (stored in user_roles table)
 - **Enforcement**: Middleware checks before handler
 - **RLS**: Row-level security policies per table
@@ -162,7 +184,9 @@ Email/Password → Supabase Auth → JWT token stored in localStorage
 ## 6️⃣ CRITICAL MISSING SYSTEMS
 
 ### 🔴 Observability & Monitoring (ABSENT)
+
 **Missing**:
+
 - ❌ Distributed tracing (no correlation IDs)
 - ❌ Structured request/response logging
 - ❌ Performance metrics dashboard
@@ -172,6 +196,7 @@ Email/Password → Supabase Auth → JWT token stored in localStorage
 **Present**: Basic Sentry (10% sample rate) + PostHog (manual capture only)
 
 ### 🔴 Disaster Recovery (ABSENT)
+
 - ❌ Backup automation
 - ❌ RTO/RPO targets
 - ❌ Failover strategy
@@ -181,6 +206,7 @@ Email/Password → Supabase Auth → JWT token stored in localStorage
 **Risk**: Complete data loss possible
 
 ### 🔴 Compliance & Audit (MINIMAL)
+
 - ✅ Basic audit_logs table
 - ❌ No compliance report generation
 - ❌ No data retention policies
@@ -188,10 +214,12 @@ Email/Password → Supabase Auth → JWT token stored in localStorage
 - ❌ No SOC 2 readiness
 
 ### 🔴 Feature Flags (ABSENT)
+
 - Can't safely roll out features to subset of users
 - Locks team to "all-or-nothing" deployments
 
 ### 🔴 Load Testing (UNDOCUMENTED)
+
 - No capac documents for:
   - Concurrent user limits
   - Transaction throughput
@@ -202,6 +230,7 @@ Email/Password → Supabase Auth → JWT token stored in localStorage
 ## 7️⃣ KNOWN BUGS & SYSTEMIC ISSUES
 
 ### 🔴 Bug #1: Login Navigation Phantom Redirect
+
 **Severity**: HIGH  
 **Symptom**: Users redirected to /login on page reload  
 **Location**: `src/routes/_app.tsx:10-15`  
@@ -210,20 +239,24 @@ Email/Password → Supabase Auth → JWT token stored in localStorage
 **Investigation**: Check auth state timing—may need retry loop
 
 ### 🔴 Bug #2: Vercel Deployment Errors
+
 **Severity**: HIGH  
 **Probable Causes**:
-- Missing environment variables (SUPABASE_*, CRON_SECRET)
+
+- Missing environment variables (SUPABASE\_\*, CRON_SECRET)
 - CSP headers blocking external APIs
 - API route configuration mismatch in vercel.json
 - Build output structure differences
 
 **Investigation Steps**:
+
 1. Check Vercel Function logs for actual error
 2. Verify all env vars set in Vercel dashboard
 3. Test build locally: `npm run build && npm run preview`
 4. Check browser DevTools for CSP violations
 
 ### Systemic Issues Revealed
+
 - Session state unreliable on page load
 - Env variables fragile and easy to miss
 - Limited deployment testing
@@ -234,6 +267,7 @@ Email/Password → Supabase Auth → JWT token stored in localStorage
 ## 8️⃣ CODE QUALITY METRICS
 
 ### 📊 Testing Coverage
+
 - **Current**: <5% (only 2 smoke tests)
 - **Unit Tests**: 0
 - **Integration Tests**: 0
@@ -241,26 +275,30 @@ Email/Password → Supabase Auth → JWT token stored in localStorage
 - **Next Target**: 40% coverage (next sprint)
 
 ### 🔒 Type Safety
+
 - **TypeScript strictness**: MEDIUM (strict mode on, but noUnusedLocals/Parameters disabled)
 - **Database types**: ✅ Auto-generated from Supabase schema
 - **Zod validation**: ✅ All API inputs validated
 - **Type gaps**: ~5-10 `as any` casts found
 
 ### ✅ Linting
+
 - **Tool**: ESLint
 - **CI enforcement**: `--max-warnings 0`
 - **Strictness**: MODERATE
 
 ### 📚 Technical Debt
-| Priority | Issue | Impact | Effort |
-|----------|-------|--------|--------|
-| CRITICAL | Session race condition | Users kicked to login | 3 hrs |
-| CRITICAL | Missing observability | Can't debug production issues | 2-3 days |
-| HIGH | N+1 role queries | Performance degradation | 4-6 hrs |
-| HIGH | No disaster recovery | Data loss risk | 1 day |
-| HIGH | <5% test coverage | Regression bugs | 3-5 days |
+
+| Priority | Issue                  | Impact                        | Effort   |
+| -------- | ---------------------- | ----------------------------- | -------- |
+| CRITICAL | Session race condition | Users kicked to login         | 3 hrs    |
+| CRITICAL | Missing observability  | Can't debug production issues | 2-3 days |
+| HIGH     | N+1 role queries       | Performance degradation       | 4-6 hrs  |
+| HIGH     | No disaster recovery   | Data loss risk                | 1 day    |
+| HIGH     | <5% test coverage      | Regression bugs               | 3-5 days |
 
 ### 📦 Dependencies
+
 - **Node version**: >=20
 - **Total deps**: 80+
 - **Audit**: No known vulnerabilities documented
@@ -271,30 +309,35 @@ Email/Password → Supabase Auth → JWT token stored in localStorage
 ## 🎯 TOP RECOMMENDATIONS (Priority Order)
 
 ### 1. Fix Login Navigation Race Condition
+
 **Why**: Directly impacts user experience  
 **How**: Implement retry loop with exponential backoff for auth state check  
 **Effort**: 2-3 hours  
 **Test**: Manual testing on hard refresh + network slow-motion
 
 ### 2. Add Distributed Tracing & Structured Logging
+
 **Why**: Can't debug production issues without correlation IDs  
 **How**: Add correlation ID middleware, structured logging, APM dashboard  
 **Effort**: 2-3 days  
 **Impact**: Enables production debugging
 
 ### 3. Cache Admin Roles in JWT Claims
+
 **Why**: Reduces 80% of role-check queries  
 **How**: Modify Supabase token claims to include role array  
 **Effort**: 4-6 hours  
 **Impact**: 10x performance improvement for admin operations
 
 ### 4. Implement Disaster Recovery
+
 **Why**: No backups = data loss risk  
 **How**: Enable Supabase automated backups, define RTO/RPO, document runbooks  
 **Effort**: 1 day  
 **Test**: Perform backup restoration drill
 
 ### 5. Add Core Business Logic Tests
+
 **Why**: <5% coverage allows regressions  
 **How**: Add unit tests for portfolio calculations, transaction validation  
 **Effort**: 3-5 days  
@@ -304,16 +347,16 @@ Email/Password → Supabase Auth → JWT token stored in localStorage
 
 ## 📋 Key Files Reference
 
-| File | Purpose | Lines | Rating |
-|------|---------|-------|--------|
-| `src/auth.tsx` | Auth context & session mgmt | 90 | ⭐⭐⭐ |
-| `src/routes/_app.tsx` | Protected app layout | 40 | ⚠️ (race condition) |
-| `src/lib/portfolio.functions.ts` | Core business logic | 600+ | ⭐⭐⭐ |
-| `src/lib/admin-middleware.ts` | RBAC middleware | 80 | ⭐⭐ (N+1 risk) |
-| `src/integrations/supabase/auth-middleware.ts` | Token validation | 60 | ⭐⭐⭐ |
-| `src/lib/rate-limiter.ts` | Rate limiting | 70 | ⭐⭐⭐ |
-| `src/lib/error-capture.ts` | Global error capture | 30 | ⭐⭐ (5s window) |
-| Full JSON analysis | Detailed findings | -- | 📄 `ARCHITECTURAL_ANALYSIS.json` |
+| File                                           | Purpose                     | Lines | Rating                           |
+| ---------------------------------------------- | --------------------------- | ----- | -------------------------------- |
+| `src/auth.tsx`                                 | Auth context & session mgmt | 90    | ⭐⭐⭐                           |
+| `src/routes/_app.tsx`                          | Protected app layout        | 40    | ⚠️ (race condition)              |
+| `src/lib/portfolio.functions.ts`               | Core business logic         | 600+  | ⭐⭐⭐                           |
+| `src/lib/admin-middleware.ts`                  | RBAC middleware             | 80    | ⭐⭐ (N+1 risk)                  |
+| `src/integrations/supabase/auth-middleware.ts` | Token validation            | 60    | ⭐⭐⭐                           |
+| `src/lib/rate-limiter.ts`                      | Rate limiting               | 70    | ⭐⭐⭐                           |
+| `src/lib/error-capture.ts`                     | Global error capture        | 30    | ⭐⭐ (5s window)                 |
+| Full JSON analysis                             | Detailed findings           | --    | 📄 `ARCHITECTURAL_ANALYSIS.json` |
 
 ---
 
@@ -322,12 +365,14 @@ Email/Password → Supabase Auth → JWT token stored in localStorage
 **KBAI Terminal** is a **functional but incomplete** platform:
 
 ✅ **Strengths**:
+
 - Clean architecture with good separation of concerns
 - Type-safe database queries
 - Comprehensive audit logging
 - 2FA security for privileged users
 
 ❌ **Critical Gaps**:
+
 - No observability (can't debug production)
 - Session state timing issue (users kicked to login)
 - Performance risks from N+1 queries

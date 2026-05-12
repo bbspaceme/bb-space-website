@@ -28,7 +28,9 @@ interface AIProvider {
 
 class AIProviderChain implements AIProvider {
   constructor(private providers: AIProvider[]) {}
-  async complete(messages, options) { /* try each provider */ }
+  async complete(messages, options) {
+    /* try each provider */
+  }
 }
 ```
 

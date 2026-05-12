@@ -69,8 +69,8 @@ export function HoldingsTable({
           <div className="space-y-1">
             <h3 className="font-serif text-lg font-semibold">Belum ada posisi</h3>
             <p className="max-w-sm text-[12px] text-muted-foreground">
-              Mulai catat holding pertama Anda. Tambahkan saldo cash terlebih dahulu, lalu klik
-              Buy untuk mencatat pembelian.
+              Mulai catat holding pertama Anda. Tambahkan saldo cash terlebih dahulu, lalu klik Buy
+              untuk mencatat pembelian.
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2">
@@ -105,9 +105,7 @@ export function HoldingsTable({
     <section className="rounded-sm border border-border bg-card">
       <header className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.14em]">Holdings</h2>
-        <span className="text-[11px] text-muted-foreground">
-          1 lot = 100 shares · EOD pricing
-        </span>
+        <span className="text-[11px] text-muted-foreground">1 lot = 100 shares · EOD pricing</span>
       </header>
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -125,10 +123,7 @@ export function HoldingsTable({
           </thead>
           <tbody className="text-[13px] tabular">
             {rows.map((r) => (
-              <tr
-                key={r.id}
-                className="border-b border-border/60 last:border-0 hover:bg-accent/40"
-              >
+              <tr key={r.id} className="border-b border-border/60 last:border-0 hover:bg-accent/40">
                 <td className="px-4 py-2.5">
                   <span className="font-mono text-[12px] font-semibold tracking-wide">
                     {r.ticker}
@@ -143,9 +138,7 @@ export function HoldingsTable({
                     <span className="text-muted-foreground">—</span>
                   )}
                 </td>
-                <td className="px-4 py-2.5 text-right text-muted-foreground">
-                  {fmtIDR(r.cost)}
-                </td>
+                <td className="px-4 py-2.5 text-right text-muted-foreground">{fmtIDR(r.cost)}</td>
                 <td className="px-4 py-2.5 text-right font-medium">
                   {r.value != null ? (
                     fmtIDR(r.value)
@@ -156,11 +149,7 @@ export function HoldingsTable({
                 <td
                   className={cn(
                     "px-4 py-2.5 text-right font-medium",
-                    r.pl == null
-                      ? "text-muted-foreground"
-                      : r.pl >= 0
-                        ? "text-pos"
-                        : "text-neg",
+                    r.pl == null ? "text-muted-foreground" : r.pl >= 0 ? "text-pos" : "text-neg",
                   )}
                 >
                   {r.pl != null ? fmtIDR(r.pl) : "—"}
@@ -184,18 +173,12 @@ export function HoldingsTable({
             <tr className="border-t border-border bg-accent/30 text-[12px] font-semibold uppercase tracking-[0.1em]">
               <td className="px-4 py-2.5">Total</td>
               <td colSpan={3}></td>
-              <td className="px-4 py-2.5 text-right text-muted-foreground">
-                {fmtIDR(totalCost)}
-              </td>
+              <td className="px-4 py-2.5 text-right text-muted-foreground">{fmtIDR(totalCost)}</td>
               <td className="px-4 py-2.5 text-right">{fmtIDR(totalValue)}</td>
-              <td
-                className={cn("px-4 py-2.5 text-right", totalPL >= 0 ? "text-pos" : "text-neg")}
-              >
+              <td className={cn("px-4 py-2.5 text-right", totalPL >= 0 ? "text-pos" : "text-neg")}>
                 {fmtIDR(totalPL)}
               </td>
-              <td
-                className={cn("px-4 py-2.5 text-right", totalPL >= 0 ? "text-pos" : "text-neg")}
-              >
+              <td className={cn("px-4 py-2.5 text-right", totalPL >= 0 ? "text-pos" : "text-neg")}>
                 {fmtPct(totalPLPct)}
               </td>
             </tr>

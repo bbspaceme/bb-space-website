@@ -259,7 +259,3 @@ function PortfolioPage() {
     </ErrorBoundary>
   );
 }
-
-
-
-

@@ -36,7 +36,11 @@ export default defineConfig(({ mode }) => {
               if (id.includes("@tanstack/react-router") || id.includes("@tanstack/react-query")) {
                 return "router";
               }
-              if (id.includes("@radix-ui/react-dialog") || id.includes("@radix-ui/react-dropdown-menu") || id.includes("lucide-react")) {
+              if (
+                id.includes("@radix-ui/react-dialog") ||
+                id.includes("@radix-ui/react-dropdown-menu") ||
+                id.includes("lucide-react")
+              ) {
                 return "ui";
               }
               if (id.includes("@supabase/supabase-js")) {

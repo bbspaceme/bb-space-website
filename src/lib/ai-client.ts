@@ -94,7 +94,10 @@ export async function callLovableAi<T>(
         throw new Error(`AI error: ${res.status} ${text.slice(0, 250)}`);
       }
 
-      const result = (await res.json()) as any;
+      const result = (await res.json()) as {
+        content?: string;
+        usage?: { input_tokens?: number; output_tokens?: number };
+      };
 
       // 3. Log usage
       const inputTokens = estimateTokens(JSON.stringify(body));

@@ -426,11 +426,7 @@ function DataPrivacyCard() {
                   >
                     {deleteMut.isPending ? "Menghapus..." : "Ya, Hapus Akun"}
                   </Button>
-                  <Button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    variant="outline"
-                    size="sm"
-                  >
+                  <Button onClick={() => setShowDeleteConfirm(false)} variant="outline" size="sm">
                     Batal
                   </Button>
                 </div>

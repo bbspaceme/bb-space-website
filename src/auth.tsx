@@ -25,13 +25,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdvisor, setIsAdvisor] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
 
-  const fetchRoleAndProfile = async (uid: string) => {
-    const [{ data: roles }, { data: profile }] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", uid),
-      supabase.from("profiles").select("username").eq("id", uid).maybeSingle(),
-    ]);
-    setIsAdmin(!!roles?.some((r) => String(r.role) === "admin"));
-    setIsAdvisor(!!roles?.some((r) => String(r.role) === "advisor"));
+  const fetchRoleAndProfile = async (user: User) => {
+    // Try to get roles from JWT claims first (more efficient)
+    const claims = user.app_metadata as { roles?: string[] } | undefined;
+    const jwtRoles = claims?.roles;
+
+    if (jwtRoles && jwtRoles.length > 0) {
+      setIsAdmin(jwtRoles.includes("admin"));
+      setIsAdvisor(jwtRoles.includes("advisor"));
+    } else {
+      // Fallback to DB query if claims not available
+      const [{ data: roles }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", user.id),
+      ]);
+      setIsAdmin(!!roles?.some((r) => String(r.role) === "admin"));
+      setIsAdvisor(!!roles?.some((r) => String(r.role) === "advisor"));
+    }
+
+    // Always fetch profile (username)
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .maybeSingle();
     setUsername(profile?.username ?? null);
   };
 
@@ -42,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (newSession?.user) {
         // Defer DB calls to avoid deadlock
         setTimeout(() => {
-          fetchRoleAndProfile(newSession.user.id).finally(() => setIsLoading(false));
+          fetchRoleAndProfile(newSession.user).finally(() => setIsLoading(false));
         }, 0);
       } else {
         setIsAdmin(false);
@@ -56,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setUser(data.session?.user ?? null);
       if (data.session?.user) {
-        fetchRoleAndProfile(data.session.user.id).finally(() => setIsLoading(false));
+        fetchRoleAndProfile(data.session.user).finally(() => setIsLoading(false));
       } else {
         setIsLoading(false);
       }
@@ -76,7 +92,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select("role")
         .eq("user_id", data.user.id);
 
-      const isPrivileged = roles?.some((r) => String(r.role) === "admin" || String(r.role) === "advisor");
+      const isPrivileged = roles?.some(
+        (r) => String(r.role) === "admin" || String(r.role) === "advisor",
+      );
 
       if (isPrivileged) {
         const { data: twofa } = await supabase
