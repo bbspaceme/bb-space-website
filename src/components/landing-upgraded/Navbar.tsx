@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { tokens } from "./tokens";
 import { NavLink as NavLinkType } from "./landing.types";
 
@@ -13,6 +14,7 @@ interface NavbarProps {
  */
 export const Navbar: React.FC<NavbarProps> = ({ links, onScroll }) => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -107,12 +109,9 @@ export const Navbar: React.FC<NavbarProps> = ({ links, onScroll }) => {
       {/* Desktop Navigation */}
       <div
         style={{
-          display: "flex",
+          display: isMobile ? "none" : "flex",
           alignItems: "center",
           gap: "40px",
-          "@media (max-width: 768px)": {
-            display: "none",
-          },
         }}
       >
         {links.map((link) => (
@@ -145,12 +144,9 @@ export const Navbar: React.FC<NavbarProps> = ({ links, onScroll }) => {
       {/* Desktop Actions */}
       <div
         style={{
-          display: "flex",
+          display: isMobile ? "none" : "flex",
           alignItems: "center",
           gap: "12px",
-          "@media (max-width: 768px)": {
-            display: "none",
-          },
         }}
       >
         <button
@@ -211,10 +207,7 @@ export const Navbar: React.FC<NavbarProps> = ({ links, onScroll }) => {
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
         style={{
-          display: "none",
-          "@media (max-width: 768px)": {
-            display: "flex",
-          },
+          display: isMobile ? "flex" : "none",
           background: "none",
           border: "none",
           color: tokens.color.text,
