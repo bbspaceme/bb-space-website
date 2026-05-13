@@ -135,6 +135,6 @@ Berikan insight strategis dalam Bahasa Indonesia, padat dan actionable. Output d
         { role: "user", content: userPrompt },
       ],
     });
-    const content = aiJson.data.choices?.[0]?.message?.content ?? "(no response)";
+    const content = (aiJson as any).data?.choices?.[0]?.message?.content ?? (aiJson as any).choices?.[0]?.message?.content ?? "(no response)";
     return { content, generated_at: new Date().toISOString(), users_analyzed: usersSummary.length };
   });
