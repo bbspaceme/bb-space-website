@@ -1,7 +1,5 @@
-import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 import { callLovableAi } from "@/lib/ai-client";
-import { authedMiddleware } from "@/lib/with-auth";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function callAiTool<T>(opts: {
   system: string;
@@ -32,23 +30,15 @@ async function callAiTool<T>(opts: {
     tool_choice: { type: "function", function: { name: opts.toolName } },
   });
 
-  const args = json.data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  const args = ((json as any).data?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments ?? (json as any).choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments);
   if (!args) throw new Error("AI tidak mengembalikan output terstruktur.");
   return JSON.parse(args) as T;
 }
 
-// ============ Stock Screener ============
-export const runStockScreener = createServerFn({ method: "POST" })
-  .middleware(authedMiddleware)
-  .inputValidator(
-    z.object({
-      risk: z.enum(["Conservative", "Moderate", "Aggressive"]),
-      amount: z.string().optional(),
-      horizon_years: z.number().int().min(1).max(20),
-      sectors: z.array(z.string()).default([]),
-    }),
-  )
-  .handler(async ({ data }) => {
+export async function runStockScreener(data: any) {
+  await requireSupabaseAuth();
+  void data;
+
     const sectorClause =
       data.sectors.length > 0
         ? `Fokus sektor: ${data.sectors.join(", ")}.`
@@ -101,18 +91,12 @@ export const runStockScreener = createServerFn({ method: "POST" })
         additionalProperties: false,
       },
     });
-  });
+  }
 
-// ============ DCF Valuation ============
-export const runDcfValuation = createServerFn({ method: "POST" })
-  .middleware(authedMiddleware)
-  .inputValidator(
-    z.object({
-      ticker: z.string().min(1).max(10),
-      company_name: z.string().optional(),
-    }),
-  )
-  .handler(async ({ data }) => {
+export async function runDcfValuation(data: any) {
+  await requireSupabaseAuth();
+  void data;
+
     const system = `Anda adalah VP Investment Banking yang melakukan Discounted Cash Flow valuation untuk saham IDX. Gunakan WACC, terminal value, dan sensitivity matrix. Estimasi berdasarkan pengetahuan publik. Selalu sertakan asumsi dan disclaimer.`;
     const user = `Lakukan DCF untuk emiten IDX: ${data.ticker.toUpperCase()}${data.company_name ? ` (${data.company_name})` : ""}.`;
     return callAiTool<{
@@ -190,18 +174,12 @@ export const runDcfValuation = createServerFn({ method: "POST" })
         additionalProperties: false,
       },
     });
-  });
+  }
 
-// ============ Earnings Brief ============
-export const runEarningsBrief = createServerFn({ method: "POST" })
-  .middleware(authedMiddleware)
-  .inputValidator(
-    z.object({
-      company: z.string().min(2),
-      release_date: z.string().optional(),
-    }),
-  )
-  .handler(async ({ data }) => {
+export async function runEarningsBrief(data: any) {
+  await requireSupabaseAuth();
+  void data;
+
     const system = `Anda adalah Senior Equity Research Analyst yang menyusun pre-earnings brief untuk emiten IDX. Output ringkas, terstruktur, berbasis pengetahuan publik. Selalu sertakan disclaimer.`;
     const user = `Buat pre-earnings brief untuk: ${data.company}${data.release_date ? `. Rencana rilis: ${data.release_date}` : ""}.`;
     return callAiTool<{
@@ -275,20 +253,12 @@ export const runEarningsBrief = createServerFn({ method: "POST" })
         additionalProperties: false,
       },
     });
-  });
+  }
 
-// ============ Portfolio Construction ============
-export const runPortfolioConstruction = createServerFn({ method: "POST" })
-  .middleware(authedMiddleware)
-  .inputValidator(
-    z.object({
-      age: z.number().int().min(18).max(90),
-      risk_score: z.number().int().min(1).max(10),
-      annual_income: z.string().optional(),
-      total_assets: z.string().optional(),
-    }),
-  )
-  .handler(async ({ data }) => {
+export async function runPortfolioConstruction(data: any) {
+  await requireSupabaseAuth();
+  void data;
+
     const system = `Anda adalah Senior Portfolio Strategist. Bangun multi-asset allocation berbasis usia, toleransi risiko, dan kekayaan untuk investor IDX. Sertakan IPS (Investment Policy Statement) ringkas.`;
     const user = `Profil: usia ${data.age}, risiko ${data.risk_score}/10, pendapatan tahunan ${data.annual_income || "-"}, total aset ${data.total_assets || "-"}. Bangun portofolio.`;
     return callAiTool<{
@@ -357,18 +327,12 @@ export const runPortfolioConstruction = createServerFn({ method: "POST" })
         additionalProperties: false,
       },
     });
-  });
+  }
 
-// ============ Technical Analysis ============
-export const runTechnicalAnalysis = createServerFn({ method: "POST" })
-  .middleware(authedMiddleware)
-  .inputValidator(
-    z.object({
-      ticker: z.string().min(1).max(10),
-      position: z.enum(["None", "Long", "Short"]),
-    }),
-  )
-  .handler(async ({ data }) => {
+export async function runTechnicalAnalysis(data: any) {
+  await requireSupabaseAuth();
+  void data;
+
     const system = `Anda adalah Quantitative Trader untuk saham IDX. Lakukan multi-timeframe technical analysis berbasis pengetahuan publik harga historis. Sertakan trade plan + confidence.`;
     const user = `Analisis teknikal ${data.ticker.toUpperCase()}. Posisi user saat ini: ${data.position}.`;
     return callAiTool<{
@@ -457,19 +421,12 @@ export const runTechnicalAnalysis = createServerFn({ method: "POST" })
         additionalProperties: false,
       },
     });
-  });
+  }
 
-// ============ Dividend Strategy ============
-export const runDividendStrategy = createServerFn({ method: "POST" })
-  .middleware(authedMiddleware)
-  .inputValidator(
-    z.object({
-      total_investment: z.string().optional(),
-      monthly_target: z.string().optional(),
-      tax_status: z.enum(["WNI", "Badan", "Asing"]),
-    }),
-  )
-  .handler(async ({ data }) => {
+export async function runDividendStrategy(data: any) {
+  await requireSupabaseAuth();
+  void data;
+
     const system = `Anda adalah Chief Investment Strategist untuk dividend portfolio IDX. Pilih 12-15 saham dividen, sertakan safety score & DRIP compounding 5 tahun. Berbasis pengetahuan publik.`;
     const user = `Total investasi: ${data.total_investment || "-"}. Target bulanan: ${data.monthly_target || "-"}. Pajak: ${data.tax_status}.`;
     return callAiTool<{
@@ -542,4 +499,5 @@ export const runDividendStrategy = createServerFn({ method: "POST" })
         additionalProperties: false,
       },
     });
-  });
+  }
+
