@@ -66,7 +66,7 @@ function IDXMarketsPage() {
                   <div className="text-3xl font-semibold">{formatIDR(index.close)}</div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span>{formatPercent(index.change_pct)}</span>
-                    <Badge variant={index.change_pct >= 0 ? "success" : "destructive"}>
+                    <Badge variant={index.change_pct >= 0 ? "default" : "destructive"}>
                       {index.date}
                     </Badge>
                   </div>
