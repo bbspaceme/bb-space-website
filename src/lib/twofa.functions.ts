@@ -168,3 +168,5 @@ export async function verifyRecoveryCodeForLogin(data: { userId: string; recover
 
   return { ok: true, remaining_codes: remainingCodes.length };
 }
+
+export const verify2faSetup = verify2fa;
