@@ -58,9 +58,8 @@ async function checkRateLimit(identifier: string): Promise<RateLimitResult> {
 // Middleware for rate limiting
 export function rateLimitMiddleware(identifierFn?: (context: { userId?: string }) => string) {
   return createMiddleware({ type: "function" }).server(async ({ next, context }) => {
-    const identifier = identifierFn
-      ? identifierFn(context as { userId?: string })
-      : (context as { userId?: string }).userId || "anonymous";
+    const ctx = (context ?? {}) as { userId?: string };
+    const identifier = identifierFn ? identifierFn(ctx) : ctx.userId || "anonymous";
     const { allowed, remaining, resetTime } = await checkRateLimit(identifier);
 
     if (!allowed) {
@@ -77,7 +76,7 @@ export function rateLimitMiddleware(identifierFn?: (context: { userId?: string }
 
     const response = await next({
       context: {
-        ...context,
+        ...ctx,
         rateLimit: { remaining, resetTime },
       },
     });

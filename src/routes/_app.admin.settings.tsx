@@ -25,12 +25,12 @@ function AdminSettingsPage() {
   const settingsQ = useQuery({
     queryKey: ["system-settings"],
     enabled: !!auth.user?.id,
-    queryFn: () => adminListSettings({ data: {} }),
+    queryFn: () => adminListSettings({}),
   });
 
   const updateMut = useMutation({
     mutationFn: (vars: { key: string; value: unknown }) =>
-      adminUpdateSetting({ data: { key: vars.key, value: vars.value } }),
+      adminUpdateSetting({ key: vars.key, value: vars.value }),
     onSuccess: () => {
       toast.success("Setting tersimpan");
       qc.invalidateQueries({ queryKey: ["system-settings"] });
@@ -39,7 +39,7 @@ function AdminSettingsPage() {
   });
 
   const smfMut = useMutation({
-    mutationFn: () => fetchSmfNav({ data: { fund_id: smfFundId } }),
+    mutationFn: () => fetchSmfNav({ fund_id: smfFundId }),
     onError: (e) => toast.error(e.message),
   });
 

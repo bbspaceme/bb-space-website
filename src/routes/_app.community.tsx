@@ -66,7 +66,7 @@ function CommunityPage() {
   const equityQ = useQuery({
     queryKey: ["community-equity", equityRange],
     staleTime: 1000 * 60 * 10,
-    queryFn: async () => getCommunityEquitySeries({ data: { from_date: equityFromDate } }),
+    queryFn: async () => getCommunityEquitySeries({ from_date: equityFromDate }),
   });
 
   const memberCountQ = useQuery({

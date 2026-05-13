@@ -173,3 +173,8 @@ export async function adminGetMutualFundNav(data: { fund_id?: string } = {}) {
     };
   }
 }
+
+// Aliases for backward compatibility
+export const adminListSettings = adminListSystemSettings;
+export const adminUpdateSetting = adminUpdateSystemSetting;
+export const fetchSmfNav = adminGetMutualFundNav;

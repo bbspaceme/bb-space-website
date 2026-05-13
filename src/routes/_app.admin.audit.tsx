@@ -31,7 +31,7 @@ function AdminAuditPage() {
   const q = useQuery({
     queryKey: ["admin-audit-logs"],
     enabled: !!auth.user?.id,
-    queryFn: () => adminListAuditLogs({ data: { limit: 300 } }),
+    queryFn: () => adminListAuditLogs({ limit: 300 }),
   });
 
   const rows = (q.data ?? []).filter((r) => {

@@ -81,7 +81,7 @@ function AdminPricesPage() {
 
   const refreshMut = useMutation({
     mutationFn: () =>
-      refreshEodPrices({ data: accessToken ? { access_token: accessToken } : undefined }),
+      refreshEodPrices(accessToken ? { access_token: accessToken } : undefined),
     onSuccess: (res) => {
       toast.success(`${res.updated} harga diperbarui via Yahoo Finance`);
       qc.invalidateQueries({ queryKey: ["admin-eod-prices"] });
@@ -92,7 +92,7 @@ function AdminPricesPage() {
 
   const intradayMut = useMutation({
     mutationFn: () =>
-      refreshIntradayPrices({ data: accessToken ? { access_token: accessToken } : undefined }),
+      refreshIntradayPrices(accessToken ? { access_token: accessToken } : undefined),
     onSuccess: (res) => {
       toast.success(`Intraday: ${res.updated} ticker + IHSG ${res.ihsg ? fmtNum(res.ihsg) : "—"}`);
       qc.invalidateQueries({ queryKey: ["admin-eod-prices"] });
@@ -122,7 +122,7 @@ function AdminPricesPage() {
 
   const deleteMut = useMutation({
     mutationFn: () =>
-      deleteAllMarketData({ data: accessToken ? { access_token: accessToken } : undefined }),
+      deleteAllMarketData(accessToken ? { access_token: accessToken } : undefined),
     onSuccess: () => {
       toast.success("Semua data harga berhasil dihapus");
       setConfirmDelete(false);
@@ -134,7 +134,7 @@ function AdminPricesPage() {
 
   const exportMut = useMutation({
     mutationFn: () =>
-      exportAllMarketData({ data: accessToken ? { access_token: accessToken } : undefined }),
+      exportAllMarketData(accessToken ? { access_token: accessToken } : undefined),
     onSuccess: (res) => {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.eod), "EOD Prices");

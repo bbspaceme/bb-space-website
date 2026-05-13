@@ -47,7 +47,7 @@ export function computeHoldingsFromTxns(txns: TxnInput[]) {
 }
 
 async function atomicAdjustCash(userId: string, delta: number): Promise<number> {
-  const { data, error } = await supabaseAdmin.rpc<number>("adjust_cash_balance", {
+  const { data, error } = await (supabaseAdmin.rpc as any)("adjust_cash_balance", {
     p_user_id: userId,
     p_delta: delta,
   });
@@ -269,14 +269,14 @@ export async function submitTransaction(data: {
 
   // IMP-02: Incremental holdings update via RPC instead of full recompute
   if (data.side === "BUY") {
-    await supabaseAdmin.rpc("upsert_holding_buy", {
+    await (supabaseAdmin.rpc as any)("upsert_holding_buy", {
       p_user_id: userId,
       p_ticker: data.ticker,
       p_lot: data.lot,
       p_price: data.price,
     });
   } else {
-    await supabaseAdmin.rpc("upsert_holding_sell", {
+    await (supabaseAdmin.rpc as any)("upsert_holding_sell", {
       p_user_id: userId,
       p_ticker: data.ticker,
       p_lot: data.lot,
@@ -465,4 +465,13 @@ export async function bootstrapAdmin(data: {
     .from("user_roles")
     .upsert([{ user_id: data.user_id, role: "admin" }], { onConflict: "user_id,role" });
   return { ok: true };
+}
+
+// Aliases for backward compatibility
+export const adminCreateUser = createUserAccount;
+export const adminGrantRole = grantUserRole;
+export const adminDeleteUser = deleteUser;
+export const adminListUsers = listAllUsers;
+export async function adminUpdateUser(_data: any): Promise<any> {
+  throw new Error("adminUpdateUser not implemented");
 }

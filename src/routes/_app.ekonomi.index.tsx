@@ -17,7 +17,7 @@ function EkonomiDashboard() {
 
   const macroQ = useQuery({
     queryKey: ["ekonomi-macro", "IDN"],
-    queryFn: () => fetchMacro({ data: { country: "IDN" } }),
+    queryFn: () => fetchMacro({ country: "IDN" }),
     staleTime: 1000 * 60 * 60,
   });
 

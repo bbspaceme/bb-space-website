@@ -52,13 +52,11 @@ function AdminSecurityPage() {
     queryKey: ["admin-sessions", activeOnly],
     enabled: !!auth.user?.id,
     queryFn: () =>
-      adminListSessions({
-        data: { only_active: activeOnly, limit: 300 },
-      }),
+      adminListSessions({ only_active: activeOnly, limit: 300 },),
   });
 
   const revokeMut = useMutation({
-    mutationFn: (session_id: string) => adminRevokeSession({ data: { session_id } }),
+    mutationFn: (session_id: string) => adminRevokeSession({ session_id }),
     onSuccess: () => {
       toast.success("Session ditandai revoked");
       qc.invalidateQueries({ queryKey: ["admin-sessions"] });

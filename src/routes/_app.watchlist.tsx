@@ -26,7 +26,7 @@ function WatchlistPage() {
   }, [search.add]);
 
   const add = useMutation({
-    mutationFn: () => addWatchlist({ data: { ticker, note: note || undefined } }),
+    mutationFn: () => addWatchlist({ ticker, note: note || undefined }),
     onSuccess: () => {
       setTicker("");
       setNote("");
@@ -37,7 +37,7 @@ function WatchlistPage() {
   });
 
   const remove = useMutation({
-    mutationFn: (id: string) => removeWatchlist({ data: { id } }),
+    mutationFn: (id: string) => removeWatchlist({ id }),
     onSuccess: () => q.refetch(),
   });
 

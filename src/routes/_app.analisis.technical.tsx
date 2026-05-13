@@ -20,7 +20,7 @@ function TechnicalPage() {
   const [ticker, setTicker] = useState("");
   const [pos, setPos] = useState<"None" | "Long" | "Short">("None");
   const m = useMutation({
-    mutationFn: () => runTechnicalAnalysis({ data: { ticker, position: pos } }),
+    mutationFn: () => runTechnicalAnalysis({ ticker, position: pos }),
     onError: (e: Error) => toast.error(e.message),
   });
   return (
