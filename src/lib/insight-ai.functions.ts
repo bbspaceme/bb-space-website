@@ -7,7 +7,7 @@ import { rateLimitMiddleware } from "@/lib/rate-limiter";
 
 export const generateAiInsight = createServerFn({ method: "POST" })
   .middleware([
-    advisorAuthMiddleware,
+    ...advisorAuthMiddleware,
     rateLimitMiddleware((context) => `ai-insight:${context.userId}`),
   ])
   .inputValidator(z.object({}))
@@ -71,7 +71,8 @@ export const generateAiInsight = createServerFn({ method: "POST" })
         positions_count: u.positions.length,
         total_value_tier: categorizeValue(u.total_value),
         cash_ratio: u.cash / (u.total_value + u.cash),
-        pl_pct: u.pl_pct,
+        pl_pct:
+          u.total_cost > 0 ? ((u.total_value - u.total_cost) / u.total_cost) * 100 : 0,
         top_sectors: u.positions
           .sort((a, b) => b.value - a.value)
           .slice(0, 3)
@@ -134,6 +135,6 @@ Berikan insight strategis dalam Bahasa Indonesia, padat dan actionable. Output d
         { role: "user", content: userPrompt },
       ],
     });
-    const content = aiJson.choices?.[0]?.message?.content ?? "(no response)";
+    const content = aiJson.data.choices?.[0]?.message?.content ?? "(no response)";
     return { content, generated_at: new Date().toISOString(), users_analyzed: usersSummary.length };
   });

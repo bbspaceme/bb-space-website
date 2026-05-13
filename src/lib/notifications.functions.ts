@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { authedMiddleware } from "@/lib/with-auth";
 
 export const listNotifications = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware(authedMiddleware)
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { data, error } = await supabase
@@ -17,7 +17,7 @@ export const listNotifications = createServerFn({ method: "GET" })
   });
 
 export const markNotificationRead = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware(authedMiddleware)
   .inputValidator(z.object({ id: z.string().uuid().optional(), all: z.boolean().optional() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -33,7 +33,7 @@ export const markNotificationRead = createServerFn({ method: "POST" })
   });
 
 export const listPriceAlerts = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware(authedMiddleware)
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { data, error } = await supabase
@@ -46,7 +46,7 @@ export const listPriceAlerts = createServerFn({ method: "GET" })
   });
 
 export const createPriceAlert = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware(authedMiddleware)
   .inputValidator(
     z.object({
       ticker: z
@@ -71,7 +71,7 @@ export const createPriceAlert = createServerFn({ method: "POST" })
   });
 
 export const deletePriceAlert = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware(authedMiddleware)
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;

@@ -126,5 +126,5 @@ export async function generateMacroBrief(data: { summary_data: string }) {
       { role: "user", content: data.summary_data },
     ],
   });
-  return { brief: j.choices?.[0]?.message?.content ?? "" };
+  return { brief: j.data.choices?.[0]?.message?.content ?? "" };
 }
