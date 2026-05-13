@@ -11,12 +11,6 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [TanStackRouterVite(), react(), tailwindcss(), tsconfigPaths()],
 
-    resolve: {
-      alias: {
-        "@tanstack/react-start": "@tanstack/react-start/client",
-      },
-    },
-
     // Environment-specific configurations
     define: {
       __APP_ENV__: JSON.stringify(env.VITE_APP_ENV || mode),
