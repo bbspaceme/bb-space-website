@@ -38,6 +38,9 @@ function NotFoundComponent() {
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
+  head: () => ({
+    links: [{ rel: "stylesheet", href: appCss }],
+  }),
 });
 
 function RootComponent() {
