@@ -234,9 +234,7 @@ function PriceAlertsCard() {
 
   const createMut = useMutation({
     mutationFn: () =>
-      create({
-        data: { ticker: ticker.toUpperCase(), condition, threshold: Number(threshold) },
-      }),
+      create({ ticker: ticker.toUpperCase(), condition, threshold: Number(threshold) }),
     onSuccess: () => {
       setTicker("");
       setThreshold("");
