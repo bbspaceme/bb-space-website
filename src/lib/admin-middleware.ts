@@ -63,7 +63,7 @@ const requireAdminAuth = createMiddleware({ type: "function" }).server(
 // Combined middleware: auth + admin role check
 export const adminAuthMiddleware = [
   attachSupabaseAuth,
-  requireSupabaseAuth,
+  requireSupabaseAuthMiddleware,
   requireAdminAuth,
 ] as const;
 
@@ -98,6 +98,6 @@ const requireAdvisorAuth = createMiddleware({ type: "function" }).server(
 
 export const advisorAuthMiddleware = [
   attachSupabaseAuth,
-  requireSupabaseAuth,
+  requireSupabaseAuthMiddleware,
   requireAdvisorAuth,
 ] as const;
