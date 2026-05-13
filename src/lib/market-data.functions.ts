@@ -296,7 +296,7 @@ export async function refreshIntradayPrices(data: any = {}) {
       tickers_failed: tickersFailed,
       total_eod_rows: totalRows,
     };
-  }
+}
 
 export async function deleteAllMarketData(data: any = {}) {
   await requireAdmin();
