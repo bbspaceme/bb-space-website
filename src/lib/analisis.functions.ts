@@ -1,8 +1,7 @@
-import { z } from "zod";
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { callLovableAi } from "@/lib/ai-client";
 import { authedMiddleware } from "@/lib/with-auth";
-import { withFinancialDisclaimer } from "@/lib/ai-disclaimer";
 
 async function callAiTool<T>(opts: {
   system: string;
@@ -39,6 +38,7 @@ async function callAiTool<T>(opts: {
 }
 
 // ============ Stock Screener ============
+export const runStockScreener = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator(
     z.object({
@@ -48,15 +48,14 @@ async function callAiTool<T>(opts: {
       sectors: z.array(z.string()).default([]),
     }),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const sectorClause =
       data.sectors.length > 0
         ? `Fokus sektor: ${data.sectors.join(", ")}.`
         : "Tanpa preferensi sektor.";
     const system = `Anda adalah Senior Equity Analyst yang menyaring saham IDX (Bursa Efek Indonesia). Pilih 10 saham IDX riil yang sesuai parameter, dengan rasionalisasi data fundamental (P/E, ROE, growth) berdasarkan pengetahuan terbaru Anda. Sertakan disclaimer bahwa angka adalah estimasi dan bukan rekomendasi investasi.`;
     const user = `Profil risiko: ${data.risk}. Horizon: ${data.horizon_years} tahun. Jumlah investasi: ${data.amount || "tidak ditentukan"}. ${sectorClause} Berikan 10 emiten terbaik di IDX.`;
-
-    const result = await callAiTool<{
+    return callAiTool<{
       tickers: {
         ticker: string;
         name: string;
@@ -102,16 +101,10 @@ async function callAiTool<T>(opts: {
         additionalProperties: false,
       },
     });
-
-    // Wrap response with financial disclaimer
-    return withFinancialDisclaimer(result, {
-      confidence: "medium",
-      model: "google/gemini-2.5-flash",
-      dataFreshness: "Data per " + new Date().toLocaleDateString("id-ID"),
-    });
   });
 
 // ============ DCF Valuation ============
+export const runDcfValuation = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator(
     z.object({
@@ -122,8 +115,7 @@ async function callAiTool<T>(opts: {
   .handler(async ({ data }) => {
     const system = `Anda adalah VP Investment Banking yang melakukan Discounted Cash Flow valuation untuk saham IDX. Gunakan WACC, terminal value, dan sensitivity matrix. Estimasi berdasarkan pengetahuan publik. Selalu sertakan asumsi dan disclaimer.`;
     const user = `Lakukan DCF untuk emiten IDX: ${data.ticker.toUpperCase()}${data.company_name ? ` (${data.company_name})` : ""}.`;
-
-    const result = await callAiTool<{
+    return callAiTool<{
       ticker: string;
       company: string;
       current_price: number;
@@ -201,6 +193,7 @@ async function callAiTool<T>(opts: {
   });
 
 // ============ Earnings Brief ============
+export const runEarningsBrief = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator(
     z.object({
@@ -285,6 +278,7 @@ async function callAiTool<T>(opts: {
   });
 
 // ============ Portfolio Construction ============
+export const runPortfolioConstruction = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator(
     z.object({
@@ -366,6 +360,7 @@ async function callAiTool<T>(opts: {
   });
 
 // ============ Technical Analysis ============
+export const runTechnicalAnalysis = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator(
     z.object({
@@ -465,6 +460,7 @@ async function callAiTool<T>(opts: {
   });
 
 // ============ Dividend Strategy ============
+export const runDividendStrategy = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator(
     z.object({
