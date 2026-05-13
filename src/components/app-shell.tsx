@@ -209,11 +209,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const handleLogout = async () => {
     if (auth.user) {
       writeAuditLog({
-        data: {
-          username: auth.username ?? undefined,
-          action: "auth.logout",
-          user_agent: navigator.userAgent,
-        },
+        username: auth.username ?? undefined,
+        action: "auth.logout",
+        user_agent: navigator.userAgent,
       }).catch(() => null);
     }
     // Clear TanStack Query cache to prevent session hijacking
