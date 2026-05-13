@@ -196,8 +196,9 @@ export async function refreshIntradayPrices(data: any = {}) {
   };
 }
 
+export async function backfillEodFromApril(data: any = {}) {
   await requireAdmin();
-  void data;
+
 
     const db = getAdminDatabaseClient();
     const fromDate = data.from_date;
