@@ -1,3 +1,8 @@
+type KVNamespace = {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+};
+
 interface RateLimitResult {
   allowed: boolean;
   remaining: number;
