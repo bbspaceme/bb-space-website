@@ -1,10 +1,11 @@
-import { z } from "zod";
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authedMiddleware } from "@/lib/with-auth";
 import { insertAuditLog } from "@/lib/audit.functions";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // Soft delete user account (GDPR compliance)
+export const softDeleteUser = createServerFn({ method: "POST" })
   .middleware([authedMiddleware])
   .inputValidator(z.object({}))
   .handler(async ({ context }) => {
@@ -33,6 +34,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
   });
 
 // Export user data (GDPR compliance)
+export const exportUserData = createServerFn({ method: "GET" })
   .middleware([authedMiddleware])
   .inputValidator(z.object({}))
   .handler(async ({ context }) => {
@@ -133,6 +135,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
   });
 
 // Admin function to restore soft-deleted user
+export const restoreUser = createServerFn({ method: "POST" })
   .middleware([authedMiddleware]) // In production, add admin check
   .inputValidator(z.object({ userId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
@@ -166,6 +169,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
   });
 
 // Admin function for permanent deletion (after retention period)
+export const permanentlyDeleteUser = createServerFn({ method: "POST" })
   .middleware([authedMiddleware]) // In production, add admin check
   .inputValidator(z.object({ userId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
@@ -199,6 +203,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
   });
 
 // Admin function to archive old data
+export const archiveOldData = createServerFn({ method: "POST" })
   .middleware([authedMiddleware]) // In production, add admin check
   .inputValidator(z.object({ daysOld: z.number().min(30).max(3650).optional() }))
   .handler(async ({ data, context }) => {
