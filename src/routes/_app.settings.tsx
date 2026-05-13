@@ -79,7 +79,7 @@ function TwoFactorCard() {
 
   const verifyMut = useMutation({
     mutationFn: () => verify({ code }),
-    onSuccess: (d) => {
+    onSuccess: (d: { ok: boolean; recovery_codes: string[] }) => {
       setRecovery(d.recovery_codes);
       setSetup(null);
       setCode("");
