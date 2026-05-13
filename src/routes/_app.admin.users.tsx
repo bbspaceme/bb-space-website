@@ -55,7 +55,7 @@ function AdminUsersPage() {
     queryKey: ["admin-users"],
     enabled: !!auth.user?.id,
     queryFn: async () => {
-      return adminListUsers({});
+      return adminListUsers();
     },
   });
 
