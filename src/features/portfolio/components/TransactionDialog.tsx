@@ -76,14 +76,11 @@ export function TransactionDialog({
     setSubmitting(true);
     try {
       await submitTransaction({
-        data: {
-          userId,
-          ticker: tickerUpper,
-          side,
-          lot: lotN,
-          price: priceN.toString(),
-          transacted_at: date,
-        },
+        ticker: tickerUpper,
+        side,
+        lot: lotN,
+        price: priceN,
+        transacted_at: date,
       });
       toast.success(`${side} ${tickerUpper} berhasil dicatat`);
       onSuccess();
