@@ -1,6 +1,8 @@
 import {
   Outlet,
   Link,
+  HeadContent,
+  Scripts,
   createRootRouteWithContext,
 } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -38,7 +40,30 @@ function NotFoundComponent() {
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
+  shellComponent: RootDocument,
+  head: () => ({
+    meta: [
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1.0" },
+      { title: "KBAI Terminal — Portfolio & Equity Intelligence" },
+    ],
+    links: [{ rel: "stylesheet", href: appCss }],
+  }),
 });
+
+function RootDocument({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="id">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        {children}
+        <Scripts />
+      </body>
+    </html>
+  );
+}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
