@@ -28,6 +28,8 @@ import { Route as AppEkonomiIndexRouteImport } from './routes/_app.ekonomi.index
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicEvaluatePriceAlertsRouteImport } from './routes/api/public/evaluate-price-alerts'
 import { Route as ApiCronDailyRefreshRouteImport } from './routes/api/cron/daily-refresh'
+import { Route as AppIdxScreenerRouteImport } from './routes/_app.idx.screener'
+import { Route as AppIdxMarketsRouteImport } from './routes/_app.idx.markets'
 import { Route as AppEkonomiMacroRouteImport } from './routes/_app.ekonomi.macro'
 import { Route as AppEkonomiKomoditasRouteImport } from './routes/_app.ekonomi.komoditas'
 import { Route as AppEkonomiGlobalRouteImport } from './routes/_app.ekonomi.global'
@@ -145,6 +147,16 @@ const ApiCronDailyRefreshRoute = ApiCronDailyRefreshRouteImport.update({
   id: '/api/cron/daily-refresh',
   path: '/api/cron/daily-refresh',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppIdxScreenerRoute = AppIdxScreenerRouteImport.update({
+  id: '/idx/screener',
+  path: '/idx/screener',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIdxMarketsRoute = AppIdxMarketsRouteImport.update({
+  id: '/idx/markets',
+  path: '/idx/markets',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppEkonomiMacroRoute = AppEkonomiMacroRouteImport.update({
   id: '/macro',
@@ -294,6 +306,8 @@ export interface FileRoutesByFullPath {
   '/ekonomi/global': typeof AppEkonomiGlobalRoute
   '/ekonomi/komoditas': typeof AppEkonomiKomoditasRoute
   '/ekonomi/macro': typeof AppEkonomiMacroRoute
+  '/idx/markets': typeof AppIdxMarketsRoute
+  '/idx/screener': typeof AppIdxScreenerRoute
   '/api/cron/daily-refresh': typeof ApiCronDailyRefreshRoute
   '/api/public/evaluate-price-alerts': typeof ApiPublicEvaluatePriceAlertsRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -335,6 +349,8 @@ export interface FileRoutesByTo {
   '/ekonomi/global': typeof AppEkonomiGlobalRoute
   '/ekonomi/komoditas': typeof AppEkonomiKomoditasRoute
   '/ekonomi/macro': typeof AppEkonomiMacroRoute
+  '/idx/markets': typeof AppIdxMarketsRoute
+  '/idx/screener': typeof AppIdxScreenerRoute
   '/api/cron/daily-refresh': typeof ApiCronDailyRefreshRoute
   '/api/public/evaluate-price-alerts': typeof ApiPublicEvaluatePriceAlertsRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -379,6 +395,8 @@ export interface FileRoutesById {
   '/_app/ekonomi/global': typeof AppEkonomiGlobalRoute
   '/_app/ekonomi/komoditas': typeof AppEkonomiKomoditasRoute
   '/_app/ekonomi/macro': typeof AppEkonomiMacroRoute
+  '/_app/idx/markets': typeof AppIdxMarketsRoute
+  '/_app/idx/screener': typeof AppIdxScreenerRoute
   '/api/cron/daily-refresh': typeof ApiCronDailyRefreshRoute
   '/api/public/evaluate-price-alerts': typeof ApiPublicEvaluatePriceAlertsRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -423,6 +441,8 @@ export interface FileRouteTypes {
     | '/ekonomi/global'
     | '/ekonomi/komoditas'
     | '/ekonomi/macro'
+    | '/idx/markets'
+    | '/idx/screener'
     | '/api/cron/daily-refresh'
     | '/api/public/evaluate-price-alerts'
     | '/api/public/health'
@@ -464,6 +484,8 @@ export interface FileRouteTypes {
     | '/ekonomi/global'
     | '/ekonomi/komoditas'
     | '/ekonomi/macro'
+    | '/idx/markets'
+    | '/idx/screener'
     | '/api/cron/daily-refresh'
     | '/api/public/evaluate-price-alerts'
     | '/api/public/health'
@@ -507,6 +529,8 @@ export interface FileRouteTypes {
     | '/_app/ekonomi/global'
     | '/_app/ekonomi/komoditas'
     | '/_app/ekonomi/macro'
+    | '/_app/idx/markets'
+    | '/_app/idx/screener'
     | '/api/cron/daily-refresh'
     | '/api/public/evaluate-price-alerts'
     | '/api/public/health'
@@ -659,6 +683,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/cron/daily-refresh'
       preLoaderRoute: typeof ApiCronDailyRefreshRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/idx/screener': {
+      id: '/_app/idx/screener'
+      path: '/idx/screener'
+      fullPath: '/idx/screener'
+      preLoaderRoute: typeof AppIdxScreenerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/idx/markets': {
+      id: '/_app/idx/markets'
+      path: '/idx/markets'
+      fullPath: '/idx/markets'
+      preLoaderRoute: typeof AppIdxMarketsRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/ekonomi/macro': {
       id: '/_app/ekonomi/macro'
@@ -903,6 +941,8 @@ interface AppRouteChildren {
   AppPortfolioRoute: typeof AppPortfolioRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppWatchlistRoute: typeof AppWatchlistRoute
+  AppIdxMarketsRoute: typeof AppIdxMarketsRoute
+  AppIdxScreenerRoute: typeof AppIdxScreenerRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -915,6 +955,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppPortfolioRoute: AppPortfolioRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppWatchlistRoute: AppWatchlistRoute,
+  AppIdxMarketsRoute: AppIdxMarketsRoute,
+  AppIdxScreenerRoute: AppIdxScreenerRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

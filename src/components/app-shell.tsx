@@ -22,6 +22,7 @@ import {
   User as UserIcon,
   Globe,
   MoreHorizontal,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -64,6 +65,8 @@ const MEMBER_GROUPS: NavGroup[] = [
     label: "Research",
     items: [
       { to: "/analisis", label: "Analisis", icon: LineChart },
+      { to: "/idx/screener", label: "IDX Screener", icon: Search },
+      { to: "/idx/markets", label: "IDX Markets", icon: BarChart3 },
       { to: "/ekonomi", label: "Ekonomi", icon: Globe },
     ],
   },
@@ -90,6 +93,8 @@ const ADVISOR_GROUPS: NavGroup[] = [
     label: "Research",
     items: [
       { to: "/analisis", label: "Analisis", icon: LineChart },
+      { to: "/idx/screener", label: "IDX Screener", icon: Search },
+      { to: "/idx/markets", label: "IDX Markets", icon: BarChart3 },
       { to: "/ekonomi", label: "Ekonomi", icon: Globe },
       { to: "/admin/insight", label: "Insight", icon: LineChart },
       { to: "/admin/insight-ai", label: "Insight AI", icon: Sparkles },
@@ -149,6 +154,8 @@ const ROUTE_TITLES: Record<string, { title: string; subtitle: string }> = {
   "/market-insight": { title: "Market Insight", subtitle: "Broadcast advisor" },
   "/analisis": { title: "Analisis", subtitle: "Equity Intelligence Platform" },
   "/analisis/screener": { title: "Analisis", subtitle: "Stock Screener" },
+  "/idx/screener": { title: "IDX Screener", subtitle: "Free IDX fundamental screener" },
+  "/idx/markets": { title: "IDX Markets", subtitle: "IDX indices, gainers, sectors" },
   "/analisis/valuation": { title: "Analisis", subtitle: "DCF Valuation" },
   "/analisis/earnings": { title: "Analisis", subtitle: "Earnings Analysis" },
   "/analisis/portfolio": { title: "Analisis", subtitle: "Portfolio Construction" },
