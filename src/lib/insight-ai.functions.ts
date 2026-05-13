@@ -7,7 +7,7 @@ import { rateLimitMiddleware } from "@/lib/rate-limiter";
 
 export const generateAiInsight = createServerFn({ method: "POST" })
   .middleware([
-    advisorAuthMiddleware,
+    ...advisorAuthMiddleware,
     rateLimitMiddleware((context) => `ai-insight:${context.userId}`),
   ])
   .inputValidator(z.object({}))
