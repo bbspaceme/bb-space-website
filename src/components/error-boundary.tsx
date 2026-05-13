@@ -13,6 +13,7 @@ interface WindowWithMonitoring extends Window {
 }
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { CorrelationIdContext, logError } from "@/lib/observability";
 
 interface Props {
   children: ReactNode;
@@ -35,7 +36,16 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to monitoring service
+    // Structured logging for observability
+    const correlationId = CorrelationIdContext.getRequestId();
+    logError("React Error Boundary caught error", error, {
+      correlationId,
+      componentStack: errorInfo.componentStack,
+      errorBoundary: "ErrorBoundary",
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+    });
+
+    // Legacy console logging for backward compatibility
     console.error("ErrorBoundary caught an error:", error, errorInfo);
 
     // In production, send to Sentry/PostHog

@@ -28,6 +28,7 @@ import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { useEffect, useState } from "react";
 import { writeAuditLog } from "@/lib/admin.functions";
+import { featureFlags, FeatureFlag } from "@/lib/feature-flags";
 import { CommandPalette } from "@/components/command-palette";
 import {
   DropdownMenu,
@@ -253,9 +254,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <nav className="flex-1 overflow-y-auto px-2 py-3">
             {navGroups.map((g) => (
               <SidebarSection key={g.label} label={g.label}>
-                {g.items.map((item) => (
-                  <SidebarLink key={item.to} {...item} />
-                ))}
+                {g.items
+                  .filter((item) => {
+                    // Feature flag checks for navigation items
+                    if (
+                      item.to === "/settings" &&
+                      !featureFlags.isEnabled(FeatureFlag.ENABLE_DARK_MODE)
+                    ) {
+                      return false;
+                    }
+                    if (
+                      item.to === "/analisis" &&
+                      !featureFlags.isEnabled(FeatureFlag.ENABLE_PERFORMANCE_MONITORING)
+                    ) {
+                      return false;
+                    }
+                    if (
+                      item.to === "/community" &&
+                      !featureFlags.isEnabled(FeatureFlag.ENABLE_ONBOARDING)
+                    ) {
+                      return false;
+                    }
+                    return true;
+                  })
+                  .map((item) => (
+                    <SidebarLink key={item.to} {...item} />
+                  ))}
               </SidebarSection>
             ))}
           </nav>

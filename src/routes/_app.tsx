@@ -3,11 +3,21 @@ import { useAuth } from "@/auth";
 import { AppShell } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { Activity } from "lucide-react";
+import { CorrelationIdContext, logInfo, logWarn } from "@/lib/observability";
 
 export const Route = createFileRoute("/_app")({
   // Use getUser() with retry logic instead of getSession(). This avoids
   // phantom redirects during hard refresh before Supabase hydrates localStorage.
   beforeLoad: async () => {
+    const correlationId = CorrelationIdContext.generate();
+    CorrelationIdContext.setRequestId(correlationId);
+
+    logInfo("Route guard: checking authentication", {
+      correlationId,
+      route: "/_app",
+      guard: "beforeLoad",
+    });
+
     let user = null;
     let attempts = 0;
     const maxAttempts = 3;
@@ -16,15 +26,29 @@ export const Route = createFileRoute("/_app")({
       const { data, error } = await supabase.auth.getUser();
       if (data?.user && !error) {
         user = data.user;
+        logInfo("Route guard: authentication successful", {
+          correlationId,
+          userId: user.id,
+          attempts: attempts + 1,
+        });
         break;
       }
       attempts += 1;
       if (attempts < maxAttempts) {
+        logWarn("Route guard: authentication attempt failed, retrying", {
+          correlationId,
+          attempt: attempts,
+          maxAttempts,
+        });
         await new Promise((resolve) => setTimeout(resolve, 100 * 2 ** (attempts - 1)));
       }
     }
 
     if (!user) {
+      logWarn("Route guard: authentication failed, redirecting to login", {
+        correlationId,
+        attempts,
+      });
       throw redirect({ to: "/login" });
     }
   },
