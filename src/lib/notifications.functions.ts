@@ -1,42 +1,51 @@
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export async function listNotifications() {
-  const { supabase, userId } = await requireSupabaseAuth();
-  const { data, error } = await supabase
-    .from("notifications")
-    .select("id, kind, title, body, link, metadata, read_at, created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(50);
-  if (error) throw error;
-  return data ?? [];
-}
+export const listNotifications = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("id, kind, title, body, link, metadata, read_at, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    return data ?? [];
+  });
 
-export async function markNotificationRead({ data }: { data: { id?: string; all?: boolean } }) {
-  const { supabase, userId } = await requireSupabaseAuth();
-  const now = new Date().toISOString();
-  const q = supabase
-    .from("notifications")
-    .update({ read_at: now })
-    .eq("user_id", userId)
-    .is("read_at", null);
-  const { error } = data.all ? await q : await q.eq("id", data.id!);
-  if (error) throw error;
-  return { ok: true };
-}
+export const markNotificationRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid().optional(), all: z.boolean().optional() }))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const now = new Date().toISOString();
+    const q = supabase
+      .from("notifications")
+      .update({ read_at: now })
+      .eq("user_id", userId)
+      .is("read_at", null);
+    const { error } = data.all ? await q : await q.eq("id", data.id!);
+    if (error) throw error;
+    return { ok: true };
+  });
 
-export async function listPriceAlerts() {
-  const { supabase, userId } = await requireSupabaseAuth();
-  const { data, error } = await supabase
-    .from("price_alerts")
-    .select("id, ticker, condition, threshold, is_active, triggered_at, created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
-}
+export const listPriceAlerts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("price_alerts")
+      .select("id, ticker, condition, threshold, is_active, triggered_at, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  });
 
+export const createPriceAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
@@ -61,6 +70,7 @@ export async function listPriceAlerts() {
     return { ok: true };
   });
 
+export const deletePriceAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {

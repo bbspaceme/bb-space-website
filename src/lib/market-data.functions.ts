@@ -1,3 +1,4 @@
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { adminAuthMiddleware } from "@/lib/admin-middleware";
 import { IDX_TICKERS, toYahoo, fromYahoo } from "@/lib/idx-tickers";
@@ -135,15 +136,18 @@ async function recomputeKbaiRange(
 // Refresh INTRADAY price (real-time, ~15min delay)
 // Updates eod_prices for TODAY using regularMarketPrice
 // ============================================
-export async function refreshIntradayPrices({ access_token }: { access_token?: string } = {}) {
-  // ARCH-01: System-level operation always uses admin client
-  const db = getAdminDatabaseClient();
-  const today = new Date().toISOString().slice(0, 10);
+export const refreshIntradayPrices = createServerFn({ method: "POST" })
+  .middleware(adminAuthMiddleware)
+  .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
+  .handler(async () => {
+    // ARCH-01: System-level operation always uses admin client
+    const db = getAdminDatabaseClient();
+    const today = new Date().toISOString().slice(0, 10);
 
-  // Tickers from holdings + always include the IDX_TICKERS basket
-  const { data: holdings } = await db.from("holdings").select("ticker").gt("total_lot", 0);
-  const heldTickers = (holdings ?? []).map((h) => h.ticker);
-  const allTickers = Array.from(new Set([...heldTickers, ...IDX_TICKERS]));
+    // Tickers from holdings + always include the IDX_TICKERS basket
+    const { data: holdings } = await db.from("holdings").select("ticker").gt("total_lot", 0);
+    const heldTickers = (holdings ?? []).map((h) => h.ticker);
+    const allTickers = Array.from(new Set([...heldTickers, ...IDX_TICKERS]));
 
     // Fetch in batches (Yahoo limit ~100 symbols per request)
     const batchSize = 80;
@@ -218,6 +222,7 @@ export async function refreshIntradayPrices({ access_token }: { access_token?: s
 // Backfill EOD: <from_date> -> <to_date|today>
 // for all IDX_TICKERS + IHSG
 // ============================================
+export const backfillEodFromApril = createServerFn({ method: "POST" })
   .middleware(adminAuthMiddleware)
   .inputValidator(
     z.object({
@@ -330,6 +335,7 @@ export async function refreshIntradayPrices({ access_token }: { access_token?: s
 // DELETE ALL market data (eod_prices + benchmark_prices)
 // Admin-only — RLS enforces this on the DB layer.
 // ============================================
+export const deleteAllMarketData = createServerFn({ method: "POST" })
   .middleware(adminAuthMiddleware)
   .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
   .handler(async ({ data }) => {
@@ -345,6 +351,7 @@ export async function refreshIntradayPrices({ access_token }: { access_token?: s
 // ============================================
 // EXPORT ALL market data — returns rows for client-side XLSX build.
 // ============================================
+export const exportAllMarketData = createServerFn({ method: "POST" })
   .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
   .handler(async ({ data }) => {
     const db = getAdminDatabaseClient();
