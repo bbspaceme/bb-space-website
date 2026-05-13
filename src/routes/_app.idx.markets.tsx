@@ -20,7 +20,9 @@ export const Route = createFileRoute("/_app/idx/markets")({
 });
 
 function IDXMarketsPage() {
-  const { data, isLoading, error } = useQuery(["idx-market-overview"], fetchIDXMarketOverview, {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["idx-market-overview"],
+    queryFn: fetchIDXMarketOverview,
     staleTime: 1000 * 60 * 5,
   });
 
