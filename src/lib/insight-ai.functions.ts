@@ -1,11 +1,10 @@
-import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { z } from "zod";
 import { callLovableAi } from "@/lib/ai-client";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { advisorAuthMiddleware } from "@/lib/admin-middleware";
 import { rateLimitMiddleware } from "@/lib/rate-limiter";
 
-export const generateAiInsight = createServerFn({ method: "POST" })
   .middleware([
     advisorAuthMiddleware,
     rateLimitMiddleware((context) => `ai-insight:${context.userId}`),

@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { getCommodityQuotes } from "@/lib/ekonomi.functions";
 import { DataState } from "@/components/data-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,7 @@ export const Route = createFileRoute("/_app/ekonomi/komoditas")({
 });
 
 function KomoditasPage() {
-  const fetchComm = useServerFn(getCommodityQuotes);
+  const fetchComm = getCommodityQuotes;
   const q = useQuery({
     queryKey: ["ekonomi-comm-only"],
     queryFn: () => fetchComm(),

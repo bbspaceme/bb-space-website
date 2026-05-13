@@ -1,10 +1,9 @@
-import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { z } from "zod";
 import { authedMiddleware } from "@/lib/with-auth";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // ============ Economic Events ============
-export const listEconomicEvents = createServerFn({ method: "GET" })
   .middleware(authedMiddleware)
   .inputValidator((d: { from?: string; to?: string; country?: string } | undefined) =>
     z
@@ -31,7 +30,6 @@ export const listEconomicEvents = createServerFn({ method: "GET" })
   });
 
 // ============ Macro indicators ============
-export const listMacroIndicators = createServerFn({ method: "GET" })
   .middleware(authedMiddleware)
   .inputValidator((d: { country?: string; indicator?: string }) =>
     z.object({ country: z.string().default("IDN"), indicator: z.string() }).parse(d),
@@ -51,7 +49,6 @@ export const listMacroIndicators = createServerFn({ method: "GET" })
 // ============ ETL: FRED ingest (admin/advisor only) ============
 const FRED_BASE = "https://api.stlouisfed.org/fred/series/observations";
 
-export const ingestFredSeries = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator((d: { series_id: string; indicator: string; country?: string; unit?: string }) =>
     z

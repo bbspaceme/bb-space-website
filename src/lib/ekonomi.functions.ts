@@ -1,7 +1,6 @@
-import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { callLovableAi } from "@/lib/ai-client";
-import { authedMiddleware } from "@/lib/with-auth";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { fetchYahooQuoteDetail } from "@/lib/yahoo-finance";
 
 // ============== World Bank API ==============
@@ -30,41 +29,39 @@ const INDICATORS = {
   GDP_USD: "NY.GDP.MKTP.CD",
 } as const;
 
-export const getMacroSnapshot = createServerFn({ method: "GET" })
-  .middleware(authedMiddleware)
-  .inputValidator((d: { country?: string }) => ({ country: d?.country ?? "IDN" }))
-  .handler(async ({ data }) => {
-    const c = data.country;
-    const safe = async (k: keyof typeof INDICATORS) => {
-      try {
-        return await fetchWorldBank(c, INDICATORS[k], 30);
-      } catch {
-        return [];
-      }
-    };
-    const [gdp, cpi, unemp, ca, exp, imp, res, gdpUsd] = await Promise.all([
-      safe("GDP_GROWTH"),
-      safe("CPI"),
-      safe("UNEMPLOYMENT"),
-      safe("CURRENT_ACCOUNT"),
-      safe("EXPORTS_USD"),
-      safe("IMPORTS_USD"),
-      safe("RESERVES"),
-      safe("GDP_USD"),
-    ]);
-    return {
-      country: c,
-      asOf: new Date().toISOString(),
-      gdpGrowth: gdp,
-      cpi,
-      unemployment: unemp,
-      currentAccountPctGdp: ca,
-      exportsUsd: exp,
-      importsUsd: imp,
-      reservesUsd: res,
-      gdpUsd,
-    };
-  });
+export async function getMacroSnapshot(data: { country?: string } = {}) {
+  const { supabase, userId } = await requireSupabaseAuth();
+  const c = data.country ?? "IDN";
+  const safe = async (k: keyof typeof INDICATORS) => {
+    try {
+      return await fetchWorldBank(c, INDICATORS[k], 30);
+    } catch {
+      return [];
+    }
+  };
+  const [gdp, cpi, unemp, ca, exp, imp, res, gdpUsd] = await Promise.all([
+    safe("GDP_GROWTH"),
+    safe("CPI"),
+    safe("UNEMPLOYMENT"),
+    safe("CURRENT_ACCOUNT"),
+    safe("EXPORTS_USD"),
+    safe("IMPORTS_USD"),
+    safe("RESERVES"),
+    safe("GDP_USD"),
+  ]);
+  return {
+    country: c,
+    asOf: new Date().toISOString(),
+    gdpGrowth: gdp,
+    cpi,
+    unemployment: unemp,
+    currentAccountPctGdp: ca,
+    exportsUsd: exp,
+    importsUsd: imp,
+    reservesUsd: res,
+    gdpUsd,
+  };
+}
 
 // ============== Commodities (Yahoo Finance proxy) ==============
 const COMMODITIES = [
@@ -76,20 +73,19 @@ const COMMODITIES = [
   { symbol: "ZC=F", name: "Corn" },
 ];
 
-export const getCommodityQuotes = createServerFn({ method: "GET" })
-  .middleware(authedMiddleware)
-  .handler(async () => {
-    const results = await Promise.all(
-      COMMODITIES.map(async (c) => {
-        const q = await fetchYahooQuoteDetail(c.symbol);
-        return {
-          ...c,
-          ...(q ?? { price: null, previousClose: null, pctChange: null, currency: null }),
-        };
-      }),
-    );
-    return { asOf: new Date().toISOString(), items: results };
-  });
+export async function getCommoditiesSnapshot() {
+  const { supabase, userId } = await requireSupabaseAuth();
+  const results = await Promise.all(
+    COMMODITIES.map(async (c) => {
+      const q = await fetchYahooQuoteDetail(c.symbol);
+      return {
+        ...c,
+        ...(q ?? { price: null, previousClose: null, pctChange: null, currency: null }),
+      };
+    }),
+  );
+  return { asOf: new Date().toISOString(), items: results };
+}
 
 // ============== FX & Global Rates ==============
 const GLOBAL_SYMBOLS = [
@@ -102,40 +98,33 @@ const GLOBAL_SYMBOLS = [
   { symbol: "^JKSE", name: "IHSG" },
 ];
 
-export const getGlobalQuotes = createServerFn({ method: "GET" })
-  .middleware(authedMiddleware)
-  .handler(async () => {
-    const items = await Promise.all(
-      GLOBAL_SYMBOLS.map(async (s) => {
-        const q = await fetchYahooQuoteDetail(s.symbol);
-        return {
-          ...s,
-          ...(q ?? { price: null, previousClose: null, pctChange: null, currency: null }),
-        };
-      }),
-    );
-    return { asOf: new Date().toISOString(), items };
-  });
+export async function getGlobalMarketsSnapshot() {
+  const { supabase, userId } = await requireSupabaseAuth();
+  const items = await Promise.all(
+    GLOBAL_SYMBOLS.map(async (s) => {
+      const q = await fetchYahooQuoteDetail(s.symbol);
+      return {
+        ...s,
+        ...(q ?? { price: null, previousClose: null, pctChange: null, currency: null }),
+      };
+    }),
+  );
+  return { asOf: new Date().toISOString(), items };
+}
 
 // ============== AI Daily Macro Brief ==============
-export const generateMacroBrief = createServerFn({ method: "POST" })
-  .middleware(authedMiddleware)
-  .inputValidator(
-    z.object({
-      summary_data: z.string().min(10).max(8000),
-    }),
-  )
-  .handler(async ({ data }) => {
-    const j = await callLovableAi<{ choices?: { message?: { content?: string } }[] }>({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        {
-          role: "system",
-          content:
-            "Anda adalah Chief Economist KBAI Terminal. Susun briefing makroekonomi Indonesia 1 halaman: kondisi global, dampak ke IDR/IHSG, sektor terpengaruh, dan 3 watchpoint minggu ini. Gunakan bahasa Indonesia, lugas, terstruktur dengan heading. Selalu tutup dengan disclaimer 'Bukan rekomendasi investasi'.",
-        },
-        { role: "user", content: data.summary_data },
-      ],
-    });
-    return { brief: j.choices?.[0]?.message?.content ?? "" };
+export async function generateMacroBrief(data: { summary_data: string }) {
+  const { supabase, userId } = await requireSupabaseAuth();
+  const j = await callLovableAi<{ choices?: { message?: { content?: string } }[] }>({
+    model: "google/gemini-2.5-flash",
+    messages: [
+      {
+        role: "system",
+        content:
+          "Anda adalah Chief Economist KBAI Terminal. Susun briefing makroekonomi Indonesia 1 halaman: kondisi global, dampak ke IDR/IHSG, sektor terpengaruh, dan 3 watchpoint minggu ini. Gunakan bahasa Indonesia, lugas, terstruktur dengan heading. Selalu tutup dengan disclaimer 'Bukan rekomendasi investasi'.",
+      },
+      { role: "user", content: data.summary_data },
+    ],
   });
+  return { brief: j.choices?.[0]?.message?.content ?? "" };
+}

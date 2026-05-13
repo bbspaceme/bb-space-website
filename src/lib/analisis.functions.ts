@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { z } from "zod";
 import { callLovableAi } from "@/lib/ai-client";
 import { authedMiddleware } from "@/lib/with-auth";
@@ -39,7 +39,6 @@ async function callAiTool<T>(opts: {
 }
 
 // ============ Stock Screener ============
-export const runStockScreener = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator(
     z.object({
@@ -113,7 +112,6 @@ export const runStockScreener = createServerFn({ method: "POST" })
   });
 
 // ============ DCF Valuation ============
-export const runDcfValuation = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator(
     z.object({
@@ -203,7 +201,6 @@ export const runDcfValuation = createServerFn({ method: "POST" })
   });
 
 // ============ Earnings Brief ============
-export const runEarningsBrief = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator(
     z.object({
@@ -288,7 +285,6 @@ export const runEarningsBrief = createServerFn({ method: "POST" })
   });
 
 // ============ Portfolio Construction ============
-export const runPortfolioConstruction = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator(
     z.object({
@@ -370,7 +366,6 @@ export const runPortfolioConstruction = createServerFn({ method: "POST" })
   });
 
 // ============ Technical Analysis ============
-export const runTechnicalAnalysis = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator(
     z.object({
@@ -470,7 +465,6 @@ export const runTechnicalAnalysis = createServerFn({ method: "POST" })
   });
 
 // ============ Dividend Strategy ============
-export const runDividendStrategy = createServerFn({ method: "POST" })
   .middleware(authedMiddleware)
   .inputValidator(
     z.object({

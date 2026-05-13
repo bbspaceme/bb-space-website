@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { getMacroSnapshot } from "@/lib/ekonomi.functions";
 import { DataState } from "@/components/data-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +28,7 @@ const COUNTRIES = [
 
 function MacroPage() {
   const [country, setCountry] = useState("IDN");
-  const fetchMacro = useServerFn(getMacroSnapshot);
+  const fetchMacro = getMacroSnapshot;
   const q = useQuery({
     queryKey: ["ekonomi-macro", country],
     queryFn: () => fetchMacro({ data: { country } }),

@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { generateMacroBrief, getGlobalQuotes, getMacroSnapshot } from "@/lib/ekonomi.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,9 +12,9 @@ export const Route = createFileRoute("/_app/ekonomi/ai-brief")({
 });
 
 function AiBriefPage() {
-  const fetchMacro = useServerFn(getMacroSnapshot);
-  const fetchGlobal = useServerFn(getGlobalQuotes);
-  const generate = useServerFn(generateMacroBrief);
+  const fetchMacro = getMacroSnapshot;
+  const fetchGlobal = getGlobalQuotes;
+  const generate = generateMacroBrief;
 
   const macroQ = useQuery({
     queryKey: ["ekonomi-macro", "IDN"],

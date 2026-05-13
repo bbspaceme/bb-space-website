@@ -2,15 +2,20 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 
 export default defineConfig(({ mode }) => {
   // Load environment variables based on mode
   const env = loadEnv(mode, process.cwd(), "");
-  const target = process.env.DEPLOY_TARGET === "cloudflare" ? "cloudflare" : "node";
 
   return {
-    plugins: [tanstackStart({ target }), react(), tailwindcss(), tsconfigPaths()],
+    plugins: [TanStackRouterVite(), react(), tailwindcss(), tsconfigPaths()],
+
+    resolve: {
+      alias: {
+        "@tanstack/react-start": "@tanstack/react-start/client",
+      },
+    },
 
     // Environment-specific configurations
     define: {

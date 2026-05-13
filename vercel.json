@@ -1,6 +1,6 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "outputDirectory": "dist/client",
   "installCommand": "npm ci",
   "framework": null,
   "rewrites": [
@@ -10,7 +10,7 @@
     },
     {
       "source": "/((?!assets/).*)",
-      "destination": "/api/entry"
+      "destination": "/index.html"
     }
   ],
   "headers": [

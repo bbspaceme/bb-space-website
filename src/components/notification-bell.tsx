@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, CheckCheck } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/auth";
 import { listNotifications, markNotificationRead } from "@/lib/notifications.functions";
 import {
@@ -19,22 +18,20 @@ export function NotificationBell() {
   const auth = useAuth();
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
-  const list = useServerFn(listNotifications);
-  const markRead = useServerFn(markNotificationRead);
 
   const q = useQuery({
     queryKey: ["notifications"],
     enabled: auth.isAuthenticated,
     staleTime: 30_000,
     refetchInterval: 60_000,
-    queryFn: () => list(),
+    queryFn: () => listNotifications(),
   });
 
   const items = Array.isArray(q.data) ? q.data : [];
   const unread = items.filter((n) => !n.read_at).length;
 
   const markAll = useMutation({
-    mutationFn: () => markRead({ data: { all: true } }),
+    mutationFn: () => markNotificationRead({ data: { all: true } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 

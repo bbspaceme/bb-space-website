@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { getMacroSnapshot, getGlobalQuotes } from "@/lib/ekonomi.functions";
 import { DataState } from "@/components/data-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,8 +12,8 @@ export const Route = createFileRoute("/_app/ekonomi/")({
 });
 
 function EkonomiDashboard() {
-  const fetchMacro = useServerFn(getMacroSnapshot);
-  const fetchGlobal = useServerFn(getGlobalQuotes);
+  const fetchMacro = getMacroSnapshot;
+  const fetchGlobal = getGlobalQuotes;
 
   const macroQ = useQuery({
     queryKey: ["ekonomi-macro", "IDN"],

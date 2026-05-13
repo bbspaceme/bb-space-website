@@ -1,8 +1,7 @@
-import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { adminAuthMiddleware } from "@/lib/admin-middleware";
-import { authedMiddleware } from "@/lib/with-auth";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getAdminDatabaseClient } from "@/lib/backend-client.server";
 import { fetchYahooQuotes } from "@/lib/yahoo-finance";
 import { toYahoo, fromYahoo } from "@/lib/idx-tickers";
@@ -56,66 +55,66 @@ async function atomicAdjustCash(userId: string, delta: number): Promise<number> 
   return Number(data);
 }
 
-export const refreshEodPrices = createServerFn({ method: "POST" })
-  .middleware([adminAuthMiddleware, rateLimitMiddleware(() => "refresh-eod-prices")])
-  .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
-  .handler(async () => {
-    // ARCH-01: System-level operation always uses admin client
-    const db = getAdminDatabaseClient();
-    const today = new Date().toISOString().slice(0, 10);
+// ============================================
+// Refresh EOD prices for all holdings (admin only)
+// ============================================
+export async function refreshEodPrices(data: { access_token?: string } = {}) {
+  // ARCH-01: System-level operation always uses admin client
+  const db = getAdminDatabaseClient();
+  const today = new Date().toISOString().slice(0, 10);
 
-    // 1. Distinct tickers from holdings
-    const { data: holdings, error: hErr } = await db
-      .from("holdings")
-      .select("ticker")
-      .gt("total_lot", 0);
-    if (hErr) throw new Error(hErr.message);
+  // 1. Distinct tickers from holdings
+  const { data: holdings, error: hErr } = await db
+    .from("holdings")
+    .select("ticker")
+    .gt("total_lot", 0);
+  if (hErr) throw new Error(hErr.message);
 
-    const tickers = Array.from(new Set((holdings ?? []).map((h) => h.ticker)));
-    if (tickers.length === 0) {
-      return { updated: 0, tickers: [], message: "No active holdings to update" };
-    }
+  const tickers = Array.from(new Set((holdings ?? []).map((h) => h.ticker)));
+  if (tickers.length === 0) {
+    return { updated: 0, tickers: [], message: "No active holdings to update" };
+  }
 
-    // 2. Fetch from Yahoo + IHSG benchmark
-    const yahooSymbols = tickers.map(toYahoo);
-    const benchmarkSymbols = ["^JKSE"]; // IHSG
-    const allSymbols = [...yahooSymbols, ...benchmarkSymbols];
-    const quotes = await fetchYahooQuotes(allSymbols);
+  // 2. Fetch from Yahoo + IHSG benchmark
+  const yahooSymbols = tickers.map(toYahoo);
+  const benchmarkSymbols = ["^JKSE"]; // IHSG
+  const allSymbols = [...yahooSymbols, ...benchmarkSymbols];
+  const quotes = await fetchYahooQuotes(allSymbols);
 
-    // 3. Upsert eod_prices
-    const eodRows = Object.entries(quotes)
-      .filter(([sym]) => sym.endsWith(".JK"))
-      .map(([sym, close]) => ({
-        ticker: fromYahoo(sym),
-        date: today,
-        close,
-        source: "yahoo",
-      }));
+  // 3. Upsert eod_prices
+  const eodRows = Object.entries(quotes)
+    .filter(([sym]) => sym.endsWith(".JK"))
+    .map(([sym, close]) => ({
+      ticker: fromYahoo(sym),
+      date: today,
+      close,
+      source: "yahoo",
+    }));
 
-    if (eodRows.length > 0) {
-      const { error } = await db.from("eod_prices").upsert(eodRows, { onConflict: "ticker,date" });
-      if (error) throw new Error(error.message);
-    }
+  if (eodRows.length > 0) {
+    const { error } = await db.from("eod_prices").upsert(eodRows, { onConflict: "ticker,date" });
+    if (error) throw new Error(error.message);
+  }
 
-    // IHSG benchmark
-    if (quotes["^JKSE"]) {
-      await db
-        .from("benchmark_prices")
-        .upsert([{ symbol: "IHSG" as const, date: today, value: quotes["^JKSE"] }], {
-          onConflict: "symbol,date",
-        });
-    }
+  // IHSG benchmark
+  if (quotes["^JKSE"]) {
+    await db
+      .from("benchmark_prices")
+      .upsert([{ symbol: "IHSG" as const, date: today, value: quotes["^JKSE"] }], {
+        onConflict: "symbol,date",
+      });
+  }
 
-    // 4. Recompute snapshots + KBAI
-    await recomputeSnapshotsAndKbai(db, today);
+  // 4. Recompute snapshots + KBAI
+  await recomputeSnapshotsAndKbai(db, today);
 
-    await insertAuditLog({
-      action: "market.refresh_prices",
-      metadata: { count: eodRows.length, today },
-    });
-
-    return { updated: eodRows.length, tickers: eodRows.map((r) => r.ticker) };
+  await insertAuditLog({
+    action: "market.refresh_prices",
+    metadata: { count: eodRows.length, today },
   });
+
+  return { updated: eodRows.length, tickers: eodRows.map((r) => r.ticker) };
+}
 
 async function recomputeSnapshotsAndKbai(
   db: ReturnType<typeof getAdminDatabaseClient>,
@@ -186,361 +185,284 @@ async function recomputeSnapshotsAndKbai(
 // ============================================
 // Recompute holdings for a user (server-side, bypasses RLS)
 // ============================================
-export const recomputeHoldings = createServerFn({ method: "POST" })
-  .middleware(authedMiddleware)
-  .inputValidator(z.object({}).optional())
-  .handler(async ({ context }) => {
-    const userId = (context as { userId?: string }).userId;
-    if (!userId) throw new Error("Unauthorized");
+export async function recomputeHoldings() {
+  const { supabase, userId } = await requireSupabaseAuth();
 
-    const { data: txns, error } = await supabaseAdmin
-      .from("transactions")
-      .select("ticker, side, lot, price, transacted_at, created_at")
-      .eq("user_id", userId)
-      .order("transacted_at", { ascending: true })
-      .order("created_at", { ascending: true });
-    if (error) throw new Error(error.message);
+  const { data: txns, error } = await supabaseAdmin
+    .from("transactions")
+    .select("ticker, side, lot, price, transacted_at, created_at")
+    .eq("user_id", userId)
+    .order("transacted_at", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
 
-    const rows = computeHoldingsFromTxns(txns ?? []).map((r) => ({
-      ...r,
-      user_id: userId,
-    }));
+  const rows = computeHoldingsFromTxns(txns ?? []).map((r) => ({
+    ...r,
+    user_id: userId,
+  }));
 
-    await supabaseAdmin.from("holdings").delete().eq("user_id", userId);
-    if (rows.length > 0) await supabaseAdmin.from("holdings").insert(rows);
+  await supabaseAdmin.from("holdings").delete().eq("user_id", userId);
+  if (rows.length > 0) await supabaseAdmin.from("holdings").insert(rows);
 
-    return { count: rows.length };
-  });
+  return { count: rows.length };
+}
 
 // ============================================
 // Submit transaction (BUY/SELL) — validates holdings & cash, posts cash movement
 // ============================================
-export const submitTransaction = createServerFn({ method: "POST" })
-  .middleware(authedMiddleware)
-  .inputValidator(
-    z.object({
-      ticker: z
-        .string()
-        .min(1)
-        .max(10)
-        .regex(/^[A-Z0-9]+$/),
-      side: z.enum(["BUY", "SELL"]),
-      lot: z.number().int().positive(),
-      price: z.number().positive(),
-      transacted_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    }),
-  )
-  .handler(async ({ context, data }) => {
-    const userId = (context as { userId?: string }).userId;
-    if (!userId) throw new Error("Unauthorized");
+export async function submitTransaction(data: {
+  ticker: string;
+  side: "BUY" | "SELL";
+  lot: number;
+  price: number;
+  transacted_at: string;
+}) {
+  const { supabase, userId } = await requireSupabaseAuth();
 
-    const today = new Date().toISOString().slice(0, 10);
-    if (data.transacted_at > today) {
-      throw new Error("Tanggal tidak boleh lebih dari hari ini");
+  const today = new Date().toISOString().slice(0, 10);
+  if (data.transacted_at > today) {
+    throw new Error("Tanggal tidak boleh lebih dari hari ini");
+  }
+  const notional = data.lot * data.price * 100;
+
+  if (data.side === "SELL") {
+    const { data: h } = await supabaseAdmin
+      .from("holdings")
+      .select("total_lot")
+      .eq("user_id", userId)
+      .eq("ticker", data.ticker)
+      .maybeSingle();
+    const owned = h?.total_lot ?? 0;
+    if (owned < data.lot) {
+      throw new Error(
+        `Tidak bisa jual ${data.lot} lot — kamu hanya punya ${owned} lot ${data.ticker}`,
+      );
     }
-    const notional = data.lot * data.price * 100;
+  }
 
-    if (data.side === "SELL") {
-      const { data: h } = await supabaseAdmin
-        .from("holdings")
-        .select("total_lot")
-        .eq("user_id", userId)
-        .eq("ticker", data.ticker)
-        .maybeSingle();
-      const owned = h?.total_lot ?? 0;
-      if (owned < data.lot) {
-        throw new Error(
-          `Tidak bisa jual ${data.lot} lot — kamu hanya punya ${owned} lot ${data.ticker}`,
-        );
-      }
-    }
-
-    // Insert transaction
-    const { data: tx, error: txErr } = await supabaseAdmin
-      .from("transactions")
-      .insert({
-        user_id: userId,
-        ticker: data.ticker,
-        side: data.side,
-        lot: data.lot,
-        price: data.price,
-        transacted_at: data.transacted_at,
-      })
-      .select("id")
-      .single();
-    if (txErr) throw new Error(txErr.message);
-
-    // Cash movement: BUY → cash turun, SELL → cash naik
-    const delta = data.side === "BUY" ? -notional : notional;
-    await supabaseAdmin.from("cash_movements").insert({
+  // Insert transaction
+  const { data: tx, error: txErr } = await supabaseAdmin
+    .from("transactions")
+    .insert({
       user_id: userId,
-      movement_type: data.side,
-      amount: delta,
-      ref_transaction_id: tx.id,
-      occurred_at: data.transacted_at,
-    });
+      ticker: data.ticker,
+      side: data.side,
+      lot: data.lot,
+      price: data.price,
+      transacted_at: data.transacted_at,
+    })
+    .select("id")
+    .single();
+  if (txErr) throw new Error(txErr.message);
 
-    const newBalance = await atomicAdjustCash(userId, delta);
-
-    // IMP-02: Incremental holdings update via RPC instead of full recompute
-    if (data.side === "BUY") {
-      await supabaseAdmin.rpc("upsert_holding_buy", {
-        p_user_id: userId,
-        p_ticker: data.ticker,
-        p_lot: data.lot,
-        p_price: data.price,
-      });
-    } else {
-      await supabaseAdmin.rpc("upsert_holding_sell", {
-        p_user_id: userId,
-        p_ticker: data.ticker,
-        p_lot: data.lot,
-      });
-    }
-
-    await insertAuditLog({
-      action: `tx.${data.side.toLowerCase()}`,
-      user_id: userId,
-      metadata: { ticker: data.ticker, lot: data.lot, price: data.price, notional },
-      entity: "transaction",
-      entity_id: tx.id,
-    });
-
-    return { ok: true, balance: newBalance };
+  // Cash movement: BUY → cash turun, SELL → cash naik
+  const delta = data.side === "BUY" ? -notional : notional;
+  await supabaseAdmin.from("cash_movements").insert({
+    user_id: userId,
+    movement_type: data.side,
+    amount: delta,
+    ref_transaction_id: tx.id,
+    occurred_at: data.transacted_at,
   });
+
+  const newBalance = await atomicAdjustCash(userId, delta);
+
+  // IMP-02: Incremental holdings update via RPC instead of full recompute
+  if (data.side === "BUY") {
+    await supabaseAdmin.rpc("upsert_holding_buy", {
+      p_user_id: userId,
+      p_ticker: data.ticker,
+      p_lot: data.lot,
+      p_price: data.price,
+    });
+  } else {
+    await supabaseAdmin.rpc("upsert_holding_sell", {
+      p_user_id: userId,
+      p_ticker: data.ticker,
+      p_lot: data.lot,
+    });
+  }
+
+  await insertAuditLog({
+    action: `tx.${data.side.toLowerCase()}`,
+    user_id: userId,
+    metadata: { ticker: data.ticker, lot: data.lot, price: data.price, notional },
+    entity: "transaction",
+    entity_id: tx.id,
+  });
+
+  return { ok: true, balance: newBalance };
+}
 
 // ============================================
 // Cash deposit / withdraw / adjust (manual)
 // ============================================
-export const adjustCash = createServerFn({ method: "POST" })
-  .middleware(authedMiddleware)
-  .inputValidator(
-    z.object({
-      movement_type: z.enum(["DEPOSIT", "WITHDRAW", "ADJUST"]),
-      amount: z.number().positive(),
-      occurred_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      note: z.string().max(255).optional(),
-    }),
-  )
-  .handler(async ({ context, data }) => {
-    const userId = (context as { userId?: string }).userId;
-    if (!userId) throw new Error("Unauthorized");
+export async function adjustCash(data: {
+  movement_type: "DEPOSIT" | "WITHDRAW" | "ADJUST";
+  amount: number;
+  occurred_at: string;
+  note?: string;
+}) {
+  const { supabase, userId } = await requireSupabaseAuth();
 
-    const delta = data.movement_type === "WITHDRAW" ? -data.amount : data.amount;
-    const { data: cur } = await supabaseAdmin
-      .from("cash_balances")
-      .select("balance")
-      .eq("user_id", userId)
-      .maybeSingle();
-    const curBal = Number(cur?.balance ?? 0);
-    if (data.movement_type === "WITHDRAW" && curBal + delta < 0) {
-      throw new Error(`Saldo tidak cukup. Saldo saat ini: ${curBal.toLocaleString("id-ID")}`);
-    }
-    await supabaseAdmin.from("cash_movements").insert({
-      user_id: userId,
-      movement_type: data.movement_type,
-      amount: delta,
-      occurred_at: data.occurred_at,
-      note: data.note ?? null,
-    });
-    const newBalance = await atomicAdjustCash(userId, delta);
-    return { balance: newBalance };
+  const delta = data.movement_type === "WITHDRAW" ? -data.amount : data.amount;
+  const { data: cur } = await supabaseAdmin
+    .from("cash_balances")
+    .select("balance")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const curBal = Number(cur?.balance ?? 0);
+  if (data.movement_type === "WITHDRAW" && curBal + delta < 0) {
+    throw new Error(`Saldo tidak cukup. Saldo saat ini: ${curBal.toLocaleString("id-ID")}`);
+  }
+  await supabaseAdmin.from("cash_movements").insert({
+    user_id: userId,
+    movement_type: data.movement_type,
+    amount: delta,
+    occurred_at: data.occurred_at,
+    note: data.note ?? null,
   });
+  const newBalance = await atomicAdjustCash(userId, delta);
+  return { balance: newBalance };
+}
 
 // ============================================
 // Admin: create user account
 // ============================================
-export const adminCreateUser = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
-  .inputValidator(
-    z.object({
-      email: z.string().email(),
-      password: z.string().min(6),
-      username: z
-        .string()
-        .min(2)
-        .max(50)
-        .regex(/^[a-zA-Z0-9_]+$/),
-      display_name: z.string().min(1).max(100).optional(),
-    }),
-  )
-  .handler(async ({ data }) => {
-    // DUP-04: userId is verified from middleware, not client input
-    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
-      email: data.email,
-      password: data.password,
-      email_confirm: true,
-      user_metadata: {
-        username: data.username,
-        display_name: data.display_name ?? data.username,
-      },
-    });
-    if (error) throw new Error(error.message);
-    return { user_id: created.user?.id };
+export async function createUserAccount(data: {
+  email: string;
+  password: string;
+  username: string;
+  display_name?: string;
+}) {
+  const { supabase } = await requireSupabaseAuth(); // Assuming admin auth
+
+  // DUP-04: userId is verified from middleware, not client input
+  const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+    email: data.email,
+    password: data.password,
+    email_confirm: true,
+    user_metadata: {
+      username: data.username,
+      display_name: data.display_name ?? data.username,
+    },
   });
+  if (error) throw new Error(error.message);
+  return { user_id: created.user?.id };
+}
 
 // audit wrapper note: adminCreateUser/Update/Delete/GrantRole logged via writeAuditLog client-side after success
 
-export const adminListUsers = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
-  .inputValidator(z.object({}))
-  .handler(async () => {
-    // DUP-04: Admin role verified by middleware
-    const [{ data: profiles, error: profileErr }, { data: allRoles, error: rolesErr }, authUsers] =
-      await Promise.all([
-        supabaseAdmin.from("profiles").select("id, username, display_name, created_at"),
-        supabaseAdmin.from("user_roles").select("user_id, role"),
-        supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-      ]);
-    if (profileErr) throw new Error(profileErr.message);
-    if (rolesErr) throw new Error(rolesErr.message);
-    if (authUsers.error) throw new Error(authUsers.error.message);
+export async function listAllUsers() {
+  const { supabase } = await requireSupabaseAuth(); // Assuming admin auth
 
-    const roleMap = new Map<string, string[]>();
-    for (const r of allRoles ?? []) {
-      roleMap.set(r.user_id, [...(roleMap.get(r.user_id) ?? []), String(r.role)]);
-    }
-    const emailMap = new Map(authUsers.data.users.map((u) => [u.id, u.email ?? ""]));
+  // DUP-04: Admin role verified by middleware
+  const [{ data: profiles, error: profileErr }, { data: allRoles, error: rolesErr }, authUsers] =
+    await Promise.all([
+      supabaseAdmin.from("profiles").select("id, username, display_name, created_at"),
+      supabaseAdmin.from("user_roles").select("user_id, role"),
+      supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    ]);
+  if (profileErr) throw new Error(profileErr.message);
+  if (rolesErr) throw new Error(rolesErr.message);
+  if (authUsers.error) throw new Error(authUsers.error.message);
 
-    return (profiles ?? []).map((p) => ({
-      ...p,
-      email: emailMap.get(p.id) ?? "",
-      roles: roleMap.get(p.id) ?? [],
-    }));
-  });
+  const roleMap = new Map<string, string[]>();
+  for (const r of allRoles ?? []) {
+    roleMap.set(r.user_id, [...(roleMap.get(r.user_id) ?? []), String(r.role)]);
+  }
+  const emailMap = new Map(authUsers.data.users.map((u) => [u.id, u.email ?? ""]));
+
+  return (profiles ?? []).map((p) => ({
+    ...p,
+    email: emailMap.get(p.id) ?? "",
+    roles: roleMap.get(p.id) ?? [],
+  }));
+}
 
 // ============================================
 // Admin: promote user to admin
 // ============================================
-export const adminGrantRole = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
-  .inputValidator(
-    z.object({
-      target_user_id: z.string().uuid(),
-      role: z.enum(["admin", "user", "advisor"]),
-    }),
-  )
-  .handler(async ({ data }) => {
-    // DUP-04: Admin verified by middleware
-    if (data.role !== "admin") {
-      const { data: currentAdmins } = await supabaseAdmin
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin");
-      const adminCount = currentAdmins?.length ?? 0;
-      const { data: currentRoles } = await supabaseAdmin
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", data.target_user_id);
-      const targetIsAdmin = !!currentRoles?.some((r) => String(r.role) === "admin");
-      if (targetIsAdmin && adminCount <= 1) {
-        throw new Error("Tidak bisa demote admin terakhir.");
-      }
-    }
+export async function grantUserRole(data: {
+  target_user_id: string;
+  role: "admin" | "user" | "advisor";
+}) {
+  const { supabase } = await requireSupabaseAuth(); // Assuming admin auth
 
-    await supabaseAdmin
-      .from("user_roles")
-      .upsert([{ user_id: data.target_user_id, role: data.role as never }], {
-        onConflict: "user_id,role",
-      });
-    return { ok: true };
-  });
-
-export const adminUpdateUser = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
-  .inputValidator(
-    z.object({
-      target_user_id: z.string().uuid(),
-      email: z.string().email().optional(),
-      password: z.string().min(6).optional(),
-      username: z
-        .string()
-        .min(2)
-        .max(50)
-        .regex(/^[a-zA-Z0-9_]+$/)
-        .optional(),
-      display_name: z.string().min(1).max(100).optional(),
-    }),
-  )
-  .handler(async ({ data }) => {
-    // DUP-04: Admin verified by middleware
-    if (data.email || data.password) {
-      const { error } = await supabaseAdmin.auth.admin.updateUserById(data.target_user_id, {
-        ...(data.email ? { email: data.email } : {}),
-        ...(data.password ? { password: data.password } : {}),
-      });
-      if (error) throw new Error(error.message);
-    }
-
-    if (data.username || data.display_name) {
-      const { error } = await supabaseAdmin
-        .from("profiles")
-        .update({
-          ...(data.username ? { username: data.username } : {}),
-          ...(data.display_name ? { display_name: data.display_name } : {}),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", data.target_user_id);
-      if (error) throw new Error(error.message);
-    }
-
-    return { ok: true };
-  });
-
-// ============================================
-// Admin: delete user
-// ============================================
-export const adminDeleteUser = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
-  .inputValidator(z.object({ target_user_id: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    // DUP-04: Admin verified by middleware
+  // DUP-04: Admin verified by middleware
+  if (data.role !== "admin") {
     const { data: currentAdmins } = await supabaseAdmin
       .from("user_roles")
       .select("user_id")
       .eq("role", "admin");
     const adminCount = currentAdmins?.length ?? 0;
-
-    const { data: targetRoles } = await supabaseAdmin
+    const { data: currentRoles } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", data.target_user_id);
-    const targetIsAdmin = !!targetRoles?.some((r) => String(r.role) === "admin");
+    const targetIsAdmin = !!currentRoles?.some((r) => String(r.role) === "admin");
     if (targetIsAdmin && adminCount <= 1) {
-      throw new Error("Tidak bisa menghapus admin terakhir.");
+      throw new Error("Tidak bisa demote admin terakhir.");
     }
+  }
 
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.target_user_id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+  await supabaseAdmin
+    .from("user_roles")
+    .upsert([{ user_id: data.target_user_id, role: data.role as never }], {
+      onConflict: "user_id,role",
+    });
+  return { ok: true };
+}
+
+
 
 // ============================================
-// Bootstrap: promote first user to admin (only if no admin exists)
+// Admin: delete user
 // ============================================
-export const bootstrapAdmin = createServerFn({ method: "POST" })
-  .inputValidator(
-    z.object({
-      user_id: z.string().uuid(),
-      bootstrap_secret: z.string().min(32),
-    }),
-  )
-  .handler(async ({ data }) => {
-    const expected = process.env.BOOTSTRAP_SECRET;
-    if (!expected || data.bootstrap_secret !== expected) {
-      throw new Response("Forbidden", { status: 403 });
-    }
+export async function deleteUser(data: { target_user_id: string }) {
+  const { supabase } = await requireSupabaseAuth(); // Assuming admin auth
 
-    const { data: existing } = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "admin")
-      .limit(1);
-    if (existing && existing.length > 0) {
-      throw new Error("Admin already exists");
-    }
-    await supabaseAdmin
-      .from("user_roles")
-      .upsert([{ user_id: data.user_id, role: "admin" }], { onConflict: "user_id,role" });
-    return { ok: true };
-  });
+  // DUP-04: Admin verified by middleware
+  const { data: currentAdmins } = await supabaseAdmin
+    .from("user_roles")
+    .select("user_id")
+    .eq("role", "admin");
+  const adminCount = currentAdmins?.length ?? 0;
+
+  const { data: targetRoles } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", data.target_user_id);
+  const targetIsAdmin = !!targetRoles?.some((r) => String(r.role) === "admin");
+  if (targetIsAdmin && adminCount <= 1) {
+    throw new Error("Tidak bisa menghapus admin terakhir.");
+  }
+
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(data.target_user_id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+// ============================================
+export async function bootstrapAdmin(data: {
+  user_id: string;
+  bootstrap_secret: string;
+}) {
+  const expected = import.meta.env.VITE_BOOTSTRAP_SECRET;
+  if (!expected || data.bootstrap_secret !== expected) {
+    throw new Response("Forbidden", { status: 403 });
+  }
+
+  const { data: existing } = await supabaseAdmin
+    .from("user_roles")
+    .select("user_id")
+    .eq("role", "admin")
+    .limit(1);
+  if (existing && existing.length > 0) {
+    throw new Error("Admin already exists");
+  }
+  await supabaseAdmin
+    .from("user_roles")
+    .upsert([{ user_id: data.user_id, role: "admin" }], { onConflict: "user_id,role" });
+  return { ok: true };
+}

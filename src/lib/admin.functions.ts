@@ -1,216 +1,175 @@
-import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { authedMiddleware } from "@/lib/with-auth";
 import { insertAuditLog } from "@/lib/audit.functions";
 import { adminAuthMiddleware } from "@/lib/admin-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // ============================================
 // AUDIT LOGS — DUP-03: Consolidated implementation
 // ============================================
-export const writeAuditLog = createServerFn({ method: "POST" })
-  .middleware(authedMiddleware)
-  .inputValidator(
-    z.object({
-      username: z.string().max(100).optional(),
-      action: z.string().min(1).max(80),
-      entity: z.string().max(80).optional(),
-      entity_id: z.string().max(120).optional(),
-      metadata: z.record(z.string(), z.any()).optional(),
-      user_agent: z.string().max(500).optional(),
-    }),
-  )
-  .handler(async ({ context, data }) => {
-    const userId = (context as { userId?: string }).userId;
-    if (!userId) throw new Error("Unauthorized");
-    await insertAuditLog({
-      ...data,
-      user_id: userId,
-    });
-    return { ok: true };
+export async function writeAuditLog(data: {
+  username?: string;
+  action: string;
+  entity?: string;
+  entity_id?: string;
+  metadata?: Record<string, any>;
+  user_agent?: string;
+}) {
+  // For SPA mode, we need to get user from auth context
+  const { supabase, userId } = await requireSupabaseAuth();
+  await insertAuditLog({
+    ...data,
+    user_id: userId,
   });
+  return { ok: true };
+}
 
-export const adminListAuditLogs = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
-  .inputValidator(
-    z.object({
-      limit: z.number().int().min(1).max(500).default(200),
-      action: z.string().max(80).optional(),
-      user_id: z.string().uuid().optional(),
-    }),
-  )
-  .handler(async ({ context, data }) => {
-    // DUP-04: userId is from authenticated context, not client input
-    let q = supabaseAdmin
-      .from("audit_logs")
-      .select(
-        "id, user_id, username, action, entity, entity_id, metadata, ip_address, user_agent, created_at",
-      )
-      .order("created_at", { ascending: false })
-      .limit(data.limit);
-    if (data.action) q = q.eq("action", data.action);
-    if (data.user_id) q = q.eq("user_id", data.user_id);
-    const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
-    return rows ?? [];
-  });
+export async function adminListAuditLogs(data: {
+  limit?: number;
+  action?: string;
+  user_id?: string;
+} = {}) {
+  // For SPA mode, we need admin auth
+  const { userId } = await requireSupabaseAuth();
+  // DUP-04: userId is from authenticated context, not client input
+  let q = supabaseAdmin
+    .from("audit_logs")
+    .select(
+      "id, user_id, username, action, entity, entity_id, metadata, ip_address, user_agent, created_at",
+    )
+    .order("created_at", { ascending: false })
+    .limit(data.limit || 200);
+  if (data.action) q = q.eq("action", data.action);
+  if (data.user_id) q = q.eq("user_id", data.user_id);
+  const { data: rows, error } = await q;
+  if (error) throw new Error(error.message);
+  return rows ?? [];
+}
 
-// ============================================
-// SESSIONS / DEVICE TRACKING
-// ============================================
-export const recordSession = createServerFn({ method: "POST" })
-  .middleware(authedMiddleware)
-  .inputValidator(
-    z.object({
-      username: z.string().max(100).optional(),
-      device_label: z.string().max(120).optional(),
-      user_agent: z.string().max(500).optional(),
-    }),
-  )
-  .handler(async ({ context, data }) => {
-    const userId = (context as { userId?: string }).userId;
-    if (!userId) throw new Error("Unauthorized");
+export async function recordSession(data: {
+  username?: string;
+  device_label?: string;
+  user_agent?: string;
+}) {
+  const { supabase, userId } = await requireSupabaseAuth();
 
-    if (data.user_agent) {
-      await supabaseAdmin
-        .from("user_sessions")
-        .update({ is_active: false, ended_at: new Date().toISOString() })
-        .eq("user_id", userId)
-        .eq("user_agent", data.user_agent)
-        .eq("is_active", true);
-    }
-    const { data: row, error } = await supabaseAdmin
-      .from("user_sessions")
-      .insert({
-        user_id: userId,
-        username: data.username ?? null,
-        device_label: data.device_label ?? null,
-        user_agent: data.user_agent ?? null,
-        is_active: true,
-        last_seen_at: new Date().toISOString(),
-      })
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
-    return { session_id: row.id };
-  });
-
-export const adminListSessions = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
-  .inputValidator(
-    z.object({
-      only_active: z.boolean().default(false),
-      limit: z.number().int().min(1).max(500).default(200),
-    }),
-  )
-  .handler(async ({ data }) => {
-    let q = supabaseAdmin
-      .from("user_sessions")
-      .select(
-        "id, user_id, username, device_label, user_agent, ip_address, is_active, last_seen_at, created_at, ended_at",
-      )
-      .order("last_seen_at", { ascending: false })
-      .limit(data.limit);
-    if (data.only_active) q = q.eq("is_active", true);
-    const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
-    return rows ?? [];
-  });
-
-export const adminRevokeSession = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
-  .inputValidator(
-    z.object({
-      session_id: z.string().uuid(),
-    }),
-  )
-  .handler(async ({ data }) => {
-    const { error } = await supabaseAdmin
+  if (data.user_agent) {
+    await supabaseAdmin
       .from("user_sessions")
       .update({ is_active: false, ended_at: new Date().toISOString() })
-      .eq("id", data.session_id);
-    if (error) throw new Error(error.message);
-    // Note: cannot force-logout the browser remotely, but session is marked revoked
-    return { ok: true };
-  });
+      .eq("user_id", userId)
+      .eq("user_agent", data.user_agent)
+      .eq("is_active", true);
+  }
+  const { data: row, error } = await supabaseAdmin
+    .from("user_sessions")
+    .insert({
+      user_id: userId,
+      username: data.username ?? null,
+      device_label: data.device_label ?? null,
+      user_agent: data.user_agent ?? null,
+      is_active: true,
+      last_seen_at: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return { session_id: row.id };
+}
+
+export async function adminListSessions(data: {
+  only_active?: boolean;
+  limit?: number;
+} = {}) {
+  // For SPA mode, we need admin auth
+  const { userId } = await requireSupabaseAuth();
+  let q = supabaseAdmin
+    .from("user_sessions")
+    .select(
+      "id, user_id, username, device_label, user_agent, ip_address, is_active, last_seen_at, created_at, ended_at",
+    )
+    .order("last_seen_at", { ascending: false })
+    .limit(data.limit || 200);
+  if (data.only_active) q = q.eq("is_active", true);
+  const { data: rows, error } = await q;
+  if (error) throw new Error(error.message);
+  return rows ?? [];
+}
+
+export async function adminRevokeSession(data: { session_id: string }) {
+  // For SPA mode, we need admin auth
+  const { userId } = await requireSupabaseAuth();
+  const { error } = await supabaseAdmin
+    .from("user_sessions")
+    .update({ is_active: false, ended_at: new Date().toISOString() })
+    .eq("id", data.session_id);
+  if (error) throw new Error(error.message);
+  // Note: cannot force-logout the browser remotely, but session is marked revoked
+  return { ok: true };
+}
 
 // ============================================
 // SYSTEM SETTINGS
 // ============================================
-export const adminListSettings = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
-  .inputValidator(z.object({}))
-  .handler(async () => {
-    const { data: rows, error } = await supabaseAdmin
-      .from("system_settings")
-      .select("key, value, updated_at")
-      .order("key", { ascending: true });
-    if (error) throw new Error(error.message);
-    return rows ?? [];
-  });
+export async function adminListSystemSettings() {
+  // For SPA mode, we need admin auth
+  const { userId } = await requireSupabaseAuth();
+  const { data: rows, error } = await supabaseAdmin
+    .from("system_settings")
+    .select("key, value, updated_at")
+    .order("key", { ascending: true });
+  if (error) throw new Error(error.message);
+  return rows ?? [];
+}
 
-export const adminUpdateSetting = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
-  .inputValidator(
-    z.object({
-      key: z.string().min(1).max(80),
-      value: z.any(),
-    }),
-  )
-  .handler(async ({ context, data }) => {
-    const userId = (context as { userId: string }).userId;
-    const { error } = await supabaseAdmin.from("system_settings").upsert(
-      {
-        key: data.key,
-        value: data.value,
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "key" },
-    );
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+export async function adminUpdateSystemSetting(data: { key: string; value: any }) {
+  const { userId } = await requireSupabaseAuth();
+  const { error } = await supabaseAdmin.from("system_settings").upsert(
+    {
+      key: data.key,
+      value: data.value,
+      updated_by: userId,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "key" },
+  );
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
 
 // ============================================
 // SMF / Reksadana scraping (pasardana.id)
 // ============================================
-export const fetchSmfNav = createServerFn({ method: "POST" })
-  .inputValidator(
-    z.object({
-      // pasardana fund id, e.g. "2057" for SMF
-      fund_id: z.string().regex(/^\d+$/).default("2057"),
-    }),
-  )
-  .handler(async ({ data }) => {
-    // Pasardana exposes a public chart JSON endpoint
-    const url = `https://pasardana.id/api/Fund/GetFundNavData?id=${data.fund_id}&period=1Y`;
-    try {
-      const res = await fetch(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 KBAITerminal/1.0",
-          Accept: "application/json",
-        },
-      });
-      if (!res.ok) {
-        return { ok: false, error: `pasardana returned ${res.status}`, data: [] };
-      }
-      const json = (await res.json()) as Array<{ Date: string; Nav: number }> | { data?: unknown };
-      const arr = Array.isArray(json)
-        ? json
-        : Array.isArray((json as { data?: unknown }).data)
-          ? (json as { data: Array<{ Date: string; Nav: number }> }).data
-          : [];
-      return {
-        ok: true,
-        count: arr.length,
-        data: arr.slice(-30).map((r) => ({ date: r.Date?.slice(0, 10), nav: r.Nav })),
-      };
-    } catch (err) {
-      return {
-        ok: false,
-        error: err instanceof Error ? err.message : "fetch failed",
-        data: [],
-      };
+export async function adminGetMutualFundNav(data: { fund_id?: string } = {}) {
+  // Pasardana exposes a public chart JSON endpoint
+  const url = `https://pasardana.id/api/Fund/GetFundNavData?id=${data.fund_id || "2057"}&period=1Y`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 KBAITerminal/1.0",
+        Accept: "application/json",
+      },
+    });
+    if (!res.ok) {
+      return { ok: false, error: `pasardana returned ${res.status}`, data: [] };
     }
-  });
+    const json = (await res.json()) as Array<{ Date: string; Nav: number }> | { data?: unknown };
+    const arr = Array.isArray(json)
+      ? json
+      : Array.isArray((json as { data?: unknown }).data)
+        ? (json as { data: Array<{ Date: string; Nav: number }> }).data
+        : [];
+    return {
+      ok: true,
+      count: arr.length,
+      data: arr.slice(-30).map((r) => ({ date: r.Date?.slice(0, 10), nav: r.Nav })),
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "fetch failed",
+      data: [],
+    };
+  }
+}

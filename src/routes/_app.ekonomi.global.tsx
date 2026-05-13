@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { getGlobalQuotes, getCommodityQuotes } from "@/lib/ekonomi.functions";
 import { DataState } from "@/components/data-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,8 +11,8 @@ export const Route = createFileRoute("/_app/ekonomi/global")({
 });
 
 function GlobalPage() {
-  const fetchGlobal = useServerFn(getGlobalQuotes);
-  const fetchComm = useServerFn(getCommodityQuotes);
+  const fetchGlobal = getGlobalQuotes;
+  const fetchComm = getCommodityQuotes;
 
   const globalQ = useQuery({
     queryKey: ["ekonomi-global"],

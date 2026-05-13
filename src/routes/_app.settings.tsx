@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,10 +55,10 @@ function SettingsPage() {
 
 function TwoFactorCard() {
   const qc = useQueryClient();
-  const status = useServerFn(get2faStatus);
-  const start = useServerFn(start2faSetup);
-  const verify = useServerFn(verify2faSetup);
-  const disable = useServerFn(disable2fa);
+  const status = get2faStatus;
+  const start = start2faSetup;
+  const verify = verify2faSetup;
+  const disable = disable2fa;
 
   const statusQ = useQuery({ queryKey: ["2fa-status"], queryFn: () => status() });
   const [setup, setSetup] = useState<{ otpauth_url: string; secret: string; qr: string } | null>(
@@ -224,9 +223,9 @@ function TwoFactorCard() {
 
 function PriceAlertsCard() {
   const qc = useQueryClient();
-  const list = useServerFn(listPriceAlerts);
-  const create = useServerFn(createPriceAlert);
-  const del = useServerFn(deletePriceAlert);
+  const list = listPriceAlerts;
+  const create = createPriceAlert;
+  const del = deletePriceAlert;
 
   const q = useQuery({ queryKey: ["price-alerts"], queryFn: () => list() });
   const [ticker, setTicker] = useState("");
@@ -339,8 +338,8 @@ function PriceAlertsCard() {
 }
 
 function DataPrivacyCard() {
-  const exportData = useServerFn(exportUserData);
-  const softDelete = useServerFn(softDeleteUser);
+  const exportData = exportUserData;
+  const softDelete = softDeleteUser;
 
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
