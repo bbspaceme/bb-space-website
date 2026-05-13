@@ -466,3 +466,12 @@ export async function bootstrapAdmin(data: {
     .upsert([{ user_id: data.user_id, role: "admin" }], { onConflict: "user_id,role" });
   return { ok: true };
 }
+
+// Aliases for backward compatibility
+export const adminCreateUser = createUserAccount;
+export const adminGrantRole = grantUserRole;
+export const adminDeleteUser = deleteUser;
+export const adminListUsers = listAllUsers;
+export async function adminUpdateUser(_data: any): Promise<any> {
+  throw new Error("adminUpdateUser not implemented");
+}

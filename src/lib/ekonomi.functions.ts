@@ -128,3 +128,8 @@ export async function generateMacroBrief(data: { summary_data: string }) {
   });
   return { brief: j.data.choices?.[0]?.message?.content ?? "" };
 }
+
+// Aliases
+export const getGlobalQuotes = getGlobalMarketsSnapshot;
+export const getCommodityQuotes = getCommoditiesSnapshot;
+export const fetchMacro = getMacroSnapshot;

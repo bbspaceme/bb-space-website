@@ -39,3 +39,7 @@ export async function getCommunityPortfolioStats(data: { from_date: string }) {
       "P/L": v.pl, // unrealized P/L
     }));
 }
+
+export async function getCommunityEquitySeries(_data: { from_date: string }): Promise<any[]> {
+  return [];
+}
