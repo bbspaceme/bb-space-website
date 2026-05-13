@@ -4,10 +4,7 @@
  * Usage: .middleware([attachSupabaseAuth, requireAdminAuth])
  */
 import { createMiddleware } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { attachSupabaseAuth } from "@/lib/with-auth";
+import { attachSupabaseAuth, requireSupabaseAuthMiddleware } from "@/lib/with-auth";
 import { CorrelationIdContext, logInfo, logWarn, logError } from "@/lib/observability";
 
 // Server-side: validate admin role from authenticated user
