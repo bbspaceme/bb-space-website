@@ -40,8 +40,8 @@ export function PortfolioChart({ holdings, prices, onRefresh, isRefreshing }: Po
         weight: 0, // Will be calculated after
       };
     })
-    .filter(Boolean)
-    .sort((a, b) => (b?.value || 0) - (a?.value || 0));
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .sort((a, b) => b.value - a.value);
 
   const totalValue = chartData.reduce((sum, item) => sum + (item?.value || 0), 0);
   chartData.forEach((item) => {

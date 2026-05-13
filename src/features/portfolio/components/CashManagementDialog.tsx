@@ -67,12 +67,10 @@ export function CashManagementDialog({
     setSubmitting(true);
     try {
       await adjustCash({
-        data: {
-          movement_type: type,
-          amount: amtN,
-          occurred_at: date,
-          note: note.trim() || undefined,
-        },
+        movement_type: type,
+        amount: amtN,
+        occurred_at: date,
+        note: note.trim() || undefined,
       });
       toast.success(`${type === "DEPOSIT" ? "Top up" : "Withdraw"} ${fmtIDR(amtN)} berhasil`);
       onSuccess();
