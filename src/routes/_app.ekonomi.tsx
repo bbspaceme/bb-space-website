@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_app/ekonomi")({
     if (error || !userData.user) return;
 
     // First check JWT claims (fast path)
-    const jwtRoles = getRolesFromUser(userData.user);
+    const jwtRoles = getRolesFromUser(userData.user as any);
     let isAllowed = ["advisor", "admin"].some((r) => jwtRoles.includes(r));
 
     // Fallback to DB query if JWT claims don't have role info

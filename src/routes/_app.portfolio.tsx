@@ -41,7 +41,7 @@ export const Route = createFileRoute("/_app/portfolio")({
     if (error || !userData.user) return;
 
     // First check JWT claims (fast path)
-    const jwtRoles = getRolesFromUser(userData.user);
+    const jwtRoles = getRolesFromUser(userData.user as any);
     let isAdmin = jwtRoles.includes("admin");
     let isAdvisor = jwtRoles.includes("advisor");
 
