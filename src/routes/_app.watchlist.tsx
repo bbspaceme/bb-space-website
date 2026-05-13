@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Trash2, Star } from "lucide-react";
-import { addWatchlist, listWatchlist, removeWatchlist } from "@/lib/watchlist.functions";
+import { addToWatchlist as addWatchlist, getWatchlist as listWatchlist, removeFromWatchlist as removeWatchlist } from "@/lib/watchlist.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/watchlist")({

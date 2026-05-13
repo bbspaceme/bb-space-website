@@ -41,7 +41,7 @@ function EkonomiCalendarPage() {
     queryKey: ["economic-events", range, country],
     queryFn: () =>
       listEconomicEvents({
-        data: { from: range.from, to: range.to, country: country === "ALL" ? undefined : country },
+        from: range.from, to: range.to, country: country === "ALL" ? undefined : country,
       }),
   });
 

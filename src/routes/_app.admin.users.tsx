@@ -55,7 +55,7 @@ function AdminUsersPage() {
     queryKey: ["admin-users"],
     enabled: !!auth.user?.id,
     queryFn: async () => {
-      return adminListUsers({});
+      return adminListUsers();
     },
   });
 
@@ -228,12 +228,10 @@ function CreateUserDialog({ adminId, onDone }: { adminId: string; onDone: () => 
     setSubmitting(true);
     try {
       await adminCreateUser({
-        data: {
-          email: email.trim(),
-          password,
-          username: username.trim(),
-          display_name: displayName.trim() || undefined,
-        },
+        email: email.trim(),
+        password,
+        username: username.trim(),
+        display_name: displayName.trim() || undefined,
       });
       toast.success(`User ${username} dibuat`);
       setEmail("");

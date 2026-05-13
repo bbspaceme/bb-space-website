@@ -79,7 +79,7 @@ function TwoFactorCard() {
 
   const verifyMut = useMutation({
     mutationFn: () => verify({ code }),
-    onSuccess: (d) => {
+    onSuccess: (d: { ok: boolean; recovery_codes: string[] }) => {
       setRecovery(d.recovery_codes);
       setSetup(null);
       setCode("");
@@ -234,9 +234,7 @@ function PriceAlertsCard() {
 
   const createMut = useMutation({
     mutationFn: () =>
-      create({
-        data: { ticker: ticker.toUpperCase(), condition, threshold: Number(threshold) },
-      }),
+      create({ ticker: ticker.toUpperCase(), condition, threshold: Number(threshold) }),
     onSuccess: () => {
       setTicker("");
       setThreshold("");

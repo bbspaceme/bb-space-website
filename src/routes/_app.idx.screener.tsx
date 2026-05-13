@@ -55,20 +55,18 @@ function IDXScreenPage() {
       min_div_yield: minDivYield ? parseFloat(minDivYield) : undefined,
       max_der: maxDer ? parseFloat(maxDer) : undefined,
       sort_by: "market_cap",
-      sort_order: "desc",
+      sort_order: "desc" as const,
       limit: 100,
     }),
     [sector, board, minPer, maxPer, minRoe, minDivYield, maxDer],
   );
 
-  const { data, isFetching, refetch } = useQuery(
-    ["idx-screener", filters],
-    () => fetchIDXScreener(filters),
-    {
-      keepPreviousData: true,
-      staleTime: 1000 * 60 * 5,
-    },
-  );
+  const { data, isFetching, refetch } = useQuery({
+    queryKey: ["idx-screener", filters],
+    queryFn: () => fetchIDXScreener(filters),
+    placeholderData: (prev) => prev,
+    staleTime: 1000 * 60 * 5,
+  });
 
   return (
     <div className="space-y-6">

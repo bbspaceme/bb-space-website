@@ -231,19 +231,16 @@ function PortfolioPage() {
           cashBalance={cashBalance}
           totalPL={totalPL}
           totalPLPct={totalPLPct}
-          positionsCount={rows.length}
         />
 
         {/* Holdings table */}
         <HoldingsTable
-          rows={rows}
-          totalCost={totalCost}
-          totalValue={totalValue}
-          totalPL={totalPL}
-          totalPLPct={totalPLPct}
+          holdings={holdingsQ.data ?? []}
+          prices={pricesQ.data ?? new Map()}
           cashBalance={cashBalance}
-          onBuy={() => setOpenDialog("BUY")}
-          onCash={() => setCashOpen(true)}
+          onBuyClick={() => setOpenDialog("BUY")}
+          onSellClick={() => setOpenDialog("SELL")}
+          onSetCashClick={() => setCashOpen(true)}
         />
 
         {/* Portfolio Chart */}
@@ -263,8 +260,7 @@ function PortfolioPage() {
           onClose={() => setOpenDialog(null)}
           holdings={holdingsQ.data ?? []}
           userId={userId!}
-          cashBalance={cashBalance}
-          onDone={() => {
+          onSuccess={() => {
             qc.invalidateQueries({ queryKey: ["holdings"] });
             qc.invalidateQueries({ queryKey: ["transactions"] });
             qc.invalidateQueries({ queryKey: ["cash-balance"] });

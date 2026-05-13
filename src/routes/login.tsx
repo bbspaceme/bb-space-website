@@ -62,17 +62,13 @@ function LoginPage() {
         if (data.user) {
           await Promise.all([
             recordSession({
-              data: {
-                username: username.trim(),
-                user_agent: navigator.userAgent,
-              },
+              username: username.trim(),
+              user_agent: navigator.userAgent,
             }).catch(() => null),
             writeAuditLog({
-              data: {
-                username: username.trim(),
-                action: "auth.login",
-                user_agent: navigator.userAgent,
-              },
+              username: username.trim(),
+              action: "auth.login",
+              user_agent: navigator.userAgent,
             }).catch(() => null),
           ]);
         }
@@ -85,7 +81,7 @@ function LoginPage() {
       const msg = err instanceof Error ? err.message : "Login gagal";
       if (msg === "MFA_REQUIRED") {
         toast.error("Admin/Advisor harus mengaktifkan 2FA. Redirecting ke setup...");
-        navigate({ to: "/_app/settings" });
+        navigate({ to: "/settings" });
         return;
       }
       toast.error(msg);

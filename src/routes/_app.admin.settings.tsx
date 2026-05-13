@@ -25,7 +25,7 @@ function AdminSettingsPage() {
   const settingsQ = useQuery({
     queryKey: ["system-settings"],
     enabled: !!auth.user?.id,
-    queryFn: () => adminListSettings({}),
+    queryFn: () => adminListSettings(),
   });
 
   const updateMut = useMutation({

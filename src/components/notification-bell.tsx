@@ -31,7 +31,7 @@ export function NotificationBell() {
   const unread = items.filter((n) => !n.read_at).length;
 
   const markAll = useMutation({
-    mutationFn: () => markNotificationRead({ data: { all: true } }),
+    mutationFn: () => markNotificationRead({ all: true }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
