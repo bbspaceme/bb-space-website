@@ -1,13 +1,17 @@
-import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
-import { adminAuthMiddleware } from "@/lib/admin-middleware";
+import { supabase } from "@/integrations/supabase/client";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { IDX_TICKERS, toYahoo, fromYahoo } from "@/lib/idx-tickers";
 import { getAdminDatabaseClient } from "@/lib/backend-client.server";
 import { fetchYahooQuotes, fetchYahooChart } from "@/lib/yahoo-finance";
 
-// ============================================
-// CoinGecko BTC helpers (no API key needed)
-// ============================================
+async function requireAdmin() {
+  const { userId } = await requireSupabaseAuth();
+  const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  const rs = (roles ?? []).map((r) => String(r.role));
+  if (!rs.includes("admin")) throw new Error("Forbidden: admin role required");
+  return userId;
+}
+
 async function fetchBtcSpotUsd(): Promise<number | null> {
   try {
     const res = await fetch(
@@ -132,106 +136,10 @@ async function recomputeKbaiRange(
   return { kbai_days: kbaiRows.length };
 }
 
-// ============================================
-// Refresh INTRADAY price (real-time, ~15min delay)
-// Updates eod_prices for TODAY using regularMarketPrice
-// ============================================
-export const refreshIntradayPrices = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
-  .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
-  .handler(async () => {
-    // ARCH-01: System-level operation always uses admin client
-    const db = getAdminDatabaseClient();
-    const today = new Date().toISOString().slice(0, 10);
+export async function refreshIntradayPrices(data: any = {}) {
+  await requireAdmin();
+  void data;
 
-    // Tickers from holdings + always include the IDX_TICKERS basket
-    const { data: holdings } = await db.from("holdings").select("ticker").gt("total_lot", 0);
-    const heldTickers = (holdings ?? []).map((h) => h.ticker);
-    const allTickers = Array.from(new Set([...heldTickers, ...IDX_TICKERS]));
-
-    // Fetch in batches (Yahoo limit ~100 symbols per request)
-    const batchSize = 80;
-    const yahooSymbols = allTickers.map(toYahoo);
-    const quotes: Record<string, number> = {};
-    for (let i = 0; i < yahooSymbols.length; i += batchSize) {
-      const batch = yahooSymbols.slice(i, i + batchSize);
-      const got = await fetchYahooQuotes([...batch, "^JKSE"]);
-      Object.assign(quotes, got);
-    }
-
-    // Upsert eod_prices (today)
-    const eodRows = Object.entries(quotes)
-      .filter(([sym]) => sym.endsWith(".JK"))
-      .map(([sym, close]) => ({
-        ticker: fromYahoo(sym),
-        date: today,
-        close,
-        source: "yahoo-intraday",
-      }));
-
-    if (eodRows.length > 0) {
-      const { error } = await db.from("eod_prices").upsert(eodRows, { onConflict: "ticker,date" });
-      if (error) throw new Error(error.message);
-    }
-
-    // IHSG benchmark
-    let ihsgUpdated = false;
-    if (quotes["^JKSE"]) {
-      const { error } = await db
-        .from("benchmark_prices")
-        .upsert([{ symbol: "IHSG" as const, date: today, value: quotes["^JKSE"] }], {
-          onConflict: "symbol,date",
-        });
-      if (!error) ihsgUpdated = true;
-    }
-
-    // GOLD benchmark via Yahoo (GC=F continuous gold futures)
-    let goldUpdated = false;
-    const goldQuote = await fetchYahooQuotes(["GC=F"]);
-    if (goldQuote["GC=F"]) {
-      const { error } = await db
-        .from("benchmark_prices")
-        .upsert([{ symbol: "GOLD" as const, date: today, value: goldQuote["GC=F"] }], {
-          onConflict: "symbol,date",
-        });
-      if (!error) goldUpdated = true;
-    }
-
-    // BTC benchmark via CoinGecko
-    let btcUpdated = false;
-    const btcSpot = await fetchBtcSpotUsd();
-    if (btcSpot != null) {
-      const { error } = await db
-        .from("benchmark_prices")
-        .upsert([{ symbol: "BTC" as const, date: today, value: btcSpot }], {
-          onConflict: "symbol,date",
-        });
-      if (!error) btcUpdated = true;
-    }
-
-    return {
-      updated: eodRows.length,
-      ihsg: ihsgUpdated ? quotes["^JKSE"] : null,
-      gold: goldUpdated ? goldQuote["GC=F"] : null,
-      btc: btcUpdated ? btcSpot : null,
-      timestamp: new Date().toISOString(),
-    };
-  });
-
-// ============================================
-// Backfill EOD: <from_date> -> <to_date|today>
-// for all IDX_TICKERS + IHSG
-// ============================================
-export const backfillEodFromApril = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
-  .inputValidator(
-    z.object({
-      from_date: z.string().min(8), // 'YYYY-MM-DD'
-      to_date: z.string().min(8).optional(), // 'YYYY-MM-DD', default today
-      access_token: z.string().min(1).optional(),
-    }),
-  )
-  .handler(async ({ data }) => {
     const db = getAdminDatabaseClient();
     const fromDate = data.from_date;
     const toDate = data.to_date ?? new Date().toISOString().slice(0, 10);
@@ -329,16 +237,115 @@ export const backfillEodFromApril = createServerFn({ method: "POST" })
       tickers_failed: tickersFailed,
       total_eod_rows: totalRows,
     };
-  });
+  }
 
-// ============================================
-// DELETE ALL market data (eod_prices + benchmark_prices)
-// Admin-only — RLS enforces this on the DB layer.
-// ============================================
-export const deleteAllMarketData = createServerFn({ method: "POST" })
-  .middleware(adminAuthMiddleware)
-  .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
-  .handler(async ({ data }) => {
+export async function backfillEodFromApril(data: any = {}) {
+  await requireAdmin();
+  void data;
+
+    const db = getAdminDatabaseClient();
+    const fromDate = data.from_date;
+    const toDate = data.to_date ?? new Date().toISOString().slice(0, 10);
+    const fromUnix = Math.floor(new Date(fromDate + "T00:00:00Z").getTime() / 1000);
+    const toUnix = Math.floor(new Date(toDate + "T23:59:59Z").getTime() / 1000);
+
+    // 1. Backfill IHSG benchmark
+    const ihsgBars = await fetchYahooChart("^JKSE", fromUnix, toUnix);
+    let ihsgInserted = 0;
+    if (ihsgBars.length > 0) {
+      const rows = ihsgBars.map((b) => ({
+        symbol: "IHSG" as const,
+        date: b.date,
+        value: b.close,
+      }));
+      const { error } = await db
+        .from("benchmark_prices")
+        .upsert(rows, { onConflict: "symbol,date" });
+      if (!error) ihsgInserted = rows.length;
+    }
+
+    // 1b. Backfill GOLD (GC=F)
+    const goldBars = await fetchYahooChart("GC=F", fromUnix, toUnix);
+    let goldInserted = 0;
+    if (goldBars.length > 0) {
+      const rows = goldBars.map((b) => ({
+        symbol: "GOLD" as const,
+        date: b.date,
+        value: b.close,
+      }));
+      const { error } = await db
+        .from("benchmark_prices")
+        .upsert(rows, { onConflict: "symbol,date" });
+      if (!error) goldInserted = rows.length;
+    }
+
+    // 1c. Backfill BTC via CoinGecko
+    const btcBars = await fetchBtcDailyUsd(fromUnix, toUnix);
+    let btcInserted = 0;
+    if (btcBars.length > 0) {
+      const rows = btcBars.map((b) => ({
+        symbol: "BTC" as const,
+        date: b.date,
+        value: b.close,
+      }));
+      const { error } = await db
+        .from("benchmark_prices")
+        .upsert(rows, { onConflict: "symbol,date" });
+      if (!error) btcInserted = rows.length;
+    }
+
+    // 2. Backfill all IDX_TICKERS (parallel batches of 16)
+    const concurrency = 16;
+    let totalRows = 0;
+    let tickersOk = 0;
+    let tickersFailed = 0;
+
+    for (let i = 0; i < IDX_TICKERS.length; i += concurrency) {
+      const batch = IDX_TICKERS.slice(i, i + concurrency);
+      const results = await Promise.allSettled(
+        batch.map(async (ticker) => {
+          const bars = await fetchYahooChart(toYahoo(ticker), fromUnix, toUnix);
+          if (bars.length === 0) return { ticker, count: 0 };
+          const rows = bars.map((b) => ({
+            ticker,
+            date: b.date,
+            close: b.close,
+            source: "yahoo-eod",
+          }));
+          const { error } = await db.from("eod_prices").upsert(rows, { onConflict: "ticker,date" });
+          if (error) throw new Error(error.message);
+          return { ticker, count: rows.length };
+        }),
+      );
+      for (const r of results) {
+        if (r.status === "fulfilled") {
+          totalRows += r.value.count;
+          if (r.value.count > 0) tickersOk += 1;
+        } else {
+          tickersFailed += 1;
+        }
+      }
+    }
+
+    const kbai = await recomputeKbaiRange(db, fromDate, toDate);
+
+    return {
+      from: fromDate,
+      total_tickers: IDX_TICKERS.length,
+      ihsg_days: ihsgInserted,
+      gold_days: goldInserted,
+      btc_days: btcInserted,
+      kbai_days: kbai.kbai_days,
+      tickers_ok: tickersOk,
+      tickers_failed: tickersFailed,
+      total_eod_rows: totalRows,
+    };
+  }
+
+export async function deleteAllMarketData(data: any = {}) {
+  await requireAdmin();
+  void data;
+
     const db = getAdminDatabaseClient();
     // Use a permissive predicate (delete requires WHERE clause via PostgREST)
     const eod = await db.from("eod_prices").delete().gt("close", -1);
@@ -346,14 +353,12 @@ export const deleteAllMarketData = createServerFn({ method: "POST" })
     const bench = await db.from("benchmark_prices").delete().gt("value", -1);
     if (bench.error) throw new Error(`benchmark: ${bench.error.message}`);
     return { ok: true };
-  });
+  }
 
-// ============================================
-// EXPORT ALL market data — returns rows for client-side XLSX build.
-// ============================================
-export const exportAllMarketData = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ access_token: z.string().min(1).optional() }).optional())
-  .handler(async ({ data }) => {
+export async function exportAllMarketData(data: any = {}) {
+  await requireAdmin();
+  void data;
+
     const db = getAdminDatabaseClient();
     const [eod, bench] = await Promise.all([
       db
@@ -373,4 +378,5 @@ export const exportAllMarketData = createServerFn({ method: "POST" })
       eod: eod.data ?? [],
       benchmark: bench.data ?? [],
     };
-  });
+  }
+
