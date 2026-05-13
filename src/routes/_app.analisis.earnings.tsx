@@ -19,7 +19,7 @@ function EarningsPage() {
   const [company, setCompany] = useState("");
   const [date, setDate] = useState("");
   const m = useMutation({
-    mutationFn: () => runEarningsBrief({ data: { company, release_date: date || undefined } }),
+    mutationFn: () => runEarningsBrief({ company, release_date: date || undefined }),
     onError: (e: Error) => toast.error(e.message),
   });
   return (

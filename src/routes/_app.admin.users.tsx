@@ -55,15 +55,13 @@ function AdminUsersPage() {
     queryKey: ["admin-users"],
     enabled: !!auth.user?.id,
     queryFn: async () => {
-      return adminListUsers({ data: {} });
+      return adminListUsers({});
     },
   });
 
   const grantMut = useMutation({
     mutationFn: (vars: { target_user_id: string; role: "admin" | "user" | "advisor" }) =>
-      adminGrantRole({
-        data: { target_user_id: vars.target_user_id, role: vars.role },
-      }),
+      adminGrantRole({ target_user_id: vars.target_user_id, role: vars.role },),
     onSuccess: () => {
       toast.success("Role updated");
       qc.invalidateQueries({ queryKey: ["admin-users"] });
@@ -72,7 +70,7 @@ function AdminUsersPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (target_user_id: string) => adminDeleteUser({ data: { target_user_id } }),
+    mutationFn: (target_user_id: string) => adminDeleteUser({ target_user_id }),
     onSuccess: () => {
       toast.success("User deleted");
       qc.invalidateQueries({ queryKey: ["admin-users"] });

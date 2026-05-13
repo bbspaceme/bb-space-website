@@ -78,7 +78,7 @@ function TwoFactorCard() {
   });
 
   const verifyMut = useMutation({
-    mutationFn: () => verify({ data: { code } }),
+    mutationFn: () => verify({ code }),
     onSuccess: (d) => {
       setRecovery(d.recovery_codes);
       setSetup(null);
@@ -247,7 +247,7 @@ function PriceAlertsCard() {
   });
 
   const delMut = useMutation({
-    mutationFn: (id: string) => del({ data: { id } }),
+    mutationFn: (id: string) => del({ id }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["price-alerts"] }),
   });
 

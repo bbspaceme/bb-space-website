@@ -20,7 +20,7 @@ function ValuationPage() {
   const [ticker, setTicker] = useState("");
   const [company, setCompany] = useState("");
   const mutation = useMutation({
-    mutationFn: () => runDcfValuation({ data: { ticker, company_name: company || undefined } }),
+    mutationFn: () => runDcfValuation({ ticker, company_name: company || undefined }),
     onError: (e: Error) => toast.error(e.message),
   });
   return (

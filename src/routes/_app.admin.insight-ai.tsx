@@ -25,7 +25,7 @@ function InsightAiPage() {
 
   const refreshMut = useMutation({
     mutationFn: async () => {
-      return generateAiInsight({ data: {} });
+      return generateAiInsight({});
     },
     onSuccess: (data) => {
       setResult(data);

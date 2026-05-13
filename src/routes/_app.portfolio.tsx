@@ -121,7 +121,7 @@ function PortfolioPage() {
 
   const refreshMut = useMutation({
     mutationFn: () =>
-      refreshEodPrices({ data: accessToken ? { access_token: accessToken } : undefined }),
+      refreshEodPrices(accessToken ? { access_token: accessToken } : undefined),
     onSuccess: (res) => {
       toast.success(`Harga diperbarui: ${res.updated} ticker`);
       qc.invalidateQueries({ queryKey: ["latest-prices"] });

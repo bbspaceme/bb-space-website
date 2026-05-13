@@ -31,7 +31,7 @@ function MacroPage() {
   const fetchMacro = getMacroSnapshot;
   const q = useQuery({
     queryKey: ["ekonomi-macro", country],
-    queryFn: () => fetchMacro({ data: { country } }),
+    queryFn: () => fetchMacro({ country }),
     staleTime: 1000 * 60 * 60,
   });
 

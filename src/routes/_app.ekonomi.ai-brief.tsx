@@ -18,7 +18,7 @@ function AiBriefPage() {
 
   const macroQ = useQuery({
     queryKey: ["ekonomi-macro", "IDN"],
-    queryFn: () => fetchMacro({ data: { country: "IDN" } }),
+    queryFn: () => fetchMacro({ country: "IDN" }),
     staleTime: 1000 * 60 * 60,
   });
   const globalQ = useQuery({
@@ -51,7 +51,7 @@ function AiBriefPage() {
         })),
         as_of: new Date().toISOString(),
       });
-      return generate({ data: { summary_data: summary } });
+      return generate({ summary_data: summary });
     },
     onError: (e: Error) => toast.error(e.message),
   });
