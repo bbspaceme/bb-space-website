@@ -58,7 +58,7 @@ function IDXScreenPage() {
       sort_order: "desc",
       limit: 100,
     }),
-    [sector, board, minPer, maxPer, minRoe, minDivYield, maxDer]
+    [sector, board, minPer, maxPer, minRoe, minDivYield, maxDer],
   );
 
   const { data, isFetching, refetch } = useQuery(
@@ -67,7 +67,7 @@ function IDXScreenPage() {
     {
       keepPreviousData: true,
       staleTime: 1000 * 60 * 5,
-    }
+    },
   );
 
   return (
@@ -175,11 +175,7 @@ function IDXScreenPage() {
               />
             </div>
 
-            <Button
-              className="w-full"
-              onClick={() => refetch()}
-              disabled={isFetching}
-            >
+            <Button className="w-full" onClick={() => refetch()} disabled={isFetching}>
               {isFetching ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat...
@@ -229,7 +225,9 @@ function IDXScreenPage() {
                       <TableCell>{stock.per?.toFixed(1) ?? "-"}</TableCell>
                       <TableCell>{stock.pbv?.toFixed(2) ?? "-"}</TableCell>
                       <TableCell>{stock.roe ? `${(stock.roe * 100).toFixed(1)}%` : "-"}</TableCell>
-                      <TableCell>{stock.dividendYield ? `${(stock.dividendYield * 100).toFixed(2)}%` : "-"}</TableCell>
+                      <TableCell>
+                        {stock.dividendYield ? `${(stock.dividendYield * 100).toFixed(2)}%` : "-"}
+                      </TableCell>
                       <TableCell>{formatMarketCap(stock.marketCap ?? null)}</TableCell>
                     </TableRow>
                   ))}
@@ -237,7 +235,8 @@ function IDXScreenPage() {
               </Table>
             ) : (
               <div className="rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                Sesuaikan filter di kiri dan klik <strong>Jalankan Screener</strong> untuk melihat saham IDX.
+                Sesuaikan filter di kiri dan klik <strong>Jalankan Screener</strong> untuk melihat
+                saham IDX.
               </div>
             )}
           </CardContent>

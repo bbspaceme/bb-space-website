@@ -3,7 +3,14 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Loader2, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown } from "lucide-react";
 import { ModuleHeader } from "@/components/analisis-shared";
 import { fetchIDXMarketOverview, formatIDR, formatPercent, getChangeColor } from "@/lib/idx-data";
@@ -13,13 +20,9 @@ export const Route = createFileRoute("/_app/idx/markets")({
 });
 
 function IDXMarketsPage() {
-  const { data, isLoading, error } = useQuery(
-    ["idx-market-overview"],
-    fetchIDXMarketOverview,
-    {
-      staleTime: 1000 * 60 * 5,
-    }
-  );
+  const { data, isLoading, error } = useQuery(["idx-market-overview"], fetchIDXMarketOverview, {
+    staleTime: 1000 * 60 * 5,
+  });
 
   const sectorSummary = useMemo(() => data?.sectors ?? [], [data]);
   const gainers = data?.gainers ?? [];
@@ -151,7 +154,8 @@ function IDXMarketsPage() {
                     </div>
                     <div className="mt-3 text-2xl font-semibold">{formatIDR(sector.marketCap)}</div>
                     <div className="mt-2 text-sm text-muted-foreground">
-                      ROE: {formatPercent(sector.avgRoe)} · P/E: {sector.avgPer.toFixed(1)} · Change: {formatPercent(sector.avgChange)}
+                      ROE: {formatPercent(sector.avgRoe)} · P/E: {sector.avgPer.toFixed(1)} ·
+                      Change: {formatPercent(sector.avgChange)}
                     </div>
                   </div>
                 ))}

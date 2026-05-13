@@ -15,7 +15,7 @@ export async function GET() {
       .from("v_idx_index_performance")
       .select("*")
       .order("index_code");
-    
+
     // Get top gainers
     const { data: gainers } = await supabase
       .from("v_idx_latest_prices")
@@ -23,7 +23,7 @@ export async function GET() {
       .not("prev_close", "is", null)
       .order("price_change_pct", { ascending: false })
       .limit(10);
-    
+
     // Get top losers
     const { data: losers } = await supabase
       .from("v_idx_latest_prices")
@@ -31,7 +31,7 @@ export async function GET() {
       .not("prev_close", "is", null)
       .order("price_change_pct", { ascending: true })
       .limit(10);
-    
+
     // Get most active by volume
     const { data: active } = await supabase
       .from("v_idx_latest_prices")
@@ -39,22 +39,39 @@ export async function GET() {
       .not("volume", "is", null)
       .order("volume", { ascending: false })
       .limit(10);
-    
+
     // Get sector performance
     const { data: sectorStats } = await supabase
       .from("v_idx_screener")
       .select("sector,market_cap,per,roe,price_change_pct")
       .not("sector", "is", null);
-    
+
+    interface SectorStatRow {
+      sector: string | null;
+      market_cap?: number | null;
+      per?: number | null;
+      roe?: number | null;
+      price_change_pct?: number | null;
+    }
+
+    interface SectorAggregation {
+      sector: string;
+      count: number;
+      totalMcap: number;
+      avgPer: number[];
+      avgRoe: number[];
+      avgChange: number[];
+    }
+
     // Aggregate by sector
-    const sectorMap: Record<string, any> = {};
+    const sectorMap: Record<string, SectorAggregation> = {};
     if (sectorStats) {
-      for (const row of sectorStats) {
+      for (const row of sectorStats as SectorStatRow[]) {
         if (!row.sector) continue;
-        const s = row.sector;
-        if (!sectorMap[s]) {
-          sectorMap[s] = {
-            sector: s,
+        const sectorKey = row.sector;
+        if (!sectorMap[sectorKey]) {
+          sectorMap[sectorKey] = {
+            sector: sectorKey,
             count: 0,
             totalMcap: 0,
             avgPer: [],
@@ -62,26 +79,28 @@ export async function GET() {
             avgChange: [],
           };
         }
-        sectorMap[s].count++;
-        sectorMap[s].totalMcap += row.market_cap ?? 0;
-        if (row.per) sectorMap[s].avgPer.push(row.per);
-        if (row.roe) sectorMap[s].avgRoe.push(row.roe);
-        if (row.price_change_pct) sectorMap[s].avgChange.push(row.price_change_pct);
+        const bucket = sectorMap[sectorKey];
+        bucket.count++;
+        bucket.totalMcap += row.market_cap ?? 0;
+        if (typeof row.per === "number") bucket.avgPer.push(row.per);
+        if (typeof row.roe === "number") bucket.avgRoe.push(row.roe);
+        if (typeof row.price_change_pct === "number") bucket.avgChange.push(row.price_change_pct);
       }
     }
-    
+
     // Calculate averages
     const sectors = Object.values(sectorMap)
-      .map((s: any) => ({
+      .map((s) => ({
         sector: s.sector,
         count: s.count,
         marketCap: s.totalMcap,
-        avgPer: s.avgPer.length > 0 ? s.avgPer.reduce((a: number, b: number) => a + b, 0) / s.avgPer.length : 0,
-        avgRoe: s.avgRoe.length > 0 ? s.avgRoe.reduce((a: number, b: number) => a + b, 0) / s.avgRoe.length : 0,
-        avgChange: s.avgChange.length > 0 ? s.avgChange.reduce((a: number, b: number) => a + b, 0) / s.avgChange.length : 0,
+        avgPer: s.avgPer.length > 0 ? s.avgPer.reduce((a, b) => a + b, 0) / s.avgPer.length : 0,
+        avgRoe: s.avgRoe.length > 0 ? s.avgRoe.reduce((a, b) => a + b, 0) / s.avgRoe.length : 0,
+        avgChange:
+          s.avgChange.length > 0 ? s.avgChange.reduce((a, b) => a + b, 0) / s.avgChange.length : 0,
       }))
-      .sort((a: any, b: any) => b.marketCap - a.marketCap);
-    
+      .sort((a, b) => b.marketCap - a.marketCap);
+
     const response = {
       timestamp: new Date().toISOString(),
       indices: indices ?? [],
@@ -97,18 +116,17 @@ export async function GET() {
         totalSectors: sectors.length,
       },
     };
-    
+
     return NextResponse.json(response, {
       headers: {
         // Cache market overview for 5 minutes
         "Cache-Control": "public, s-maxage=300, stale-while-revalidate=30",
       },
     });
-    
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

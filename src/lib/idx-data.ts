@@ -34,9 +34,34 @@ export interface IDXScreenerFilters {
   limit?: number;
 }
 
+export interface IDXStockCompany {
+  name: string;
+  industry?: string;
+  description?: string;
+  website?: string;
+  [key: string]: unknown;
+}
+
+export interface IDXStockRatios {
+  per?: number;
+  pbv?: number;
+  roe?: number;
+  dividendYield?: number;
+  debtEquity?: number;
+  [key: string]: unknown;
+}
+
+export interface IDXStockTechnical {
+  signals?: string[];
+  ma20?: number;
+  ma50?: number;
+  rsi?: number;
+  [key: string]: unknown;
+}
+
 export interface IDXStockDetail {
   ticker: string;
-  company: any;
+  company: IDXStockCompany;
   prices: Array<{
     date: string;
     open: number;
@@ -45,8 +70,8 @@ export interface IDXStockDetail {
     close: number;
     volume: number;
   }>;
-  ratios: any;
-  technical: any;
+  ratios: IDXStockRatios;
+  technical: IDXStockTechnical;
   meta: {
     period: string;
     total_days: number;
@@ -89,7 +114,7 @@ export interface IDXMarketOverview {
  */
 export async function fetchIDXStockDetail(
   ticker: string,
-  period: string = "1y"
+  period: string = "1y",
 ): Promise<IDXStockDetail | null> {
   try {
     const response = await fetch(`/api/idx/stocks/${ticker}?period=${period}`);
@@ -119,11 +144,11 @@ export async function fetchIDXMarketOverview(): Promise<IDXMarketOverview | null
  * Screener: fetch stocks with filters
  */
 export async function fetchIDXScreener(
-  filters: IDXScreenerFilters
+  filters: IDXScreenerFilters,
 ): Promise<{ data: IDXStock[]; count: number } | null> {
   try {
     const params = new URLSearchParams();
-    
+
     // Build query params
     if (filters.sector) params.set("sector", filters.sector);
     if (filters.board) params.set("board", filters.board);
@@ -132,16 +157,18 @@ export async function fetchIDXScreener(
     if (filters.min_pbv !== undefined) params.set("min_pbv", String(filters.min_pbv));
     if (filters.max_pbv !== undefined) params.set("max_pbv", String(filters.max_pbv));
     if (filters.min_roe !== undefined) params.set("min_roe", String(filters.min_roe));
-    if (filters.min_div_yield !== undefined) params.set("min_div_yield", String(filters.min_div_yield));
+    if (filters.min_div_yield !== undefined)
+      params.set("min_div_yield", String(filters.min_div_yield));
     if (filters.max_der !== undefined) params.set("max_der", String(filters.max_der));
-    if (filters.min_market_cap !== undefined) params.set("min_market_cap", String(filters.min_market_cap));
+    if (filters.min_market_cap !== undefined)
+      params.set("min_market_cap", String(filters.min_market_cap));
     if (filters.sort_by) params.set("sort_by", filters.sort_by);
     if (filters.sort_order) params.set("sort_order", filters.sort_order);
     if (filters.limit) params.set("limit", String(filters.limit));
-    
+
     const response = await fetch(`/api/idx/screener?${params.toString()}`);
     if (!response.ok) throw new Error("Failed to fetch screener data");
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error fetching screener:", error);
@@ -154,7 +181,7 @@ export async function fetchIDXScreener(
  */
 export function formatIDR(value: number | null | undefined): string {
   if (value === null || value === undefined) return "-";
-  
+
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
@@ -176,7 +203,7 @@ export function formatPercent(value: number | null | undefined, decimals = 2): s
  */
 export function formatMarketCap(value: number | null | undefined): string {
   if (value === null || value === undefined) return "-";
-  
+
   if (value >= 1e12) return `${(value / 1e12).toFixed(1)}T`;
   if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
   if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
@@ -229,11 +256,7 @@ export const IDX_SECTORS = [
 /**
  * Get boards list
  */
-export const IDX_BOARDS = [
-  "Utama",
-  "Pengembangan",
-  "Akselerasi",
-];
+export const IDX_BOARDS = ["Utama", "Pengembangan", "Akselerasi"];
 
 /**
  * Screener presets
@@ -255,10 +278,10 @@ export const SCREENER_PRESETS = {
     min_roe: 0.1,
   },
   "Blue Chips": {
-    min_market_cap: 100e12,  // > 100T
+    min_market_cap: 100e12, // > 100T
   },
   "Small Caps": {
-    min_market_cap: 100e9,   // > 100B
-    max_market_cap: 1e12,    // < 1T
+    min_market_cap: 100e9, // > 100B
+    max_market_cap: 1e12, // < 1T
   },
 };
