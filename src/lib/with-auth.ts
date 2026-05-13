@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Client-side middleware: attaches Supabase access token as Authorization header
-// so requireSupabaseAuth (server-side) can validate the user.
 export const attachSupabaseAuth = createMiddleware({ type: "function" }).client(
   async ({ next }) => {
     const { data } = await supabase.auth.getSession();
@@ -15,4 +14,12 @@ export const attachSupabaseAuth = createMiddleware({ type: "function" }).client(
   },
 );
 
-export const authedMiddleware = [attachSupabaseAuth, requireSupabaseAuth] as const;
+// Server-side middleware: validates user, injects { supabase, userId, claims }
+export const requireSupabaseAuthMiddleware = createMiddleware({ type: "function" }).server(
+  async ({ next }) => {
+    const ctx = await requireSupabaseAuth();
+    return next({ context: ctx });
+  },
+);
+
+export const authedMiddleware = [attachSupabaseAuth, requireSupabaseAuthMiddleware] as const;
