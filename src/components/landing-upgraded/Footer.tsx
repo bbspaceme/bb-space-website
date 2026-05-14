@@ -80,6 +80,7 @@ export const Footer: React.FC<FooterProps> = ({
             paddingBottom: "40px",
             borderBottom: `1px solid ${tokens.color.border}`,
           }}
+          className="asset-row"
         >
           {sections.map((section) => (
             <div key={section.title}>

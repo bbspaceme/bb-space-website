@@ -76,35 +76,35 @@
 :root {
   --radius: 0.25rem;
 
-  /* KBAI brand tokens (aligned with landing) */
-  --background: #070c18; /* main dark navy */
-  --foreground: #e8e4dc; /* primary text */
+  /* KBAI brand tokens (unified with landing page) */
+  --background: #07080A; /* main dark navy - matches landing */
+  --foreground: #F0F2F5; /* primary text - matches landing */
 
-  --card: #0f1628;
-  --card-foreground: #e8e4dc;
+  --card: #0D0F12;
+  --card-foreground: #F0F2F5;
 
-  --popover: #141b2d;
-  --popover-foreground: #e8e4dc;
+  --popover: #111418;
+  --popover-foreground: #F0F2F5;
 
-  --primary: #e8e4dc;
-  --primary-foreground: #0f1628;
+  --primary: #F0F2F5;
+  --primary-foreground: #07080A;
 
-  --secondary: #8a9ab5;
-  --secondary-foreground: #e8e4dc;
+  --secondary: #6B7280;
+  --secondary-foreground: #F0F2F5;
 
   /* Muted color adjusted to meet WCAG AA on dark background */
-  --muted: #6b7a9a;
-  --muted-foreground: #6b7a9a;
+  --muted: #6B7280;
+  --muted-foreground: #6B7280;
 
-  --accent: #7eb8b0; /* teal brand */
-  --accent-foreground: #070c18;
+  --accent: #22C55E; /* green accent - matches landing */
+  --accent-foreground: #07080A;
 
-  --destructive: #c97070;
-  --destructive-foreground: #070c18;
+  --destructive: #EF4444;
+  --destructive-foreground: #07080A;
 
-  --border: rgba(126, 184, 176, 0.1);
+  --border: rgba(255, 255, 255, 0.06);
   --input: rgba(255, 255, 255, 0.04);
-  --ring: rgba(126, 184, 176, 0.12);
+  --ring: rgba(34, 197, 94, 0.12);
 
   /* Semantic finance colors — used ONLY for P/L. */
   --pos: #5fa87a;
@@ -117,14 +117,14 @@
   --chart-4: #5fa87a; /* BTC */
   --chart-5: #6b6fb0; /* muted */
 
-  --sidebar: #0b0f1a;
-  --sidebar-foreground: #e8e4dc;
-  --sidebar-primary: #e8e4dc;
-  --sidebar-primary-foreground: #0b0f1a;
-  --sidebar-accent: #7eb8b0;
-  --sidebar-accent-foreground: #0b0f1a;
-  --sidebar-border: rgba(255, 255, 255, 0.04);
-  --sidebar-ring: rgba(126, 184, 176, 0.08);
+  --sidebar: #07080A;
+  --sidebar-foreground: #F0F2F5;
+  --sidebar-primary: #F0F2F5;
+  --sidebar-primary-foreground: #07080A;
+  --sidebar-accent: #22C55E;
+  --sidebar-accent-foreground: #07080A;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: rgba(34, 197, 94, 0.12);
 
   /* Fonts — prefer brand display/serif for headings */
   --font-sans:

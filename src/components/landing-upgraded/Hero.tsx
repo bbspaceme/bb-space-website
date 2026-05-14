@@ -47,6 +47,7 @@ export const Hero: React.FC<HeroProps> = ({
         overflow: "hidden",
         textAlign: "center",
       }}
+      className="hero-section"
       id="home"
       role="region"
       aria-label="Hero section"
@@ -114,6 +115,7 @@ export const Hero: React.FC<HeroProps> = ({
             animation: "fadeUp 0.8s ease-out 0.1s backwards",
             letterSpacing: "-1px",
           }}
+          className="hero-title"
         >
           Kelola portofolio.
           <br />
@@ -141,6 +143,7 @@ export const Hero: React.FC<HeroProps> = ({
             maxWidth: "700px",
             animation: "fadeUp 0.8s ease-out 0.2s backwards",
           }}
+          className="hero-subtitle"
         >
           {subtitle}
         </p>
@@ -155,6 +158,7 @@ export const Hero: React.FC<HeroProps> = ({
             flexWrap: "wrap",
             animation: "fadeUp 0.8s ease-out 0.3s backwards",
           }}
+          className="hero-actions"
         >
           <button
             onClick={() => onCTA?.("demo")}
@@ -170,6 +174,7 @@ export const Hero: React.FC<HeroProps> = ({
               fontFamily: '"Instrument Sans", sans-serif',
               transition: "all 0.3s ease",
             }}
+            className="hero-cta"
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
               (e.currentTarget as HTMLButtonElement).style.boxShadow =

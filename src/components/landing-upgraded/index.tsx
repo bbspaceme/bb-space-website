@@ -116,6 +116,7 @@ export const ImprovedLandingPage: React.FC<ImprovedLandingPageProps> = ({
           borderTop: `1px solid ${tokens.color.border}`,
           borderBottom: `1px solid ${tokens.color.border}`,
         }}
+        className="section-padding"
         role="region"
         aria-label="Performance metrics"
       >
@@ -137,9 +138,11 @@ export const ImprovedLandingPage: React.FC<ImprovedLandingPageProps> = ({
                   color: tokens.color.textMuted,
                   fontFamily: '"DM Mono", monospace',
                   margin: 0,
+                  fontWeight: "500",
                 }}
               >
-                ⚠ Data Historis · Lihat Data Aktual Setelah Login
+                ⚠️ DATA ILLUSTRATIF · Berdasarkan historis komunitas KBAI. Data aktual tersedia
+                setelah login untuk member terverifikasi.
               </p>
             </div>
           )}
@@ -150,6 +153,7 @@ export const ImprovedLandingPage: React.FC<ImprovedLandingPageProps> = ({
               gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
               gap: "24px",
             }}
+            className="stats-strip"
           >
             {metrics.map((metric, idx) => (
               <div
@@ -170,7 +174,8 @@ export const ImprovedLandingPage: React.FC<ImprovedLandingPageProps> = ({
                     margin: "0 0 8px 0",
                   }}
                 >
-                  {metric.label}
+                  {metric.label}{" "}
+                  <span style={{ color: tokens.color.warning, fontSize: "10px" }}>SAMPLE</span>
                 </p>
                 <p
                   style={{
@@ -206,6 +211,7 @@ export const ImprovedLandingPage: React.FC<ImprovedLandingPageProps> = ({
           padding: "80px 24px",
           borderBottom: `1px solid ${tokens.color.border}`,
         }}
+        className="section-padding"
         role="region"
         aria-label="5-layer framework"
       >
@@ -231,6 +237,7 @@ export const ImprovedLandingPage: React.FC<ImprovedLandingPageProps> = ({
               gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
               gap: "32px",
             }}
+            className="layers-grid"
           >
             {frameworks.map((fw, idx) => (
               <div
@@ -244,6 +251,7 @@ export const ImprovedLandingPage: React.FC<ImprovedLandingPageProps> = ({
                   cursor: "pointer",
                   animation: `fadeUp 0.6s ease-out ${idx * 0.1}s backwards`,
                 }}
+                className="layer-card"
                 onMouseEnter={(e) => {
                   const el = e.currentTarget as HTMLDivElement;
                   el.style.transform = "translateY(-8px)";

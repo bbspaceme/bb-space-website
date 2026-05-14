@@ -139,6 +139,122 @@ export const globalStyles = `
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  /* ══ RESPONSIVE BREAKPOINTS ══ */
+
+  /* Tablet and smaller desktop */
+  @media (max-width: 1100px) {
+    .hero-section {
+      padding: 80px 24px 60px !important;
+    }
+
+    .hero-title {
+      font-size: clamp(48px, 8vw, 96px) !important;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(16px, 2.5vw, 20px) !important;
+    }
+
+    .layers-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 24px !important;
+    }
+
+    .stats-strip {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+
+  /* Tablet */
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 100px 20px 60px !important;
+      min-height: auto !important;
+    }
+
+    .hero-title {
+      font-size: clamp(36px, 10vw, 60px) !important;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(14px, 2vw, 18px) !important;
+    }
+
+    .hero-actions {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 16px !important;
+    }
+
+    .layers-grid {
+      grid-template-columns: 1fr !important;
+    }
+
+    .stats-strip {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .kpi-strip {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .section-padding {
+      padding: 60px 20px !important;
+    }
+
+    .asset-row {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+
+  /* Mobile */
+  @media (max-width: 480px) {
+    .hero-section {
+      padding: 80px 16px 40px !important;
+    }
+
+    .hero-title {
+      font-size: clamp(32px, 9vw, 48px) !important;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(14px, 2.5vw, 16px) !important;
+    }
+
+    .hero-actions {
+      width: 100% !important;
+    }
+
+    .hero-cta {
+      width: 100% !important;
+      text-align: center !important;
+    }
+
+    .stats-strip {
+      grid-template-columns: 1fr !important;
+    }
+
+    .asset-row {
+      grid-template-columns: 1fr !important;
+    }
+
+    .layers-grid {
+      grid-template-columns: 1fr !important;
+    }
+
+    .nav-right .nav-cta {
+      display: none !important;
+    }
+
+    .section-padding {
+      padding: 40px 16px !important;
+    }
+
+    .layer-card {
+      padding: 24px 20px !important;
+    }
+  }
 `;
 
 export const cssModule = `

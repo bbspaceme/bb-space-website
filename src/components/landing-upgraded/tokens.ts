@@ -1,25 +1,25 @@
 /**
  * Landing Page Design Tokens
- * Centralized, reusable design system
+ * Now unified with global CSS variables for consistency
  */
 
 import { DesignTokens } from "./landing.types";
 
 export const tokens: DesignTokens = {
   color: {
-    bg: "#07080A",
-    surface: "#0D0F12",
-    surfaceElevated: "#111418",
-    border: "rgba(255,255,255,0.06)",
+    bg: "var(--background)",
+    surface: "var(--card)",
+    surfaceElevated: "var(--popover)",
+    border: "var(--border)",
     borderHover: "rgba(255,255,255,0.12)",
-    text: "#F0F2F5",
-    textMuted: "#6B7280",
-    textSubtle: "#374151",
-    accent: "#22C55E",
+    text: "var(--foreground)",
+    textMuted: "var(--muted-foreground)",
+    textSubtle: "var(--muted)",
+    accent: "var(--accent)",
     accentDim: "rgba(34,197,94,0.12)",
     accentBorder: "rgba(34,197,94,0.25)",
     warning: "#F59E0B",
-    danger: "#EF4444",
+    danger: "var(--destructive)",
     blue: "#3B82F6",
     gold: "#D97706",
   },
