@@ -11,12 +11,14 @@
 ## 🎯 Strategic Integration
 
 ### Current BB Space Capabilities
+
 - ✅ Portfolio management & analysis
 - ✅ AI-powered market insights
 - ✅ Role-based admin controls
 - ✅ Real-time notifications
 
 ### New IDX Capabilities
+
 - 📊 Free IDX stock data (Daily OHLCV)
 - 💰 Fundamental analysis (PER, PBV, ROE, etc.)
 - 📈 Technical indicators (RSI, MACD, BB, SMA)
@@ -50,6 +52,7 @@ Data Layer:
 ## 📋 Implementation Roadmap
 
 ### Phase 1: Foundation (Week 1-2) 🟢 IN PROGRESS
+
 **Goal**: Establish data pipeline and infrastructure
 
 - [ ] **Step 1.1**: Extend Supabase schema with IDX tables
@@ -77,6 +80,7 @@ Data Layer:
   - Monitor 7 hari operasi
 
 ### Phase 2: Backend API (Week 3-4) 🟡 PLANNED
+
 **Goal**: Create Vercel Edge Functions for IDX queries
 
 - [ ] **Step 2.1**: Edge Functions
@@ -91,6 +95,7 @@ Data Layer:
   - 24h cache for company profiles
 
 ### Phase 3: Frontend UI (Week 5-8) 🔴 PLANNED
+
 **Goal**: Integrate IDX features into existing UI
 
 - [ ] **Step 3.1**: Enhance existing pages
@@ -114,18 +119,19 @@ Data Layer:
 
 ## 📊 Data Sources (Gratis 100%)
 
-| Source | Coverage | Delay | Limit | Purpose |
-|--------|----------|-------|-------|---------|
-| IDX.co.id internal API | All IDX | Same-day | None | Companies, ratios, financials |
-| yfinance | IDX tickers + indices | 1 hour | None | Historical OHLCV, tech analysis |
-| Twelve Data (free) | IDX select | Real-time | 800 req/day | Fundamental backup |
-| GitHub Dataset | 958 emiten | Weekly update | None | Historical data 2019+ |
+| Source                 | Coverage              | Delay         | Limit       | Purpose                         |
+| ---------------------- | --------------------- | ------------- | ----------- | ------------------------------- |
+| IDX.co.id internal API | All IDX               | Same-day      | None        | Companies, ratios, financials   |
+| yfinance               | IDX tickers + indices | 1 hour        | None        | Historical OHLCV, tech analysis |
+| Twelve Data (free)     | IDX select            | Real-time     | 800 req/day | Fundamental backup              |
+| GitHub Dataset         | 958 emiten            | Weekly update | None        | Historical data 2019+           |
 
 ---
 
 ## 🔒 Legal Compliance
 
 **IDX Terms of Service Pasal 5**:
+
 - ✅ Personal/Academic use → BOLEH
 - ✅ Open source non-commercial → BOLEH (dengan atribusi)
 - ❌ Commercial SaaS → PERLU LISENSI (tidak untuk BB Space free tier)
@@ -228,31 +234,34 @@ Data Layer:
 
 ## 📈 Success Metrics
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| **Audit Score** | 10/10 ⭐⭐⭐⭐⭐ | 10/10 ✅ |
-| **Data Coverage** | 958 IDX emiten | TBD |
-| **Data Freshness** | < 24h | TBD |
-| **API Response Time** | < 200ms (edge) | TBD |
-| **Screener Filters** | 15+ conditions | TBD |
-| **Technical Indicators** | 10+ indicators | TBD |
-| **Dashboard Performance** | < 3s load | TBD |
+| Metric                    | Target           | Current  |
+| ------------------------- | ---------------- | -------- |
+| **Audit Score**           | 10/10 ⭐⭐⭐⭐⭐ | 10/10 ✅ |
+| **Data Coverage**         | 958 IDX emiten   | TBD      |
+| **Data Freshness**        | < 24h            | TBD      |
+| **API Response Time**     | < 200ms (edge)   | TBD      |
+| **Screener Filters**      | 15+ conditions   | TBD      |
+| **Technical Indicators**  | 10+ indicators   | TBD      |
+| **Dashboard Performance** | < 3s load        | TBD      |
 
 ---
 
 ## 🚀 Next Steps
 
 **Immediate** (Next 2 hours):
+
 1. Create Supabase schema migrations for IDX tables
 2. Write Python ETL pipeline scripts
 3. Setup GitHub Actions workflows
 
 **Follow-up** (Next 24 hours):
+
 1. Test data pipeline end-to-end
 2. Load initial historical data
 3. Verify data quality
 
 **Week 1**:
+
 1. Validate daily updates working
 2. Start Backend API implementation
 3. Begin UI component development

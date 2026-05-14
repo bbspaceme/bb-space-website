@@ -5,18 +5,21 @@
 The IDX Platform integration is **100% complete** at the infrastructure level:
 
 ### Phase 1: Foundation ✅ COMPLETE
+
 - [x] Supabase PostgreSQL schema with IDX tables (companies, prices, ratios, technicals, indices)
 - [x] Python ETL pipeline (fetch, transform, load)
 - [x] GitHub Actions scheduler (daily at 17:10 WIB + manual full load)
 - [x] Technical indicators computation (RSI, MACD, Bollinger Bands, etc.)
 
 ### Phase 2: API ✅ COMPLETE
+
 - [x] Vercel Edge Functions for:
   - `/api/idx/stocks/[ticker]` - Stock detail with prices, ratios, indicators
   - `/api/idx/screener` - Multi-filter screener with fundamental data
   - `/api/idx/market/overview` - Market snapshot, indices, gainers, losers, sectors
 
 ### Phase 3: Frontend ✅ READY FOR INTEGRATION
+
 - [x] `src/lib/idx-data.ts` - Data operations library with utilities:
   - `fetchIDXStockDetail()` - Get stock data
   - `fetchIDXScreener()` - Multi-filter screener
@@ -82,11 +85,11 @@ python idx_pipeline.py  # Test run
 ```typescript
 // In your React components
 
-import { 
-  fetchIDXScreener, 
+import {
+  fetchIDXScreener,
   fetchIDXMarketOverview,
-  formatIDR, 
-  formatPercent 
+  formatIDR,
+  formatPercent
 } from "@/lib/idx-data";
 
 // Fetch screener data
@@ -117,6 +120,7 @@ const result = await fetchIDXScreener({
 All endpoints cache data appropriately for performance:
 
 ### Stock Detail
+
 ```
 GET /api/idx/stocks/[ticker]?period=1y
 → Returns: prices, company info, ratios, technical indicators
@@ -124,6 +128,7 @@ GET /api/idx/stocks/[ticker]?period=1y
 ```
 
 ### Screener
+
 ```
 GET /api/idx/screener?sector=Keuangan&max_per=15&sort_by=market_cap
 → Returns: filtered stock list
@@ -132,6 +137,7 @@ GET /api/idx/screener?sector=Keuangan&max_per=15&sort_by=market_cap
 ```
 
 ### Market Overview
+
 ```
 GET /api/idx/market/overview
 → Returns: indices, gainers, losers, sectors performance
@@ -196,7 +202,7 @@ To add UI components, create:
 // src/routes/_app.idx.stocks.[ticker].tsx
 // Stock detail page with chart
 
-// src/routes/_app.idx.screener.tsx  
+// src/routes/_app.idx.screener.tsx
 // Advanced screener page
 
 // src/routes/_app.idx.markets.tsx
@@ -210,16 +216,19 @@ Use the `IDX_PLATFORM_INTEGRATION.md` and `idx_data.ts` utilities to build these
 ## 🆘 Troubleshooting
 
 **Pipeline failing?**
+
 - Check GitHub Actions logs: **GitHub → Actions → idx-update-daily.yml**
 - Check Supabase logs: **Supabase Dashboard → Logs**
 - Check `idx_etl_logs` table for errors
 
 **No data showing?**
+
 - Verify Supabase secrets in GitHub Actions
 - Check that schema migration ran successfully
 - Run manual test: `python scripts/etl/idx_pipeline.py`
 
 **API returning errors?**
+
 - Check Supabase connectivity
 - Verify table names match schema
 - Test in Supabase SQL Editor first
@@ -228,19 +237,20 @@ Use the `IDX_PLATFORM_INTEGRATION.md` and `idx_data.ts` utilities to build these
 
 ## 📈 Capacity & Performance
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Companies | 958 emiten | Updated daily |
-| Daily records | ~950 prices | Per day |
-| Storage used | ~90 MB/year | At 500 MB, lasts ~5 years |
-| API response | <200ms | Edge Functions cached |
-| Update window | 17:10-18:00 WIB | ~1 hour daily |
+| Metric        | Value           | Notes                     |
+| ------------- | --------------- | ------------------------- |
+| Companies     | 958 emiten      | Updated daily             |
+| Daily records | ~950 prices     | Per day                   |
+| Storage used  | ~90 MB/year     | At 500 MB, lasts ~5 years |
+| API response  | <200ms          | Edge Functions cached     |
+| Update window | 17:10-18:00 WIB | ~1 hour daily             |
 
 ---
 
 ## 🔒 Legal Compliance
 
 ✅ **BB Space is compliant** with IDX Terms of Service:
+
 - Personal/research platform (non-commercial)
 - Open source with proper attribution
 - No data redistribution to third parties
@@ -252,6 +262,7 @@ To commercialize, obtain IDX data license.
 ## 📞 Support
 
 For issues or questions:
+
 1. Check logs in Supabase
 2. Check GitHub Actions execution history
 3. Review `IDX_PLATFORM_INTEGRATION.md` documentation

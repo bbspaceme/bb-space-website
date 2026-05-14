@@ -45,7 +45,7 @@ function RequestAccessPage() {
     setSubmitting(true);
     try {
       // Insert into access_requests table (create this in Supabase)
-      const { error } = await (supabase.from as any)("access_requests").insert({
+      const { error } = await supabase.from("access_requests" as never).insert({
         full_name: formData.fullName,
         email: formData.email,
         investment_background: formData.investmentBackground,

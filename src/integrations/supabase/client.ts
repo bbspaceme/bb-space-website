@@ -27,7 +27,7 @@ function createSupabaseClient() {
           persistSession: true,
           autoRefreshToken: true,
         },
-      }
+      },
     );
   }
 

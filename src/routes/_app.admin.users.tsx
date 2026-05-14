@@ -61,7 +61,7 @@ function AdminUsersPage() {
 
   const grantMut = useMutation({
     mutationFn: (vars: { target_user_id: string; role: "admin" | "user" | "advisor" }) =>
-      adminGrantRole({ target_user_id: vars.target_user_id, role: vars.role },),
+      adminGrantRole({ target_user_id: vars.target_user_id, role: vars.role }),
     onSuccess: () => {
       toast.success("Role updated");
       qc.invalidateQueries({ queryKey: ["admin-users"] });

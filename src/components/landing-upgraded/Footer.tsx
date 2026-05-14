@@ -55,8 +55,7 @@ export const Footer: React.FC<FooterProps> = ({
       const target = document.querySelector(href);
       target?.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      navigate({ to: href as any });
+      navigate({ to: href });
     }
   };
 

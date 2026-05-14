@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useAuth } from "@/auth";
 import { supabase } from "@/integrations/supabase/client";
+
+type UserWithRoles = { app_metadata?: { roles?: Array<string | null> } } | null;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,7 +32,7 @@ import { PortfolioMetrics } from "@/features/portfolio/components/PortfolioMetri
 import { PortfolioChart } from "@/features/portfolio/components/PortfolioChart";
 import { TransactionHistory } from "@/features/portfolio/components/TransactionHistory";
 
-function getRolesFromUser(user: { app_metadata?: { roles?: string[] } } | null) {
+function getRolesFromUser(user: UserWithRoles) {
   const roles = user?.app_metadata?.roles;
   return Array.isArray(roles) ? roles.map(String) : [];
 }
@@ -41,7 +43,7 @@ export const Route = createFileRoute("/_app/portfolio")({
     if (error || !userData.user) return;
 
     // First check JWT claims (fast path)
-    const jwtRoles = getRolesFromUser(userData.user as any);
+    const jwtRoles = getRolesFromUser(userData.user);
     let isAdmin = jwtRoles.includes("admin");
     let isAdvisor = jwtRoles.includes("advisor");
 
@@ -120,8 +122,7 @@ function PortfolioPage() {
   });
 
   const refreshMut = useMutation({
-    mutationFn: () =>
-      refreshEodPrices(accessToken ? { access_token: accessToken } : undefined),
+    mutationFn: () => refreshEodPrices(accessToken ? { access_token: accessToken } : undefined),
     onSuccess: (res) => {
       toast.success(`Harga diperbarui: ${res.updated} ticker`);
       qc.invalidateQueries({ queryKey: ["latest-prices"] });

@@ -40,6 +40,6 @@ export async function getCommunityPortfolioStats(data: { from_date: string }) {
     }));
 }
 
-export async function getCommunityEquitySeries(_data: { from_date: string }): Promise<any[]> {
+export async function getCommunityEquitySeries(_data: { from_date: string }): Promise<unknown[]> {
   return [];
 }

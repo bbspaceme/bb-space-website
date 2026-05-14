@@ -2,7 +2,9 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useAuth } from "@/auth";
 import { supabase } from "@/integrations/supabase/client";
 
-function getRolesFromUser(user: { app_metadata?: { roles?: string[] } } | null) {
+type UserWithRoles = { app_metadata?: { roles?: Array<string | null> } } | null;
+
+function getRolesFromUser(user: UserWithRoles) {
   const roles = user?.app_metadata?.roles;
   return Array.isArray(roles) ? roles.map(String) : [];
 }
@@ -12,7 +14,7 @@ export const Route = createFileRoute("/_app/admin")({
     const { data: userData, error } = await supabase.auth.getUser();
     if (error || !userData.user) throw redirect({ to: "/login" });
 
-    const jwtRoles = getRolesFromUser(userData.user as any);
+    const jwtRoles = getRolesFromUser(userData.user);
     let isAdmin = jwtRoles.includes("admin");
     let isAdvisor = jwtRoles.includes("advisor");
 

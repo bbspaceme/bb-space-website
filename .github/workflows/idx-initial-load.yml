@@ -13,8 +13,8 @@ on:
 jobs:
   initial-load:
     runs-on: ubuntu-latest
-    timeout-minutes: 300  # 5 hours for full load
-    
+    timeout-minutes: 300 # 5 hours for full load
+
     steps:
       - name: Check confirmation
         run: |
@@ -22,48 +22,48 @@ jobs:
             echo "❌ Long-running job cancelled - confirmation required"
             exit 1
           fi
-      
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      
+
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
           cache-dependency-path: "scripts/etl/requirements.txt"
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r scripts/etl/requirements.txt
-      
+
       - name: Load 5-year historical data (NO RATIOS)
         env:
-          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
           cd scripts/etl
           echo "🚀 Starting 5-year historical data load..."
           echo "⏱️  Start time: $(date '+%Y-%m-%d %H:%M:%S WIB')"
-          
+
           # Load full history, skip ratio computation (too slow)
           python idx_pipeline.py --full --no-ratios
-          
+
           echo "⏱️  End time: $(date '+%Y-%m-%d %H:%M:%S WIB')"
           echo "✅ Historical data load complete!"
-      
+
       - name: Compute technical indicators for top 200 stocks
         env:
-          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
           cd scripts/etl
           echo "📊 Computing technical indicators..."
           python idx_compute_indicators.py 200
-      
+
       - name: Success notification
         if: success()
         run: |

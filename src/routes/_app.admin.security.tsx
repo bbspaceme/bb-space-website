@@ -51,8 +51,7 @@ function AdminSecurityPage() {
   const q = useQuery({
     queryKey: ["admin-sessions", activeOnly],
     enabled: !!auth.user?.id,
-    queryFn: () =>
-      adminListSessions({ only_active: activeOnly, limit: 300 },),
+    queryFn: () => adminListSessions({ only_active: activeOnly, limit: 300 }),
   });
 
   const revokeMut = useMutation({

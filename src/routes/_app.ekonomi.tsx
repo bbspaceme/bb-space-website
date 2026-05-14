@@ -2,7 +2,9 @@ import { createFileRoute, Outlet, Link, redirect } from "@tanstack/react-router"
 import { supabase } from "@/integrations/supabase/client";
 import { TrendingUp, Globe, Coins, BarChart3, Sparkles, CalendarDays } from "lucide-react";
 
-function getRolesFromUser(user: { app_metadata?: { roles?: string[] } } | null) {
+type UserWithRoles = { app_metadata?: { roles?: Array<string | null> } } | null;
+
+function getRolesFromUser(user: UserWithRoles) {
   const roles = user?.app_metadata?.roles;
   return Array.isArray(roles) ? roles.map(String) : [];
 }
@@ -13,7 +15,7 @@ export const Route = createFileRoute("/_app/ekonomi")({
     if (error || !userData.user) return;
 
     // First check JWT claims (fast path)
-    const jwtRoles = getRolesFromUser(userData.user as any);
+    const jwtRoles = getRolesFromUser(userData.user);
     let isAllowed = ["advisor", "admin"].some((r) => jwtRoles.includes(r));
 
     // Fallback to DB query if JWT claims don't have role info

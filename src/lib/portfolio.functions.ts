@@ -46,8 +46,18 @@ export function computeHoldingsFromTxns(txns: TxnInput[]) {
     }));
 }
 
+type SupabaseRpcResult<T> = { data: T | null; error: { message?: string } | null };
+
+function rpcCall<T>(fnName: string, params?: object): Promise<SupabaseRpcResult<T>> {
+  const typedRpc = supabaseAdmin.rpc as unknown as <U = unknown>(
+    name: string,
+    parameters?: object,
+  ) => Promise<SupabaseRpcResult<U>>;
+  return typedRpc(fnName, params);
+}
+
 async function atomicAdjustCash(userId: string, delta: number): Promise<number> {
-  const { data, error } = await (supabaseAdmin.rpc as any)("adjust_cash_balance", {
+  const { data, error } = await rpcCall<number>("adjust_cash_balance", {
     p_user_id: userId,
     p_delta: delta,
   });
@@ -269,14 +279,14 @@ export async function submitTransaction(data: {
 
   // IMP-02: Incremental holdings update via RPC instead of full recompute
   if (data.side === "BUY") {
-    await (supabaseAdmin.rpc as any)("upsert_holding_buy", {
+    await rpcCall<unknown>("upsert_holding_buy", {
       p_user_id: userId,
       p_ticker: data.ticker,
       p_lot: data.lot,
       p_price: data.price,
     });
   } else {
-    await (supabaseAdmin.rpc as any)("upsert_holding_sell", {
+    await rpcCall<unknown>("upsert_holding_sell", {
       p_user_id: userId,
       p_ticker: data.ticker,
       p_lot: data.lot,
@@ -414,8 +424,6 @@ export async function grantUserRole(data: {
   return { ok: true };
 }
 
-
-
 // ============================================
 // Admin: delete user
 // ============================================
@@ -444,10 +452,7 @@ export async function deleteUser(data: { target_user_id: string }) {
 }
 
 // ============================================
-export async function bootstrapAdmin(data: {
-  user_id: string;
-  bootstrap_secret: string;
-}) {
+export async function bootstrapAdmin(data: { user_id: string; bootstrap_secret: string }) {
   const expected = import.meta.env.VITE_BOOTSTRAP_SECRET;
   if (!expected || data.bootstrap_secret !== expected) {
     throw new Response("Forbidden", { status: 403 });
@@ -472,6 +477,6 @@ export const adminCreateUser = createUserAccount;
 export const adminGrantRole = grantUserRole;
 export const adminDeleteUser = deleteUser;
 export const adminListUsers = listAllUsers;
-export async function adminUpdateUser(_data: any): Promise<any> {
+export async function adminUpdateUser(_data: unknown): Promise<never> {
   throw new Error("adminUpdateUser not implemented");
 }

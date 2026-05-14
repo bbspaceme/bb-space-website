@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Json } from "@/integrations/supabase/types";
 import { authedMiddleware } from "@/lib/with-auth";
 import { insertAuditLog } from "@/lib/audit.functions";
 import { adminAuthMiddleware } from "@/lib/admin-middleware";
@@ -13,7 +14,7 @@ export async function writeAuditLog(data: {
   action: string;
   entity?: string;
   entity_id?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, Json>;
   user_agent?: string;
 }) {
   // For SPA mode, we need to get user from auth context
@@ -25,11 +26,13 @@ export async function writeAuditLog(data: {
   return { ok: true };
 }
 
-export async function adminListAuditLogs(data: {
-  limit?: number;
-  action?: string;
-  user_id?: string;
-} = {}) {
+export async function adminListAuditLogs(
+  data: {
+    limit?: number;
+    action?: string;
+    user_id?: string;
+  } = {},
+) {
   // For SPA mode, we need admin auth
   const { userId } = await requireSupabaseAuth();
   // DUP-04: userId is from authenticated context, not client input
@@ -78,10 +81,12 @@ export async function recordSession(data: {
   return { session_id: row.id };
 }
 
-export async function adminListSessions(data: {
-  only_active?: boolean;
-  limit?: number;
-} = {}) {
+export async function adminListSessions(
+  data: {
+    only_active?: boolean;
+    limit?: number;
+  } = {},
+) {
   // For SPA mode, we need admin auth
   const { userId } = await requireSupabaseAuth();
   let q = supabaseAdmin
@@ -123,7 +128,7 @@ export async function adminListSystemSettings() {
   return rows ?? [];
 }
 
-export async function adminUpdateSystemSetting(data: { key: string; value: any }) {
+export async function adminUpdateSystemSetting(data: { key: string; value: Json }) {
   const { userId } = await requireSupabaseAuth();
   const { error } = await supabaseAdmin.from("system_settings").upsert(
     {

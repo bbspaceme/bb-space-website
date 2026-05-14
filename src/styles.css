@@ -77,30 +77,30 @@
   --radius: 0.25rem;
 
   /* KBAI brand tokens (unified with landing page) */
-  --background: #07080A; /* main dark navy - matches landing */
-  --foreground: #F0F2F5; /* primary text - matches landing */
+  --background: #07080a; /* main dark navy - matches landing */
+  --foreground: #f0f2f5; /* primary text - matches landing */
 
-  --card: #0D0F12;
-  --card-foreground: #F0F2F5;
+  --card: #0d0f12;
+  --card-foreground: #f0f2f5;
 
   --popover: #111418;
-  --popover-foreground: #F0F2F5;
+  --popover-foreground: #f0f2f5;
 
-  --primary: #F0F2F5;
-  --primary-foreground: #07080A;
+  --primary: #f0f2f5;
+  --primary-foreground: #07080a;
 
-  --secondary: #6B7280;
-  --secondary-foreground: #F0F2F5;
+  --secondary: #6b7280;
+  --secondary-foreground: #f0f2f5;
 
   /* Muted color adjusted to meet WCAG AA on dark background */
-  --muted: #6B7280;
-  --muted-foreground: #6B7280;
+  --muted: #6b7280;
+  --muted-foreground: #6b7280;
 
-  --accent: #22C55E; /* green accent - matches landing */
-  --accent-foreground: #07080A;
+  --accent: #22c55e; /* green accent - matches landing */
+  --accent-foreground: #07080a;
 
-  --destructive: #EF4444;
-  --destructive-foreground: #07080A;
+  --destructive: #ef4444;
+  --destructive-foreground: #07080a;
 
   --border: rgba(255, 255, 255, 0.06);
   --input: rgba(255, 255, 255, 0.04);
@@ -117,12 +117,12 @@
   --chart-4: #5fa87a; /* BTC */
   --chart-5: #6b6fb0; /* muted */
 
-  --sidebar: #07080A;
-  --sidebar-foreground: #F0F2F5;
-  --sidebar-primary: #F0F2F5;
-  --sidebar-primary-foreground: #07080A;
-  --sidebar-accent: #22C55E;
-  --sidebar-accent-foreground: #07080A;
+  --sidebar: #07080a;
+  --sidebar-foreground: #f0f2f5;
+  --sidebar-primary: #f0f2f5;
+  --sidebar-primary-foreground: #07080a;
+  --sidebar-accent: #22c55e;
+  --sidebar-accent-foreground: #07080a;
   --sidebar-border: rgba(255, 255, 255, 0.06);
   --sidebar-ring: rgba(34, 197, 94, 0.12);
 

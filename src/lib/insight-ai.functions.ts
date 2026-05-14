@@ -5,10 +5,7 @@ import { callLovableAi } from "@/lib/ai-client";
 
 async function requireAdvisor() {
   const { userId } = await requireSupabaseAuth();
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
+  const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   const rs = (roles ?? []).map((r) => String(r.role));
   if (!rs.includes("admin") && !rs.includes("advisor")) {
     throw new Error("Forbidden: admin or advisor role required");
@@ -72,7 +69,10 @@ export async function generateAiInsight() {
       total_value_tier: categorize(u.total_value),
       cash_ratio: u.cash / (u.total_value + u.cash),
       pl_pct: u.total_cost > 0 ? ((u.total_value - u.total_cost) / u.total_cost) * 100 : 0,
-      top_sectors: u.positions.sort((a, b) => b.value - a.value).slice(0, 3).map((p) => p.ticker),
+      top_sectors: u.positions
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 3)
+        .map((p) => p.ticker),
     };
   });
 
@@ -102,7 +102,12 @@ export async function generateAiInsight() {
   const systemPrompt = `Kamu adalah analis investasi senior untuk komunitas KBAI (IDX). Berikan insight strategis dalam Bahasa Indonesia, padat dan actionable, dalam markdown.`;
   const userPrompt = `Data internal:\n\n${JSON.stringify(payload, null, 2)}`;
 
-  const aiJson = await callLovableAi<{ choices?: { message?: { content?: string } }[] }>({
+  type LovableAiResponse = {
+    data?: { choices?: { message?: { content?: string } }[] };
+    choices?: { message?: { content?: string } }[];
+  };
+
+  const aiJson = await callLovableAi<LovableAiResponse>({
     model: "google/gemini-2.5-pro",
     messages: [
       { role: "system", content: systemPrompt },
@@ -110,8 +115,8 @@ export async function generateAiInsight() {
     ],
   });
   const content =
-    (aiJson as any).data?.choices?.[0]?.message?.content ??
-    (aiJson as any).choices?.[0]?.message?.content ??
+    aiJson.data?.choices?.[0]?.message?.content ??
+    aiJson.choices?.[0]?.message?.content ??
     "(no response)";
   return {
     content,

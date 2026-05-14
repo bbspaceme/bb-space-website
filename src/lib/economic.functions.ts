@@ -1,7 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export async function listEconomicEvents(data: { from?: string; to?: string; country?: string } = {}) {
+export async function listEconomicEvents(
+  data: { from?: string; to?: string; country?: string } = {},
+) {
   await requireSupabaseAuth();
   let q = supabase
     .from("economic_events")

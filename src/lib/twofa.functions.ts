@@ -67,9 +67,7 @@ export async function verify2fa(data: { code: string }) {
 
   // SEC-03: Generate plaintext recovery codes, hash them for storage
   const recoveryPlaintext = generateRecoveryCodes();
-  const recoveryHashed = await Promise.all(
-    recoveryPlaintext.map((code) => hashRecoveryCode(code)),
-  );
+  const recoveryHashed = await Promise.all(recoveryPlaintext.map((code) => hashRecoveryCode(code)));
 
   await supabaseAdmin
     .from("user_2fa")
