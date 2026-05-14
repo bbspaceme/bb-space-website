@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/auth";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
@@ -74,6 +75,7 @@ function RootComponent() {
           <Outlet />
         </ErrorBoundary>
         <Toaster richColors position="top-right" />
+        <SpeedInsights />
       </AuthProvider>
     </QueryClientProvider>
   );
