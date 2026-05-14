@@ -10,7 +10,7 @@
     },
     {
       "source": "/((?!assets/).*)",
-      "destination": "/index.html"
+      "destination": "/api/entry"
     }
   ],
   "headers": [
