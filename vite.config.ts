@@ -6,4 +6,24 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-export default defineConfig();
+export default defineConfig({
+  vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ["react", "react-dom"],
+            router: ["@tanstack/react-router", "@tanstack/react-start"],
+            ui: [
+              "@radix-ui/react-dialog",
+              "@radix-ui/react-dropdown-menu",
+              "@radix-ui/react-select",
+            ],
+            charts: ["recharts"],
+            utils: ["date-fns", "clsx", "class-variance-authority"],
+          },
+        },
+      },
+    },
+  },
+});
