@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { QueryClient } from "@tanstack/react-query";
+import { Analytics } from "@vercel/analytics/react";
 import { routeTree } from "./routeTree.gen";
 import "./styles.css";
 
@@ -24,5 +25,6 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <StrictMode>
     <RouterProvider router={router} />
+    <Analytics />
   </StrictMode>,
 );
