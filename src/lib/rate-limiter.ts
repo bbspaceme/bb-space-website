@@ -1,7 +1,7 @@
 import { createMiddleware } from "@tanstack/react-start";
 
 type GlobalWithKV = typeof globalThis & {
-  KV?: {
+  RATE_LIMIT_KV?: {
     get: (key: string) => Promise<string | null>;
     put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>;
   };
@@ -40,8 +40,8 @@ async function checkRateLimitInMemory(identifier: string): Promise<RateLimitResu
 async function checkRateLimit(identifier: string): Promise<RateLimitResult> {
   const useKv = process.env.RATE_LIMIT_KV_ENABLED === "true";
   const kvBinding =
-    typeof globalThis !== "undefined" && "KV" in globalThis
-      ? (globalThis as GlobalWithKV).KV
+    typeof globalThis !== "undefined" && "RATE_LIMIT_KV" in globalThis
+      ? (globalThis as GlobalWithKV).RATE_LIMIT_KV
       : undefined;
 
   if (useKv && kvBinding) {
@@ -50,6 +50,10 @@ async function checkRateLimit(identifier: string): Promise<RateLimitResult> {
     } catch (error) {
       console.warn("KV rate limiter failed, falling back to in-memory limiter", error);
     }
+  }
+
+  if (process.env.NODE_ENV === "production" && useKv && !kvBinding) {
+    throw new Error("RATE_LIMIT_KV_ENABLED=true but RATE_LIMIT_KV binding is not configured");
   }
 
   return checkRateLimitInMemory(identifier);
