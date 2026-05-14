@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { QueryClient } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { routeTree } from "./routeTree.gen";
 import "./styles.css";
 
@@ -26,5 +27,6 @@ root.render(
   <StrictMode>
     <RouterProvider router={router} />
     <Analytics />
+    <SpeedInsights />
   </StrictMode>,
 );
