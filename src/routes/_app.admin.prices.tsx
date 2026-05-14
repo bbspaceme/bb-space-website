@@ -34,11 +34,33 @@ import { toast } from "sonner";
 import { RefreshCw, Activity, Database, Trash2, Download } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/_app/admin/prices")({
   component: AdminPricesPage,
 });
+
+function escapeCsvValue(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const text = String(value);
+  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function downloadCsv(filename: string, rows: Array<Record<string, unknown>>): void {
+  const headers = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
+  const csv = [
+    headers.map(escapeCsvValue).join(","),
+    ...rows.map((row) => headers.map((header) => escapeCsvValue(row[header])).join(",")),
+  ].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
 
 function AdminPricesPage() {
   const qc = useQueryClient();
@@ -83,7 +105,7 @@ function AdminPricesPage() {
     mutationFn: () =>
       refreshEodPrices(accessToken ? { access_token: accessToken } : undefined),
     onSuccess: (res) => {
-      toast.success(`${res.updated} harga diperbarui via Yahoo Finance`);
+      toast.success(`${res.updated} harga diperbarui via market data provider`);
       qc.invalidateQueries({ queryKey: ["admin-eod-prices"] });
       qc.invalidateQueries({ queryKey: ["admin-bench-prices"] });
     },
@@ -136,14 +158,10 @@ function AdminPricesPage() {
     mutationFn: () =>
       exportAllMarketData(accessToken ? { access_token: accessToken } : undefined),
     onSuccess: (res) => {
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.eod), "EOD Prices");
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(res.benchmark), "Benchmarks");
-      XLSX.writeFile(
-        wb,
-        `kbai-market-data-${format(new Date(), "yyyyMMdd-HHmm", { locale: idLocale })}.xlsx`,
-      );
-      toast.success(`Export OK: ${res.eod.length} EOD + ${res.benchmark.length} benchmark`);
+      const stamp = format(new Date(), "yyyyMMdd-HHmm", { locale: idLocale });
+      downloadCsv(`kbai-eod-prices-${stamp}.csv`, res.eod);
+      downloadCsv(`kbai-benchmark-prices-${stamp}.csv`, res.benchmark);
+      toast.success(`Export OK: ${res.eod.length} EOD + ${res.benchmark.length} benchmark CSV`);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -154,7 +172,7 @@ function AdminPricesPage() {
         <CardHeader>
           <CardTitle>Market Data Engine</CardTitle>
           <CardDescription>
-            Sumber: Yahoo Finance (intraday delay ~15 menit, EOD harian).
+            Sumber: provider market data berlisensi. Yahoo fallback hanya aktif bila MARKET_DATA_ALLOW_UNLICENSED_YAHOO=true untuk development lokal.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

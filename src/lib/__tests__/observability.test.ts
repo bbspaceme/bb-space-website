@@ -28,11 +28,11 @@ describe("Observability System", () => {
       expect(id2).toBe(initialId);
     });
 
-    test("allows setting correlation ID", () => {
+    test("does not store mutable request state on the server", () => {
       const newId = "correlation-123";
       CorrelationIdContext.setRequestId(newId);
 
-      expect(CorrelationIdContext.getRequestId()).toBe(newId);
+      expect(CorrelationIdContext.getRequestId()).toBe("unscoped");
     });
   });
 
@@ -95,25 +95,26 @@ describe("Observability System", () => {
   });
 
   describe("Log Correlation", () => {
-    test("all logs from same request share correlation ID", () => {
+    test("all logs from same request share explicit correlation ID", () => {
       const requestId = "request-correlation-123";
-      CorrelationIdContext.setRequestId(requestId);
 
-      const log1 = createStructuredLog("info", "Operation started");
-      const log2 = createStructuredLog("info", "Operation completed");
-      const log3 = createStructuredLog("error", "Cleanup failed", undefined, new Error("Test"));
+      const log1 = createStructuredLog("info", "Operation started", { correlationId: requestId });
+      const log2 = createStructuredLog("info", "Operation completed", { correlationId: requestId });
+      const log3 = createStructuredLog(
+        "error",
+        "Cleanup failed",
+        { correlationId: requestId },
+        new Error("Test"),
+      );
 
       expect(log1.requestId).toBe(requestId);
       expect(log2.requestId).toBe(requestId);
       expect(log3.requestId).toBe(requestId);
     });
 
-    test("different requests have different correlation IDs", () => {
-      CorrelationIdContext.setRequestId("request-1");
-      const log1 = createStructuredLog("info", "Request 1");
-
-      CorrelationIdContext.setRequestId("request-2");
-      const log2 = createStructuredLog("info", "Request 2");
+    test("different requests have different explicit correlation IDs", () => {
+      const log1 = createStructuredLog("info", "Request 1", { correlationId: "request-1" });
+      const log2 = createStructuredLog("info", "Request 2", { correlationId: "request-2" });
 
       expect(log1.requestId).toBe("request-1");
       expect(log2.requestId).toBe("request-2");

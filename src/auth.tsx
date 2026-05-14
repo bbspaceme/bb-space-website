@@ -17,6 +17,11 @@ export interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+export function getRolesFromUser(user: Pick<User, "app_metadata"> | null): string[] {
+  const roles = user?.app_metadata?.roles;
+  return Array.isArray(roles) ? roles.map(String) : [];
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -27,10 +32,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchRoleAndProfile = async (user: User) => {
     // Try to get roles from JWT claims first (more efficient)
-    const claims = user.app_metadata as { roles?: string[] } | undefined;
-    const jwtRoles = claims?.roles;
+    const jwtRoles = getRolesFromUser(user);
 
-    if (jwtRoles && jwtRoles.length > 0) {
+    if (jwtRoles.length > 0) {
       setIsAdmin(jwtRoles.includes("admin"));
       setIsAdvisor(jwtRoles.includes("advisor"));
     } else {

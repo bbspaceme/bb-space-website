@@ -3,10 +3,16 @@
  */
 
 const YAHOO_HEADERS: Record<string, string> = {
-  "User-Agent":
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
   Accept: "application/json,text/plain,*/*",
 };
+
+function assertYahooFallbackEnabled(): void {
+  if (process.env.MARKET_DATA_ALLOW_UNLICENSED_YAHOO !== "true") {
+    throw new Error(
+      "Yahoo Finance fallback is disabled. Configure a licensed market data provider or set MARKET_DATA_ALLOW_UNLICENSED_YAHOO=true only for local development.",
+    );
+  }
+}
 
 /**
  * Fetch with retry logic and timeout
@@ -67,6 +73,7 @@ async function fetchWithRetry(
  * @returns Map of symbol -> regularMarketPrice
  */
 export async function fetchYahooQuotes(symbols: string[]): Promise<Record<string, number>> {
+  assertYahooFallbackEnabled();
   if (symbols.length === 0) return {};
   const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
     symbols.join(","),
@@ -95,6 +102,7 @@ export async function fetchYahooChart(
   fromUnix: number,
   toUnix: number,
 ): Promise<Array<{ date: string; close: number }>> {
+  assertYahooFallbackEnabled();
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
     symbol,
   )}?period1=${fromUnix}&period2=${toUnix}&interval=1d`;
@@ -136,6 +144,7 @@ export async function fetchYahooQuoteDetail(symbol: string): Promise<{
   pctChange: number;
   currency: string;
 } | null> {
+  assertYahooFallbackEnabled();
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
     symbol,
   )}?range=5d&interval=1d`;

@@ -1,23 +1,33 @@
 const uuidv4 = () => crypto.randomUUID();
 
 /**
- * Correlation ID utility for request tracing
- * Add this to middleware chain to enable distributed tracing
+ * Correlation ID utilities for request tracing.
+ *
+ * Serverless runtimes may reuse a single isolate for many concurrent requests,
+ * so this module deliberately avoids mutable module-level request state on the
+ * server. Pass `correlationId`/`requestId` in the log context (or TanStack
+ * middleware context) instead of relying on a global singleton.
  */
 
 export class CorrelationIdContext {
-  private static requestId: string = uuidv4();
+  private static browserRequestId: string = uuidv4();
 
   static generate(): string {
     return uuidv4();
   }
 
   static getRequestId(): string {
-    return CorrelationIdContext.requestId;
+    if (typeof window !== "undefined") {
+      return CorrelationIdContext.browserRequestId;
+    }
+
+    return "unscoped";
   }
 
   static setRequestId(id: string): void {
-    CorrelationIdContext.requestId = id;
+    if (typeof window !== "undefined") {
+      CorrelationIdContext.browserRequestId = id;
+    }
   }
 }
 
@@ -38,6 +48,11 @@ export interface StructuredLog {
   };
 }
 
+function getContextRequestId(context?: Record<string, unknown>): string | undefined {
+  const requestId = context?.requestId ?? context?.correlationId;
+  return typeof requestId === "string" && requestId.length > 0 ? requestId : undefined;
+}
+
 export function createStructuredLog(
   level: "info" | "warn" | "error" | "debug",
   message: string,
@@ -48,7 +63,7 @@ export function createStructuredLog(
     level,
     message,
     timestamp: new Date().toISOString(),
-    requestId: CorrelationIdContext.getRequestId(),
+    requestId: getContextRequestId(context) ?? CorrelationIdContext.getRequestId(),
     context,
     error: error
       ? {
